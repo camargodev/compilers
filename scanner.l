@@ -56,12 +56,12 @@ protected	return TK_PR_PROTECTED;
 "%>%"		return TK_OC_FORWARD_PIPE;
 "%|%"		return TK_OC_BASH_PIPE;
 
-'.'         return TK_LIT_CHAR;
-\".*\"      return TK_LIT_STRING;
+true        return TK_LIT_TRUE;
+false       return TK_LIT_FALSE;
 
-true 		return TK_LIT_TRUE;
-false 		return TK_LIT_FALSE;
+'(\\.|[^'])'        return TK_LIT_CHAR;
 
+\"(\\.|[^"])*\"     {count_lines(); return TK_LIT_STRING;}
 
 {SPECIAL_CHAR}                          return (int) yytext[0];
 
@@ -77,10 +77,11 @@ false 		return TK_LIT_FALSE;
 {SIGN}({INT}|{FLOAT})(e|E){SIGN}{INT}   return TK_LIT_FLOAT;
 
 [\n] 							        ++num_lines; 
-"/*"(.|\n)*"*/"                         count_lines();
 "//".*					        
 [ ]
 [\t]+			
+
+"/*"([^*]|(\*+[^*/]))*\*+\/             {printf("COMENTARIO\n"); count_lines();}
 
 .                                       return TOKEN_ERRO;
 
