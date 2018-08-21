@@ -7,7 +7,6 @@
 
 	int num_lines = 1;
 %}
-
 %option noyywrap
 
 SPECIAL_CHAR	[,|;|:|(|)|{|}|\[|\]|+|-|||?|*|/|<|>|=|!|&|%|#|^|.|$]
@@ -15,8 +14,9 @@ LETTER			[A-Za-z_]
 DIGIT			[0-9]
 SIGN            [-|+]
 INT             {DIGIT}+
+S_INT           ({SIGN}{INT}|{INT})
 FLOAT           {DIGIT}+"."{DIGIT}+
-
+S_FLOAT         ({SIGN}{FLOAT}|{FLOAT})
 
 %%
 
@@ -59,29 +59,23 @@ protected	return TK_PR_PROTECTED;
 true        return TK_LIT_TRUE;
 false       return TK_LIT_FALSE;
 
-'(\\.|[^'])'        return TK_LIT_CHAR;
-
-\"(\\.|[^"])*\"     {count_lines(); return TK_LIT_STRING;}
+'(\\.|[^'\n\t])'    return TK_LIT_CHAR;
+\"(\\.|[^"\n])*\"   return TK_LIT_STRING;
 
 {SPECIAL_CHAR}                          return (int) yytext[0];
 
 {LETTER}+({LETTER}|{DIGIT})*            return TK_IDENTIFICADOR;
 
-{INT}                                   return TK_LIT_INT;
-{SIGN}{INT}                             return TK_LIT_INT;
-{FLOAT}                                 return TK_LIT_FLOAT;
-{SIGN}{FLOAT}                           return TK_LIT_FLOAT;
-({INT}|{FLOAT})(e|E){INT}               return TK_LIT_FLOAT;
-{SIGN}({INT}|{FLOAT})(e|E){INT}         return TK_LIT_FLOAT;
-({INT}|{FLOAT})(e|E){SIGN}{INT}         return TK_LIT_FLOAT;
-{SIGN}({INT}|{FLOAT})(e|E){SIGN}{INT}   return TK_LIT_FLOAT;
+{S_INT}                                 return TK_LIT_INT;
+{S_FLOAT}                               return TK_LIT_FLOAT;
+({S_INT}|{S_FLOAT})(e|E){S_INT}         return TK_LIT_FLOAT;
 
 [\n] 							        ++num_lines; 
 "//".*					        
 [ ]
 [\t]+			
 
-"/*"([^*]|(\*+[^*/]))*\*+\/             {printf("COMENTARIO\n"); count_lines();}
+"/*"([^*]|(\*+[^*/]))*\*+\/             count_lines();
 
 .                                       return TOKEN_ERRO;
 
