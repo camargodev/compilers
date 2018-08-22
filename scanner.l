@@ -38,6 +38,7 @@ static		return TK_PR_STATIC;
 foreach		return TK_PR_FOREACH;
 for 		return TK_PR_FOR;
 switch		return TK_PR_SWITCH;
+case		return TK_PR_CASE;
 break		return TK_PR_BREAK;
 continue	return TK_PR_CONTINUE;
 class 		return TK_PR_CLASS;
