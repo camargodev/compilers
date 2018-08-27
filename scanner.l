@@ -1,7 +1,7 @@
 %{
+    // João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
 	#include "tokens.h"
-    #include "main.c"
 
     void count_lines();
 
@@ -9,7 +9,7 @@
 %}
 %option noyywrap
 
-SPECIAL_CHAR	[,|;|:|(|)|{|}|\[|\]|+|\-|||?|*|/|<|>|=|!|&|%|#|^|.|$]
+SPECIAL_CHAR	[,;:(){}\[\]+\-|?*/<>=!&%#^.$]
 LETTER			[A-Za-z_]
 DIGIT			[0-9]
 SIGN            [-|+]
@@ -17,6 +17,8 @@ INT             {DIGIT}+
 S_INT           ({SIGN}{INT}|{INT})
 FLOAT           {DIGIT}+"."{DIGIT}+
 S_FLOAT         ({SIGN}{FLOAT}|{FLOAT})
+
+%x comment
 
 %%
 
@@ -60,6 +62,7 @@ protected	return TK_PR_PROTECTED;
 true        return TK_LIT_TRUE;
 false       return TK_LIT_FALSE;
 
+
 '(\\.|[^'\n\t])'    return TK_LIT_CHAR;
 \"(\\.|[^"\n])*\"   return TK_LIT_STRING;
 
@@ -76,21 +79,17 @@ false       return TK_LIT_FALSE;
 [ ]
 [\t]+			
 
-"/*"([^*]|(\*+[^*/]))*\*+\/             count_lines();
-
 .                                       return TOKEN_ERRO;
 
-%%
 
-void count_lines()
-{
-    int i = 0;
-    for (i = 0; i < strlen(yytext); i++)
-    {
-        if (yytext[i] == '\n')
-            ++num_lines;
-    }
-}
+"/*"                    BEGIN(comment);
+
+<comment>[^*\n]*        
+<comment>"*"+[^*/\n]*   
+<comment>\n             ++num_lines;
+<comment>"*"+"/"        BEGIN(INITIAL);
+
+%%
 
 int get_line_number(void)
 {
