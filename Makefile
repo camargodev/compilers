@@ -6,6 +6,9 @@ all: parser.y scanner.l main.c
 	gcc -c lex.yy.c parser.tab.c
 	gcc -o parser lex.yy.o parser.tab.o main.c -lfl
 
+test: test.txt parser
+	cat test.txt | ./parser 
+
 clean:
 	rm -f parser
 	rm -f parser.tab.c
@@ -13,3 +16,4 @@ clean:
 	rm -f parser.tab.h
 	rm -f lex.yy.o
 	rm -f lex.yy.c
+

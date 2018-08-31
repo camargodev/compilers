@@ -1,1 +1,33 @@
 class ponto1d[private int x];
+class ponto2d[public int x : protected float y];
+class ponto3d[public int x : private float w : protected float y];
+
+var1 int;
+var2 static int;
+var3 char;
+var4 static char[5];
+var5 bool[+20];
+
+int func1() {}
+bool func2(int x, int y) {}
+char func3(bool isAbc) {
+	char c;
+	static string x <= "abc";
+	static const int k <= 3;
+	const int l <= 8;
+
+
+}
+
+string func4(int a1, int a2, int a3) {
+	bool yz;
+	bool ab <= true;
+	yz = ab;
+	ponto1d$x = 12;
+}
+
+
+string fun5() {
+	var4[4] = 'a';
+	var5[+12] = true;
+}

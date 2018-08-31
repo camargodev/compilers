@@ -3,22 +3,21 @@
     // Marcellus Farias 	 - 281984
 	#include <stdio.h>
 	#include "tokens.h"
-	int num_lines = 1;
 %}
 %option noyywrap
+%option yylineno
 
 SPECIAL_CHAR	[,;:(){}\[\]+\-|?*/<>=!&%#^.$]
 LETTER			[A-Za-z_]
 DIGIT			[0-9]
-SIGN            [-|+]
 INT             {DIGIT}+
-S_INT           ({SIGN}{INT}|{INT})
 FLOAT           {DIGIT}+"."{DIGIT}+
-S_FLOAT         ({SIGN}{FLOAT}|{FLOAT})
-NUM 			({S_INT}|{S_FLOAT})
+NUM 			({INT}|{FLOAT})
 ID 				({LETTER}|{DIGIT})
 
-%x comment
+%x 				comment
+%x				int_op
+%x				float_op
 
 %%
 
@@ -69,25 +68,25 @@ protected	return TK_PR_PROTECTED;
 true        return TK_LIT_TRUE;
 false       return TK_LIT_FALSE;
 
-
-{S_INT}                 return TK_LIT_INT;
-{S_FLOAT}				return TK_LIT_FLOAT;
-{NUM}(e|E){S_INT}       return TK_LIT_FLOAT;
+{INT}					return TK_LIT_INT;
+{FLOAT}					return TK_LIT_FLOAT;
+{NUM}(e|E)       		return TK_LIT_FLOAT;
 
 '(\\.|[^'\n\t])'    	return TK_LIT_CHAR;
 \"(\\.|[^"\n])*\"  	 	return TK_LIT_STRING;
 
 {SPECIAL_CHAR}			return (int) yytext[0];
 
-[\n]					++num_lines; 
-
-"/*"					BEGIN(comment);
-<comment>[^*\n]*        
-<comment>"*"+[^*/\n]*   
-<comment>\n             ++num_lines;
-<comment>"*"+"/"        BEGIN(INITIAL);
+[\n]					 
 
 {LETTER}+({ID})*		return TK_IDENTIFICADOR;
+
+"/*"					BEGIN(comment);
+<comment>[^*\n]*	   
+<comment>"*"+[^*/\n]*   
+<comment>\n		   		
+<comment>"*"+"/"	   	BEGIN(INITIAL);
+
 
 "//".*					        
 [ ]
@@ -100,5 +99,5 @@ false       return TK_LIT_FALSE;
 
 int get_line_number(void)
 {
-	return num_lines;
+	return yylineno;
 }
