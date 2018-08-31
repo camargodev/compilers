@@ -14,6 +14,7 @@ INT             {DIGIT}+
 FLOAT           {DIGIT}+"."{DIGIT}+
 NUM 			({INT}|{FLOAT})
 ID 				({LETTER}|{DIGIT})
+EXP				([+-]{INT}|{INT})
 
 %x 				comment
 %x				int_op
@@ -70,7 +71,7 @@ false       return TK_LIT_FALSE;
 
 {INT}					return TK_LIT_INT;
 {FLOAT}					return TK_LIT_FLOAT;
-{NUM}(e|E)       		return TK_LIT_FLOAT;
+{NUM}(e|E){EXP}			return TK_LIT_FLOAT;
 
 '(\\.|[^'\n\t])'    	return TK_LIT_CHAR;
 \"(\\.|[^"\n])*\"  	 	return TK_LIT_STRING;
