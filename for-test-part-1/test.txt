@@ -1,0 +1,36 @@
+int x = 10;
+bool equal10;
+if (x == 10) then {
+	equal10 = true;
+} else {
+	equal10 = false;
+}
+
+/*multi line 1*/
+
+/* multi
+line
+2*/
+
+do {
+	x = x - 1;
+} while (x > 0);
+
+
+// teste switch
+switch(equal10) {
+	case 1:
+		char c = 'a';
+		return 5;
+	case 2:
+		break;
+	case 3:
+		continue;
+}
+
+public class ponto {
+	private int x;
+	protected int y;
+}
+
+static string erro = "ERRO"; 

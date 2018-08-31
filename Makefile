@@ -1,9 +1,15 @@
 # João Vitor de Camargo (274722) e Marcellus Farias (281984)
 
-all: scanner.l tokens.h main.c
+all: parser.y scanner.l main.c
+	bison -d parser.y
 	flex scanner.l
-	gcc -o etapa1 lex.yy.c main.c
+	gcc -c lex.yy.c parser.tab.c
+	gcc -o parser lex.yy.o parser.tab.o main.c -lfl
 
 clean:
-	rm -f etapa1
+	rm -f parser
+	rm -f parser.tab.c
+	rm -f parser.tab.o
+	rm -f parser.tab.h
+	rm -f lex.yy.o
 	rm -f lex.yy.c

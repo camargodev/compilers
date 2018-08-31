@@ -2,7 +2,7 @@
     // João Vitor de Camargo - 274722
     // Marcellus Farias 	 - 281984
 	#include <stdio.h>
-	#include "parser.tab.h"
+	#include "tokens.h"
 	int num_lines = 1;
 %}
 %option noyywrap
