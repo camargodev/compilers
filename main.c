@@ -8,5 +8,7 @@ Este arquivo será posterioremente substituído, não acrescente nada.
 
 int main (int argc, char **argv)
 {
-    return yyparse();
+    int result = yyparse();
+    printf("%i\n", result);
+    return result;
 }

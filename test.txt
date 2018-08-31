@@ -1,0 +1,1 @@
+class ponto1d[private int x];

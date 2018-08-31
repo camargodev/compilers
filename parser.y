@@ -51,7 +51,26 @@ void yyerror (char const *s);
 
 %%
 
-programa : TK_LIT_TRUE;
+programa : global_var | new_type | func
+type  : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
+scope : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
+var   : type TK_IDENTIFICADOR
+
+new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
+param_begin : scope  param_body | param_body
+param_body  : var param_end
+param_end   : ':' param_begin | ']' 
+
+global_var       : TK_IDENTIFICADOR globar_var_begin 
+globar_var_begin : TK_PR_STATIC type global_var_body | type global_var_body
+global_var_body  : ';' | '[' global_var_end 
+global_var_end   : '+' TK_LIT_INT ']' ';' | TK_LIT_INT ']' ';' 
+
+func            : TK_PR_STATIC func_name | func_name
+func_name       : type TK_IDENTIFICADOR '(' func_params
+func_params     : ')' func_body | var func_params_end
+func_params_end : ')' func_body | ',' var func_params_end
+func_body       : '{' '}' 
 
 %%
 
