@@ -22,12 +22,27 @@ char func3(bool isAbc) {
 string func4(int a1, int a2, int a3) {
 	bool yz;
 	bool ab <= true;
-	yz = ab;
-	ponto1d$x = 12;
+	ponto x;
+	ponto y;
+	bool abc <= 1+1;
+	int abcd <= 1+(1+x);
+	int j <= 1+(1+x[1+1]);
 }
 
 
 string fun5() {
 	var4[4] = 'a';
 	var5[+12] = true;
+	var6j = 1;
+	var7[1]$abc = 7.0;
+	var8[1+1] = 3;
+	val9[x[1]+2] = 7;
+	val10[x[1] + y[1]] = 8;
+	val10[x[z[1]] + y[1]] = 8;
+	a[2e10 + -5] = 1;
+	b[(1+1) + ((x[1]) + 1 * -7)] = 15;
+	var = x[4*4/4]$xyz;
+	var[x[4*4/4]$xyz] = 4;
+	var[x+y+z[1]]$campo = g[h[x*1+teste$ab]];
+	teste$x = y;
 }

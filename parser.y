@@ -67,8 +67,11 @@ type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : type TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
-pos_int : '+' TK_LIT_INT | TK_LIT_INT
-lits 	: TK_LIT_INT | TK_LIT_FLOAT | bool | TK_LIT_CHAR | TK_LIT_STRING
+signal  : '+' | '-' | %empty
+//pos_int : '+' TK_LIT_INT | TK_LIT_INT
+//lits 	: TK_LIT_INT | TK_LIT_FLOAT | bool | TK_LIT_CHAR | TK_LIT_STRING
+
+non_num_lits 	: bool | TK_LIT_CHAR | TK_LIT_STRING
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope  param_body | param_body
@@ -78,7 +81,7 @@ param_end   : ':' param_begin | ']'
 global_var       : TK_IDENTIFICADOR globar_var_begin 
 globar_var_begin : TK_PR_STATIC type global_var_body | type global_var_body
 global_var_body  : ';' | '[' global_var_end 
-global_var_end   : pos_int ']' ';' 
+global_var_end   : artm ']' ';' 
 
 func            : TK_PR_STATIC func_begin | func_begin
 func_begin       : type TK_IDENTIFICADOR '(' func_params
@@ -87,17 +90,31 @@ func_params_end : ')' func_body | ',' var func_params_end
 func_body       : '{' cmd_block 
 
 cmd_block	: '}' | cmd cmd_block 
-cmd 		: local_var | attr
+cmd 		: TK_PR_STATIC local_var_begin | TK_PR_CONST local_var_body
+cmd 		: type TK_IDENTIFICADOR local_var_end | TK_IDENTIFICADOR cmd_id_fix
 
-local_var		: TK_PR_STATIC local_var_begin | local_var_begin  
+cmd_id_fix	: TK_IDENTIFICADOR local_var_end | '[' artm ']' attr_field 
+cmd_id_fix	: '$' TK_IDENTIFICADOR attr_body | attr_body
+
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : type TK_IDENTIFICADOR local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
-var_attr  : TK_IDENTIFICADOR | lits
 
-attr 		: TK_IDENTIFICADOR attr_begin
-attr_begin  : '[' pos_int ']' attr_body | '$' TK_IDENTIFICADOR attr_body | attr_body
+var_attr  		: TK_IDENTIFICADOR var_id_attr_fix | non_num_lits
+var_attr 		: TK_LIT_INT var_attr_fix | TK_LIT_FLOAT var_attr_fix
+var_attr_fix 	: op artm | %empty
+var_id_attr_fix : artm_id_fix var_attr_fix
+
+attr_field	: '$' TK_IDENTIFICADOR attr_body | attr_body
 attr_body   : '=' var_attr ';'
+
+op 		: '+' | '-' | '*' | '/'
+
+artm 	 		: signal artm_vals
+artm_vals 		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
+artm_id_fix 	: '[' artm ']' artm_id_field |  artm_id_field
+artm_id_field 	: '$' TK_IDENTIFICADOR | %empty
+artm 			: artm op artm
 
 
 %%
