@@ -7,6 +7,8 @@ var2 static int;
 var3 char;
 var4 static char[5];
 var5 bool[+20];
+var6 string[x + 4];
+var7 int[x[10] + -(y*2)];
 
 int func1() {}
 bool func2(int x, int y) {}
@@ -44,5 +46,8 @@ string fun5() {
 	var = x[4*4/4]$xyz;
 	var[x[4*4/4]$xyz] = 4;
 	var[x+y+z[1]]$campo = g[h[x*1+teste$ab]];
-	teste$x = y;
+	teste$x = y + teste();
+	teste$x = y + teste(x + t[1]);
+	teste$x = y + teste(x + teste(y));
+	teste[(teste(x, y, z))] = 8;
 }

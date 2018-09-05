@@ -7,6 +7,8 @@
 	void yyerror (char const *s);
 %}
 
+%verbose
+
 %token TK_PR_INT
 %token TK_PR_FLOAT
 %token TK_PR_BOOL
@@ -110,12 +112,13 @@ attr_body   : '=' var_attr ';'
 
 op 		: '+' | '-' | '*' | '/'
 
-artm 	 		: signal artm_vals
-artm_vals 		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
-artm_id_fix 	: '[' artm ']' artm_id_field |  artm_id_field
-artm_id_field 	: '$' TK_IDENTIFICADOR | %empty
-artm 			: artm op artm
-
+artm 	 				: signal artm_vals
+artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
+artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
+artm_func_params     	: ')' | artm artm_func_params_end | '.' artm_func_params_end
+artm_func_params_end 	: ')' | ',' artm artm_func_params_end | '.' artm_func_params_end
+artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
+artm 					: artm op artm
 
 %%
 
