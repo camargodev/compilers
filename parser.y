@@ -125,8 +125,9 @@ artm 	 				: signal artm_vals
 artm 					: artm op artm
 artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
 artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
-artm_func_params     	: ')' | artm artm_func_params_end | '.' artm_func_params_end
-artm_func_params_end 	: ')' | ',' artm artm_func_params_end | '.' artm_func_params_end
+artm_func_params     	: ')' | artm artm_func_params_body | '.' artm_func_params_body
+artm_func_params_body 	: ')' | ',' artm_func_params_end
+artm_func_params_end 	: artm artm_func_params_body | '.' artm_func_params_body
 artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
 
 %%
