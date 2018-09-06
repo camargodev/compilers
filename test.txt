@@ -50,4 +50,13 @@ string fun5() {
 	teste$x = y + teste(x + t[1]);
 	teste$x = y + teste(x + teste(y));
 	teste[(teste(x, y, z))] = 8;
+	input x+1;
+	input x[1]+obj[1]$field+a$b;
+	output x[1]+obj[1]$field+a$b, 7, -8;
+	output 7, -8, 1+1;
+	teste << 7 + 7;
+	teste$abc << 7 + 7;
+	teste[x[1]] << 7 + 7;
+	teste[a]$b << 7 + 7;
+	teste$x << -7;
 }

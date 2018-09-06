@@ -70,6 +70,7 @@ scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : type TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
 signal  : '+' | '-' | %empty
+shift	: TK_OC_SL | TK_OC_SR
 //pos_int : '+' TK_LIT_INT | TK_LIT_INT
 //lits 	: TK_LIT_INT | TK_LIT_FLOAT | bool | TK_LIT_CHAR | TK_LIT_STRING
 
@@ -94,9 +95,17 @@ func_body       : '{' cmd_block
 cmd_block	: '}' | cmd cmd_block 
 cmd 		: TK_PR_STATIC local_var_begin | TK_PR_CONST local_var_body
 cmd 		: type TK_IDENTIFICADOR local_var_end | TK_IDENTIFICADOR cmd_id_fix
+cmd 		: TK_PR_INPUT artm ';'
+cmd 		: TK_PR_OUTPUT artm output 
+
+output 		: ';' | ',' artm output
+
 
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end | '[' artm ']' attr_field 
-cmd_id_fix	: '$' TK_IDENTIFICADOR attr_body | attr_body
+cmd_id_fix	: '$' TK_IDENTIFICADOR shift_or_attr | attr_body
+cmd_id_fix  : shift artm ';'
+
+shift_or_attr 	: attr_body | shift artm ';'
 
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : type TK_IDENTIFICADOR local_var_end
@@ -107,18 +116,18 @@ var_attr 		: TK_LIT_INT var_attr_fix | TK_LIT_FLOAT var_attr_fix
 var_attr_fix 	: op artm | %empty
 var_id_attr_fix : artm_id_fix var_attr_fix
 
-attr_field	: '$' TK_IDENTIFICADOR attr_body | attr_body
+attr_field	: '$' TK_IDENTIFICADOR shift_or_attr | shift_or_attr
 attr_body   : '=' var_attr ';'
 
 op 		: '+' | '-' | '*' | '/'
 
 artm 	 				: signal artm_vals
+artm 					: artm op artm
 artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
 artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
 artm_func_params     	: ')' | artm artm_func_params_end | '.' artm_func_params_end
 artm_func_params_end 	: ')' | ',' artm artm_func_params_end | '.' artm_func_params_end
 artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
-artm 					: artm op artm
 
 %%
 
