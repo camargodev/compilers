@@ -13,22 +13,22 @@ var7 int[x[10] + -(y*2)];
 int func1() {}
 bool func2(int x, int y) {}
 char func3(bool isAbc) {
-	char c;
-	static string x <= "abc";
-	static const int k <= 3;
-	const int l <= 8;
+	c char;
+	static x int <= "abc";
+	static const k int <= 3;
+	const l int <= 8;
 
 
 }
 
 string func4(int a1, int a2, int a3) {
-	bool yz;
-	bool ab <= true;
-	ponto x;
-	ponto y;
-	bool abc <= 1+1;
-	int abcd <= 1+(1+x);
-	int j <= 1+(1+x[1+1]);
+	yz bool;
+	ab bool  <= true;
+	x ponto;
+	y ponto;
+	abc bool <= 1+1;
+	abcd int <= 1+(1+x);
+	j int <= 1+(1+x[1+1]);
 }
 
 
@@ -59,8 +59,15 @@ string fun5() {
 	teste[x[1]] << 7 + 7;
 	teste[a]$b << 7 + 7;
 	teste$x << -7;
+	teste[x^4+x[1]]$abc >> 18/24%x[4]+teste$x;
 	x = teste(1+1);
 	x = teste(1,2,3);
 	x = teste(.) + 1;
 	x = teste(.,1) + teste(x,.);
+	teste();
+	teste(abc);
+	teste(abc, d);
+	teste(a[1], b);
+	teste(a[1]$d, a$d);
+	teste(a[x[1] + 2^6]$d, a$d);
 }

@@ -9,6 +9,11 @@
 
 %verbose
 
+%left '+'
+%left '-'
+%left '*'
+%left '/'
+
 %token TK_PR_INT
 %token TK_PR_FLOAT
 %token TK_PR_BOOL
@@ -94,7 +99,7 @@ func_body       : '{' cmd_block
 
 cmd_block	: '}' | cmd cmd_block 
 cmd 		: TK_PR_STATIC local_var_begin | TK_PR_CONST local_var_body
-cmd 		: type TK_IDENTIFICADOR local_var_end | TK_IDENTIFICADOR cmd_id_fix
+cmd 		: TK_IDENTIFICADOR type local_var_end | TK_IDENTIFICADOR cmd_id_fix
 cmd 		: TK_PR_INPUT artm ';'
 cmd 		: TK_PR_OUTPUT artm output 
 
@@ -103,12 +108,14 @@ output 		: ';' | ',' artm output
 
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end | '[' artm ']' attr_field 
 cmd_id_fix	: '$' TK_IDENTIFICADOR shift_or_attr | attr_body
-cmd_id_fix  : shift artm ';'
+cmd_id_fix  : shift artm ';' | '(' func_call_params
+func_call_params     : ')' ';' | artm func_call_params_end
+func_call_params_end : ')' ';' | ',' artm func_call_params_end
 
 shift_or_attr 	: attr_body | shift artm ';'
 
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
-local_var_body  : type TK_IDENTIFICADOR local_var_end
+local_var_body  : TK_IDENTIFICADOR type local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
 
 var_attr  		: TK_IDENTIFICADOR var_id_attr_fix | non_num_lits
@@ -119,10 +126,11 @@ var_id_attr_fix : artm_id_fix var_attr_fix
 attr_field	: '$' TK_IDENTIFICADOR shift_or_attr | shift_or_attr
 attr_body   : '=' var_attr ';'
 
-op 		: '+' | '-' | '*' | '/'
+op 		: '+' | '-' | '*' | '/' | '%' | '^'
 
-artm 	 				: signal artm_vals
-artm 					: artm op artm
+
+artm 					: signal artm_vals artm_begin
+artm_begin 				: op artm | %empty
 artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
 artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
 artm_func_params     	: ')' | artm artm_func_params_body | '.' artm_func_params_body
