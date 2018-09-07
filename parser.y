@@ -73,15 +73,13 @@ func_section 		: func func_section | %empty
 
 type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
-var     : type TK_IDENTIFICADOR
+var     : TK_PR_CONST type TK_IDENTIFICADOR | type TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
 signal  : '+' | '-' | %empty
 shift	: TK_OC_SL | TK_OC_SR
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
 op 		: '+' | '-' | '*' | '/' | '%' | '^'
 logic_op : TK_OC_AND | TK_OC_OR
-
-non_num_lits 	: bool | TK_LIT_CHAR | TK_LIT_STRING
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope  param_body | param_body
@@ -104,23 +102,32 @@ cmd_block	: '}' | cmd cmd_block
 cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_INPUT artm ';'
 				| TK_PR_OUTPUT artm output 
+				| bool logic_seq
+				| TK_PR_IF '(' artm ')' TK_PR_THEN '{' cmd_block else
+
+else 		: %empty | TK_PR_ELSE '{' cmd_block
 
 output 		: ';' | ',' artm output
 
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end
+				| type local_var_end
 				| '[' artm ']' attr_field 
 				| '$' TK_IDENTIFICADOR shift_or_attr
 				| shift_or_attr
 				| '(' func_call_params
-				| type local_var_end
-				| logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+				| logic_op logic_var logic_exp
 				| TK_PR_STATIC local_var_begin
 				| TK_PR_CONST local_var_body
 
-logic_exp	: logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+logic_exp	: logic_op logic_var logic_exp
 				| ';'
 
-logic_exp_attr	: logic_op TK_IDENTIFICADOR artm_id_fix logic_exp_attr
+logic_seq 	: logic_op logic_var logic_exp | ';'
+logic_seq_attr : logic_op logic_var logic_exp_attr | %empty
+
+logic_var	: TK_IDENTIFICADOR artm_id_fix | bool
+
+logic_exp_attr	: logic_op logic_var logic_exp_attr
 			  	| %empty
 
 func_call_params     : ')' piped_expr 
@@ -130,7 +137,7 @@ func_call_params_end : ')' piped_expr
 
 piped_expr		: ';'
 				| pipe TK_IDENTIFICADOR '(' func_call_params
-				| logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+				| logic_op logic_var logic_exp
 
 shift_or_attr 	: attr_body
 				| shift artm ';'
@@ -141,9 +148,13 @@ local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : type local_var_end | TK_IDENTIFICADOR local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
 
-var_attr  		: TK_IDENTIFICADOR var_id_attr_fix | non_num_lits
-var_attr 		: TK_LIT_INT var_attr_fix | TK_LIT_FLOAT var_attr_fix
-var_attr_fix 	: op artm | logic_op TK_IDENTIFICADOR artm_id_fix logic_exp_attr | %empty
+var_attr  		: TK_IDENTIFICADOR var_id_attr_fix
+					| TK_LIT_STRING
+					| TK_LIT_CHAR 
+					| TK_LIT_INT var_attr_fix
+					| TK_LIT_FLOAT var_attr_fix
+					| bool logic_seq_attr
+var_attr_fix 	: op artm | logic_op logic_var logic_exp_attr | %empty
 
 var_id_attr_fix : artm_id_fix var_attr_fix
 

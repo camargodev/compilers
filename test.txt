@@ -92,4 +92,47 @@ string fun5() {
 	var39232a = z && y || z && a;
 	var7 = x && y;
 	var8 = x && y && z;
+	true && x[1];
+	true;
+	false;
+	a && false && b && true;
+	zy = a && false && b && true;
+	a = true;
+	b = false;
+	//1+1;
+	c = false && true;
+	c = false || a || true;
+}
+
+static int abc(const int x) {
+	if (3+3) then {
+		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		x && y && z;
+		x || y;
+		x || y && z;
+		a = a() && b;
+	}
+	if (3+3) then {}
+	if (3+3) then {
+		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		x && y && z;
+		x || y;
+		x || y && z;
+		a = a() && b;
+	} else {
+		a && false && b && true;
+		zy = a && false && b && true;
+		a = true;
+		b = false;
+	}
+
+	if (1) then {
+		if (2) then {
+			if (3) then {
+
+			}
+		} else {
+
+		}
+	}
 }
