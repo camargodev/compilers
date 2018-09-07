@@ -77,13 +77,14 @@ string fun5() {
 	f1() %>% f2() %>% f3();
 	f1() %>% f2() %|% f3() %>% f1();
 	teste(1) %|% teste(x);
-	este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+	teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
 	x && y && z;
 	x || y;
 	x || y && z;
 	a = a() && b;
 	var5 = x;
 	a = a() && b();
+	break;
 	a() && b();
 	a = a && b();
 	a || b();
@@ -100,8 +101,11 @@ string fun5() {
 	a = true;
 	b = false;
 	//1+1;
+	continue;
+	break;
 	c = false && true;
 	c = false || a || true;
+	return teste(a[x[1] + 2^6]$d, a$d) + f1() + f2(1,2,3,4);
 }
 
 static int abc(const int x) {
@@ -132,7 +136,41 @@ static int abc(const int x) {
 
 			}
 		} else {
-
+			return 3;
 		}
+	}
+}
+
+pessoa x() {
+	do {
+		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		x && y && z;
+		false;
+	} while (x+3);
+
+	while (x+3) do {
+		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		x && y && z;
+		false;
+	}
+
+	while (x+3) do {
+		do {
+			if (3+3) then {
+				if (3+3) then {
+					este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+					x && y && z;
+					x || y;
+					x || y && z;
+					a = a() && b;
+				} else {
+					a && false && b && true;
+					zy = a && false && b && true;
+					a = true;
+					b = false;
+				}
+			}
+		} while (4+4);
+		return 7+ -9*2;
 	}
 }

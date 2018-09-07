@@ -94,6 +94,7 @@ global_var_end   : artm ']' ';'
 
 func            : TK_PR_STATIC func_begin | func_begin
 func_begin      : type TK_IDENTIFICADOR '(' func_params
+					| TK_IDENTIFICADOR TK_IDENTIFICADOR '(' func_params
 func_params     : ')' func_body | var func_params_end
 func_params_end : ')' func_body | ',' var func_params_end
 func_body       : '{' cmd_block 
@@ -104,6 +105,11 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_OUTPUT artm output 
 				| bool logic_seq
 				| TK_PR_IF '(' artm ')' TK_PR_THEN '{' cmd_block else
+				| TK_PR_WHILE '(' artm ')' TK_PR_DO '{' cmd_block
+				| TK_PR_DO '{' cmd_block TK_PR_WHILE '(' artm ')' ';'
+				| TK_PR_CONTINUE ';'
+				| TK_PR_BREAK ';'
+				| TK_PR_RETURN artm ';'
 
 else 		: %empty | TK_PR_ELSE '{' cmd_block
 
@@ -118,6 +124,7 @@ cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| logic_op logic_var logic_exp
 				| TK_PR_STATIC local_var_begin
 				| TK_PR_CONST local_var_body
+
 
 logic_exp	: logic_op logic_var logic_exp
 				| ';'
