@@ -1,4 +1,5 @@
 %{
+	// João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
 	
 	extern int yylineno;
@@ -77,8 +78,8 @@ bool    : TK_LIT_TRUE | TK_LIT_FALSE
 signal  : '+' | '-' | %empty
 shift	: TK_OC_SL | TK_OC_SR
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
-//pos_int : '+' TK_LIT_INT | TK_LIT_INT
-//lits 	: TK_LIT_INT | TK_LIT_FLOAT | bool | TK_LIT_CHAR | TK_LIT_STRING
+op 		: '+' | '-' | '*' | '/' | '%' | '^'
+logic_op : TK_OC_AND | TK_OC_OR
 
 non_num_lits 	: bool | TK_LIT_CHAR | TK_LIT_STRING
 
@@ -93,7 +94,7 @@ global_var_body  : ';' | '[' global_var_end
 global_var_end   : artm ']' ';' 
 
 func            : TK_PR_STATIC func_begin | func_begin
-func_begin       : type TK_IDENTIFICADOR '(' func_params
+func_begin      : type TK_IDENTIFICADOR '(' func_params
 func_params     : ')' func_body | var func_params_end
 func_params_end : ')' func_body | ',' var func_params_end
 func_body       : '{' cmd_block 
@@ -107,25 +108,33 @@ cmd 		: TK_PR_STATIC local_var_begin
 
 output 		: ';' | ',' artm output
 
-
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| '[' artm ']' attr_field 
 				| '$' TK_IDENTIFICADOR shift_or_attr
 				| shift_or_attr
 				| '(' func_call_params
 				| type local_var_end
+				| logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+
+logic_exp	: logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+				| ';'
+
+logic_exp_attr	: logic_op TK_IDENTIFICADOR artm_id_fix logic_exp_attr
+			  	| %empty
 
 func_call_params     : ')' piped_expr 
-					| artm func_call_params_end
+						| artm func_call_params_end
 func_call_params_end : ')' piped_expr
-					| ',' artm func_call_params_end
+						| ',' artm func_call_params_end
 
 piped_expr		: ';'
 				| pipe TK_IDENTIFICADOR '(' func_call_params
+				| logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
 
 shift_or_attr 	: attr_body
 				| shift artm ';'
-attr_body   : '=' var_attr ';'
+
+attr_body   	: '=' var_attr ';'
 
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : TK_IDENTIFICADOR type local_var_end
@@ -133,28 +142,25 @@ local_var_end   : ';' | TK_OC_LE var_attr ';'
 
 var_attr  		: TK_IDENTIFICADOR var_id_attr_fix | non_num_lits
 var_attr 		: TK_LIT_INT var_attr_fix | TK_LIT_FLOAT var_attr_fix
-var_attr_fix 	: op artm | %empty
+var_attr_fix 	: op artm | logic_op TK_IDENTIFICADOR artm_id_fix logic_exp_attr | %empty
 
 var_id_attr_fix : artm_id_fix var_attr_fix
 
 attr_field	: '$' TK_IDENTIFICADOR shift_or_attr | shift_or_attr
 
-
-op 		: '+' | '-' | '*' | '/' | '%' | '^'
-
-
 artm 					: signal artm_vals artm_begin
 artm_begin 				: op artm | %empty
 artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
 artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
+artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
 artm_func_params     	: ')' | artm artm_func_params_body | '.' artm_func_params_body
 artm_func_params_body 	: ')' | ',' artm_func_params_end
 artm_func_params_end 	: artm artm_func_params_body | '.' artm_func_params_body
-artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
+
 
 %%
 
 void yyerror(char const *s)
 {
-    fprintf(stderr,"Error | Line: %d\n%s\n", yylineno, s);
+    fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
 }

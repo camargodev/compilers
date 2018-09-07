@@ -75,4 +75,18 @@ string fun5() {
 	f1() %>% f2() %|% f3() %>% f1();
 	teste(1) %|% teste(x);
 	teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+	x && y && z;
+	x || y;
+	x || y && z;
+	a = a() && b;
+	var5 = x;
+	a = a() && b();
+	a() && b();
+	a = a && b();
+	a || b();
+	a(x,y,z) && a(a) || a(x,y,k);
+	var18 = z || y;
+	var39232a = z && y || z && a;
+	var7 = x && y;
+	var8 = x && y && z;
 }
