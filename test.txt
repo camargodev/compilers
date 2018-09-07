@@ -10,13 +10,16 @@ var5 bool[+20];
 var6 string[x + 4];
 var7 int[x[10] + -(y*2)];
 
+var8 ponto1d;
+
 int func1() {}
 bool func2(int x, int y) {}
 char func3(bool isAbc) {
 	c char;
-	static x int <= "abc";
-	static const k int <= 3;
-	const l int <= 8;
+	x static int <= "abc";
+	k static const int <= 3;
+	l const int <= 8;
+	i static ponto;
 
 
 }
@@ -74,7 +77,7 @@ string fun5() {
 	f1() %>% f2() %>% f3();
 	f1() %>% f2() %|% f3() %>% f1();
 	teste(1) %|% teste(x);
-	teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+	este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
 	x && y && z;
 	x || y;
 	x || y && z;

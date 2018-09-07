@@ -89,7 +89,8 @@ param_body  : var param_end
 param_end   : ':' param_begin | ']' 
 
 global_var       : TK_IDENTIFICADOR globar_var_begin 
-globar_var_begin : TK_PR_STATIC type global_var_body | type global_var_body
+globar_var_begin : TK_PR_STATIC global_var_type | global_var_type
+global_var_type	 : type global_var_body | TK_IDENTIFICADOR global_var_body
 global_var_body  : ';' | '[' global_var_end 
 global_var_end   : artm ']' ';' 
 
@@ -100,9 +101,7 @@ func_params_end : ')' func_body | ',' var func_params_end
 func_body       : '{' cmd_block 
 
 cmd_block	: '}' | cmd cmd_block 
-cmd 		: TK_PR_STATIC local_var_begin
-				| TK_PR_CONST local_var_body
-				| TK_IDENTIFICADOR cmd_id_fix
+cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_INPUT artm ';'
 				| TK_PR_OUTPUT artm output 
 
@@ -115,6 +114,8 @@ cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| '(' func_call_params
 				| type local_var_end
 				| logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
+				| TK_PR_STATIC local_var_begin
+				| TK_PR_CONST local_var_body
 
 logic_exp	: logic_op TK_IDENTIFICADOR artm_id_fix logic_exp
 				| ';'
@@ -137,7 +138,7 @@ shift_or_attr 	: attr_body
 attr_body   	: '=' var_attr ';'
 
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
-local_var_body  : TK_IDENTIFICADOR type local_var_end
+local_var_body  : type local_var_end | TK_IDENTIFICADOR local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
 
 var_attr  		: TK_IDENTIFICADOR var_id_attr_fix | non_num_lits
