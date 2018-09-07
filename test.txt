@@ -174,3 +174,92 @@ pessoa x() {
 		return 7+ -9*2;
 	}
 }
+
+abc defg(ponto w) {
+	for(x+1 : x+1 : x+1) {
+
+	}
+	for (x+1 : x+1 : x+1) {
+		if (3+3) then {
+			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+			x && y && z;
+			x || y;
+			x || y && z;
+			a = a() && b;
+		} else {
+			a && false && b && true;
+			zy = a && false && b && true;
+			a = true;
+			b = false;
+		}
+	}
+	for (x+1,x+2,x+3 : x+1 : x+1) {
+		if (3+3) then {
+			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+			x && y && z;
+			x || y;
+			x || y && z;
+			a = a() && b;
+		} else {
+			a && false && b && true;
+			zy = a && false && b && true;
+			a = true;
+			b = false;
+		}
+	}
+	for (x+1,x+2,x+3 : x+1 : x+1,y+2,z+3) {
+		if (3+3) then {
+			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+			x && y && z;
+			x || y;
+			x || y && z;
+			a = a() && b;
+		} else {
+			foreach(a : x+1,x+2,x+3) {
+				a && false && b && true;
+				zy = a && false && b && true;
+				a = true;
+				b = false;
+			}
+		}
+	}
+	for (x+1,x+2,x+3,x+1,x+2,x+3 : x+1 : x+1,x+1,x+2,x+3,x+1,x+2,x+3) {
+	}
+}
+
+static ponto x(const ponto y) {
+	foreach(a : x+1) {
+		foreach(a : x+1) {
+			foreach(a : x+1) {
+			}
+		}	
+	}
+	foreach(a : x+1) {
+		if (3+3) then {
+			x = 7;
+		}
+		foreach(a : x+1) {
+			foreach(a : x+1) {
+				while (x+3) do {
+				este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+				x && y && z;
+				}
+			}
+		}	
+	}
+} 
+
+int w() {
+	switch (x+1) {
+		a = x + 1;
+		if (3+3) then {
+			x = 7;
+		}
+	}
+	switch (x+1) {
+		switch (x+2) {
+			a = x + 1;
+		}
+		a = x + 1;
+	}
+}

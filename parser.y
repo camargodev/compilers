@@ -73,7 +73,8 @@ func_section 		: func func_section | %empty
 
 type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
-var     : TK_PR_CONST type TK_IDENTIFICADOR | type TK_IDENTIFICADOR
+var     : TK_PR_CONST types TK_IDENTIFICADOR | types TK_IDENTIFICADOR
+types 	: type | TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
 signal  : '+' | '-' | %empty
 shift	: TK_OC_SL | TK_OC_SR
@@ -110,6 +111,11 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_CONTINUE ';'
 				| TK_PR_BREAK ';'
 				| TK_PR_RETURN artm ';'
+				| TK_PR_FOR '(' artm for_list ':'
+					artm ':' artm for_list ')' '{' cmd_block
+				| TK_PR_FOREACH '(' TK_IDENTIFICADOR ':'
+					artm for_list  ')' '{' cmd_block
+				| TK_PR_SWITCH '(' artm ')' '{' cmd_block
 
 else 		: %empty | TK_PR_ELSE '{' cmd_block
 
@@ -124,6 +130,8 @@ cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| logic_op logic_var logic_exp
 				| TK_PR_STATIC local_var_begin
 				| TK_PR_CONST local_var_body
+
+for_list	: ',' artm for_list | %empty
 
 
 logic_exp	: logic_op logic_var logic_exp
