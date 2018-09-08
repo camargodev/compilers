@@ -72,7 +72,6 @@ scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : TK_PR_CONST types TK_IDENTIFICADOR | types TK_IDENTIFICADOR
 types 	: type | TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
-shift	: TK_OC_SL | TK_OC_SR
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
@@ -99,6 +98,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_OUTPUT expr output 
 				| TK_LIT_INT expr_begin ';'
 				| TK_LIT_FLOAT expr_begin ';'
+				| not_null_un_op un_op expr_vals expr_begin ';'
 				| TK_PR_IF '(' expr ')' TK_PR_THEN '{' cmd_block else
 				| TK_PR_WHILE '(' expr ')' TK_PR_DO '{' cmd_block
 				| TK_PR_DO '{' cmd_block TK_PR_WHILE '(' expr ')' ';'
@@ -111,77 +111,59 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix
 					expr for_list  ')' '{' cmd_block
 				| TK_PR_SWITCH '(' expr ')' '{' cmd_block
 
+cmd_id_fix	: TK_IDENTIFICADOR local_var_end
+				| type local_var_end
+				| id_seq attr
+				| TK_PR_STATIC local_var_begin
+				| TK_PR_CONST local_var_body
+
 else 		: %empty | TK_PR_ELSE '{' cmd_block
 
 output 		: ';' | ',' expr output
 
-cmd_id_fix	: TK_IDENTIFICADOR local_var_end
-				| type local_var_end
-				| '[' expr ']' attr_field 
-				| '$' TK_IDENTIFICADOR shift_or_attr
-				| shift_or_attr
-				| '(' func_call_params
-				| TK_PR_STATIC local_var_begin
-				| TK_PR_CONST local_var_body
-
 for_list	: ',' expr for_list | %empty
 
-func_call_params     : ')' expr_seq 
-						| expr func_call_params_end
-func_call_params_end : ')' expr_seq
-						| ',' expr func_call_params_end
+attr 	 	: '=' var_attr ';'
+				| TK_OC_SL expr ';'
+				| TK_OC_SR expr ';'
+				| bin_op expr ';'
+				| piped_expr ';'
 
-expr_seq		: ';'
-				| pipe TK_IDENTIFICADOR '(' func_call_params
-				| bin_op expr ';' 
-
-attr_func_call_params     : ')' attr_piped_expr 
-							| expr attr_func_call_params_end
-attr_func_call_params_end : ')' attr_piped_expr
-							| ',' expr attr_func_call_params_end
-
-attr_piped_expr	: %empty
-				| pipe TK_IDENTIFICADOR '(' attr_func_call_params
-
-shift_or_attr 	: attr_body 
-				| shift expr ';'
-				| expr_begin ';'
-
-attr_body   	: '=' var_attr ';'
+piped_expr	: pipe TK_IDENTIFICADOR id_seq piped_expr | %empty
 
 local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : type local_var_end | TK_IDENTIFICADOR local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
 
-var_attr  		: TK_IDENTIFICADOR var_id_attr_fix
+var_attr  		: TK_IDENTIFICADOR id_seq var_attr_fix
 					| TK_LIT_STRING
 					| TK_LIT_CHAR 
-					| TK_LIT_INT var_attr_fix
-					| TK_LIT_FLOAT var_attr_fix
-					| bool var_attr_fix
+					| TK_LIT_INT expr_begin
+					| TK_LIT_FLOAT expr_begin
+					| not_null_un_op un_op expr_vals expr_begin
+					| bool expr_begin
 
 var_attr_fix 	: bin_op expr
-					| pipe TK_IDENTIFICADOR '(' attr_func_call_params
+					| pipe TK_IDENTIFICADOR id_seq piped_expr
 					| %empty
 
-var_id_attr_fix : expr_id var_attr_fix
-
-attr_field	: '$' TK_IDENTIFICADOR shift_or_attr | shift_or_attr
-
-
-bin_op		: '+' | '-' | '*' | '/' | '%' | '^' | '|' | '&'
+bin_op		: '+' | '-' | '*' | '/' | '%'
+				| '^' | '|' | '&' | '>' | '<'
 				| TK_OC_AND | TK_OC_OR | TK_OC_LE
 				| TK_OC_NE | TK_OC_EQ | TK_OC_GE
-un_op 		: '+' | '-' | '!' | '&' | '*' | '?' | '#' | %empty
+un_op 			: not_null_un_op un_op | %empty
+not_null_un_op  : '+' | '-' | '!' | '&' | '*' | '?' | '#'
 
 expr 			: un_op expr_vals expr_begin
 expr_begin 		: bin_op expr | %empty
-expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR expr_id | '(' expr ')' | bool
-expr_id			: '[' expr ']' expr_id_field |  expr_id_field | '(' expr_func_params
-expr_id_field 	: '$' TK_IDENTIFICADOR | %empty
-expr_func_params		: ')' | expr expr_func_params_body | '.' expr_func_params_body
-expr_func_params_body 	: ')' | ',' expr_func_params_end
-expr_func_params_end 	: expr expr_func_params_body | '.' expr_func_params_body
+expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR id_seq | '(' expr ')' | bool
+
+id_seq			: '[' expr ']' id_seq_field |  id_seq_field | '(' func_call_params
+id_seq_field 	: '$' TK_IDENTIFICADOR | %empty
+
+func_call_params		: ')' | expr func_call_params_body | '.' func_call_params_body
+func_call_params_body 	: ')' | ',' func_call_params_end
+func_call_params_end 	: expr func_call_params_body | '.' func_call_params_body
 
 %%
 

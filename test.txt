@@ -110,6 +110,58 @@ string fun5() {
 	return teste(a[x[1] + 2^6]$d, a$d) + f1() + f2(1,2,3,4);
 }
 
+string teste_operadores() {
+	f() %>% g();
+	x > y;
+	x < y;
+	x | y;
+	x & y;
+	x + y;
+	x - y;
+	x * y;
+	x / y;
+	x % y;
+	x ^ y;
+	x && y;
+	x || y;
+	x >= y;
+	x <= y;
+	x == y;
+	x != y;
+	+x;
+	-x;
+	!x;
+	&x;
+	*x;
+	?x;
+	#x;
+	a = x > y;
+	a = x < y;
+	a = x | y;
+	a = x & y;
+	a = x + y;
+	a = x - y;
+	a = x * y;
+	a = x / y;
+	a = x % y;
+	a = x ^ y;
+	a = x && y;
+	a = x || y;
+	a = x >= y;
+	a = x <= y;
+	a = x == y;
+	a = x != y;
+	a = +x;
+	a = -x;
+	a = !x;
+	a = &x;
+	a = *x;
+	a = ?x;
+	a = #x;
+	a = !!x;
+	a = !!x + &y % 17 + true && ky;
+}
+
 static int abc(const int x) {
 	if (3+3) then {
 		a = teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
