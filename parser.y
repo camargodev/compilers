@@ -9,11 +9,7 @@
 %}
 
 %verbose
-
-%left '+'
-%left '-'
-%left '*'
-%left '/'
+%define parse.error verbose
 
 %token TK_PR_INT
 %token TK_PR_FLOAT
@@ -76,14 +72,11 @@ scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : TK_PR_CONST types TK_IDENTIFICADOR | types TK_IDENTIFICADOR
 types 	: type | TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
-signal  : '+' | '-' | %empty
 shift	: TK_OC_SL | TK_OC_SR
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
-op 		: '+' | '-' | '*' | '/' | '%' | '^'
-logic_op : TK_OC_AND | TK_OC_OR
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
-param_begin : scope  param_body | param_body
+param_begin : scope param_body | param_body
 param_body  : var param_end
 param_end   : ':' param_begin | ']' 
 
@@ -91,7 +84,7 @@ global_var       : TK_IDENTIFICADOR globar_var_begin
 globar_var_begin : TK_PR_STATIC global_var_type | global_var_type
 global_var_type	 : type global_var_body | TK_IDENTIFICADOR global_var_body
 global_var_body  : ';' | '[' global_var_end 
-global_var_end   : artm ']' ';' 
+global_var_end   : expr ']' ';' 
 
 func            : TK_PR_STATIC func_begin | func_begin
 func_begin      : type TK_IDENTIFICADOR '(' func_params
@@ -102,60 +95,57 @@ func_body       : '{' cmd_block
 
 cmd_block	: '}' | cmd cmd_block 
 cmd 		: TK_IDENTIFICADOR cmd_id_fix
-				| TK_PR_INPUT artm ';'
-				| TK_PR_OUTPUT artm output 
-				| bool logic_seq
-				| TK_PR_IF '(' artm ')' TK_PR_THEN '{' cmd_block else
-				| TK_PR_WHILE '(' artm ')' TK_PR_DO '{' cmd_block
-				| TK_PR_DO '{' cmd_block TK_PR_WHILE '(' artm ')' ';'
+				| TK_PR_INPUT expr ';'
+				| TK_PR_OUTPUT expr output 
+				| TK_LIT_INT expr_begin ';'
+				| TK_LIT_FLOAT expr_begin ';'
+				| TK_PR_IF '(' expr ')' TK_PR_THEN '{' cmd_block else
+				| TK_PR_WHILE '(' expr ')' TK_PR_DO '{' cmd_block
+				| TK_PR_DO '{' cmd_block TK_PR_WHILE '(' expr ')' ';'
 				| TK_PR_CONTINUE ';'
 				| TK_PR_BREAK ';'
-				| TK_PR_RETURN artm ';'
-				| TK_PR_FOR '(' artm for_list ':'
-					artm ':' artm for_list ')' '{' cmd_block
+				| TK_PR_RETURN expr ';'
+				| TK_PR_FOR '(' expr for_list ':'
+					expr ':' expr for_list ')' '{' cmd_block
 				| TK_PR_FOREACH '(' TK_IDENTIFICADOR ':'
-					artm for_list  ')' '{' cmd_block
-				| TK_PR_SWITCH '(' artm ')' '{' cmd_block
+					expr for_list  ')' '{' cmd_block
+				| TK_PR_SWITCH '(' expr ')' '{' cmd_block
 
 else 		: %empty | TK_PR_ELSE '{' cmd_block
 
-output 		: ';' | ',' artm output
+output 		: ';' | ',' expr output
 
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| type local_var_end
-				| '[' artm ']' attr_field 
+				| '[' expr ']' attr_field 
 				| '$' TK_IDENTIFICADOR shift_or_attr
 				| shift_or_attr
 				| '(' func_call_params
-				| logic_op logic_var logic_exp
 				| TK_PR_STATIC local_var_begin
 				| TK_PR_CONST local_var_body
 
-for_list	: ',' artm for_list | %empty
+for_list	: ',' expr for_list | %empty
 
+func_call_params     : ')' expr_seq 
+						| expr func_call_params_end
+func_call_params_end : ')' expr_seq
+						| ',' expr func_call_params_end
 
-logic_exp	: logic_op logic_var logic_exp
-				| ';'
-
-logic_seq 	: logic_op logic_var logic_exp | ';'
-logic_seq_attr : logic_op logic_var logic_exp_attr | %empty
-
-logic_var	: TK_IDENTIFICADOR artm_id_fix | bool
-
-logic_exp_attr	: logic_op logic_var logic_exp_attr
-			  	| %empty
-
-func_call_params     : ')' piped_expr 
-						| artm func_call_params_end
-func_call_params_end : ')' piped_expr
-						| ',' artm func_call_params_end
-
-piped_expr		: ';'
+expr_seq		: ';'
 				| pipe TK_IDENTIFICADOR '(' func_call_params
-				| logic_op logic_var logic_exp
+				| bin_op expr ';' 
 
-shift_or_attr 	: attr_body
-				| shift artm ';'
+attr_func_call_params     : ')' attr_piped_expr 
+							| expr attr_func_call_params_end
+attr_func_call_params_end : ')' attr_piped_expr
+							| ',' expr attr_func_call_params_end
+
+attr_piped_expr	: %empty
+				| pipe TK_IDENTIFICADOR '(' attr_func_call_params
+
+shift_or_attr 	: attr_body 
+				| shift expr ';'
+				| expr_begin ';'
 
 attr_body   	: '=' var_attr ';'
 
@@ -168,22 +158,30 @@ var_attr  		: TK_IDENTIFICADOR var_id_attr_fix
 					| TK_LIT_CHAR 
 					| TK_LIT_INT var_attr_fix
 					| TK_LIT_FLOAT var_attr_fix
-					| bool logic_seq_attr
-var_attr_fix 	: op artm | logic_op logic_var logic_exp_attr | %empty
+					| bool var_attr_fix
 
-var_id_attr_fix : artm_id_fix var_attr_fix
+var_attr_fix 	: bin_op expr
+					| pipe TK_IDENTIFICADOR '(' attr_func_call_params
+					| %empty
+
+var_id_attr_fix : expr_id var_attr_fix
 
 attr_field	: '$' TK_IDENTIFICADOR shift_or_attr | shift_or_attr
 
-artm 					: signal artm_vals artm_begin
-artm_begin 				: op artm | %empty
-artm_vals 				: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR artm_id_fix | '(' artm ')'
-artm_id_fix 			: '[' artm ']' artm_id_field |  artm_id_field | '(' artm_func_params
-artm_id_field 			: '$' TK_IDENTIFICADOR | %empty
-artm_func_params     	: ')' | artm artm_func_params_body | '.' artm_func_params_body
-artm_func_params_body 	: ')' | ',' artm_func_params_end
-artm_func_params_end 	: artm artm_func_params_body | '.' artm_func_params_body
 
+bin_op		: '+' | '-' | '*' | '/' | '%' | '^' | '|' | '&'
+				| TK_OC_AND | TK_OC_OR | TK_OC_LE
+				| TK_OC_NE | TK_OC_EQ | TK_OC_GE
+un_op 		: '+' | '-' | '!' | '&' | '*' | '?' | '#' | %empty
+
+expr 			: un_op expr_vals expr_begin
+expr_begin 		: bin_op expr | %empty
+expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR expr_id | '(' expr ')' | bool
+expr_id			: '[' expr ']' expr_id_field |  expr_id_field | '(' expr_func_params
+expr_id_field 	: '$' TK_IDENTIFICADOR | %empty
+expr_func_params		: ')' | expr expr_func_params_body | '.' expr_func_params_body
+expr_func_params_body 	: ')' | ',' expr_func_params_end
+expr_func_params_end 	: expr expr_func_params_body | '.' expr_func_params_body
 
 %%
 

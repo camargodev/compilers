@@ -48,7 +48,9 @@ string fun5() {
 	b[(1+1) + ((x[1]) + 1 * -7)] = 15;
 	var = x[4*4/4]$xyz;
 	var[x[4*4/4]$xyz] = 4;
-	var[x+y+z[1]]$campo = g[h[x*1+teste$ab]];
+	a = x() + y();
+	x() + y();
+	var[x+y+z[1]]$campo + g[h[x*1+teste$ab]];
 	teste$x = y + teste();
 	teste$x = y + teste(x + t[1]);
 	teste$x = y + teste(x + teste(y));
@@ -78,25 +80,25 @@ string fun5() {
 	f1() %>% f2() %|% f3() %>% f1();
 	teste(1) %|% teste(x);
 	teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-	x && y && z;
-	x || y;
-	x || y && z;
+	//x && y && z;
+	//x || y;
+	//x || y && z;
 	a = a() && b;
 	var5 = x;
 	a = a() && b();
 	break;
-	a() && b();
+	//a() && b();
 	a = a && b();
-	a || b();
-	a(x,y,z) && a(a) || a(x,y,k);
+	//a || b();
+	//a(x,y,z) && a(a) || a(x,y,k);
 	var18 = z || y;
 	var39232a = z && y || z && a;
 	var7 = x && y;
 	var8 = x && y && z;
-	true && x[1];
-	true;
-	false;
-	a && false && b && true;
+	//true && x[1];
+	//true;
+	//false;
+	//a && false && b && true;
 	zy = a && false && b && true;
 	a = true;
 	b = false;
@@ -110,21 +112,18 @@ string fun5() {
 
 static int abc(const int x) {
 	if (3+3) then {
-		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-		x && y && z;
+		a = teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		/*x && y && z;
 		x || y;
-		x || y && z;
+		x || y && z;*/
 		a = a() && b;
 	}
 	if (3+3) then {}
 	if (3+3) then {
-		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-		x && y && z;
-		x || y;
-		x || y && z;
+		t = este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
 		a = a() && b;
 	} else {
-		a && false && b && true;
+		//a && false && b && true;
 		zy = a && false && b && true;
 		a = true;
 		b = false;
@@ -143,28 +142,25 @@ static int abc(const int x) {
 
 pessoa x() {
 	do {
-		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-		x && y && z;
-		false;
+		teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+		a = x && y && z;
+		a = false;
 	} while (x+3);
 
 	while (x+3) do {
-		este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-		x && y && z;
-		false;
+		b = x && y && z;
+		x = false;
 	}
 
 	while (x+3) do {
 		do {
 			if (3+3) then {
 				if (3+3) then {
-					este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-					x && y && z;
-					x || y;
-					x || y && z;
+					a = este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+					x && y && z * x || y + x || y && z;
 					a = a() && b;
 				} else {
-					a && false && b && true;
+					w = a && false && b && true;
 					zy = a && false && b && true;
 					a = true;
 					b = false;
@@ -182,12 +178,10 @@ abc defg(ponto w) {
 	for (x+1 : x+1 : x+1) {
 		if (3+3) then {
 			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-			x && y && z;
-			x || y;
-			x || y && z;
+
 			a = a() && b;
 		} else {
-			a && false && b && true;
+			//a && false && b && true;
 			zy = a && false && b && true;
 			a = true;
 			b = false;
@@ -195,13 +189,11 @@ abc defg(ponto w) {
 	}
 	for (x+1,x+2,x+3 : x+1 : x+1) {
 		if (3+3) then {
-			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-			x && y && z;
-			x || y;
-			x || y && z;
+			t = este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+			
 			a = a() && b;
 		} else {
-			a && false && b && true;
+			//a && false && b && true;
 			zy = a && false && b && true;
 			a = true;
 			b = false;
@@ -209,14 +201,11 @@ abc defg(ponto w) {
 	}
 	for (x+1,x+2,x+3 : x+1 : x+1,y+2,z+3) {
 		if (3+3) then {
-			este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-			x && y && z;
-			x || y;
-			x || y && z;
+			t = este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
 			a = a() && b;
 		} else {
 			foreach(a : x+1,x+2,x+3) {
-				a && false && b && true;
+				xyz = a && false && b && true;
 				zy = a && false && b && true;
 				a = true;
 				b = false;
@@ -242,7 +231,7 @@ static ponto x(const ponto y) {
 			foreach(a : x+1) {
 				while (x+3) do {
 				este(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
-				x && y && z;
+				w = x && y && z;
 				}
 			}
 		}	
@@ -254,6 +243,9 @@ int w() {
 		a = x + 1;
 		if (3+3) then {
 			x = 7;
+			x+x1;
+			1+1;
+			1.1+1;
 		}
 	}
 	switch (x+1) {
