@@ -35,10 +35,13 @@ char func3(bool isAbc) {
 
 	//const static int[] x;
 	x static const int;
-	c tipoMarcellus <= 0;
+	c tipoMarcellus;
+	c int <= 0;
+	c x;
 
 	output marcellus, marcellus;
 	x << -1;
+	x << funcao() + x + 2 + f(.) %>% g(.,.); 
 	x << 0;
 	return 1;
 	if (true + 1) then {x=1;}
@@ -61,6 +64,9 @@ char func3(bool isAbc) {
 	case 1: x <= 3; X<= 4; break;
 	x = (y == 2) ? x : z;
 	x = funcao();
+	x = x != 2 ? "abc" : funcao();
+	a = 7 + f() %>% g();
+	a = 7 + f() %>% g() + 7;
 }
 
 
