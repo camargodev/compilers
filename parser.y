@@ -61,11 +61,15 @@
 
 %%
 
-programa :  type_section   
+programa :  start  
 
+start : new_type start | global_var start | func start | %empty
+
+/*
 type_section 		: new_type type_section | global_var_section
 global_var_section  : global_var global_var_section | func_section
 func_section 		: func func_section | %empty
+*/
 
 type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
@@ -110,6 +114,8 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix
 				| TK_PR_FOREACH '(' TK_IDENTIFICADOR ':'
 					expr for_list  ')' '{' cmd_block
 				| TK_PR_SWITCH '(' expr ')' '{' cmd_block
+				| TK_PR_CASE TK_LIT_INT ':'
+								
 
 cmd_id_fix	: TK_IDENTIFICADOR local_var_end
 				| type local_var_end
@@ -123,7 +129,7 @@ output 		: ';' | ',' expr output
 
 for_list	: ',' expr for_list | %empty
 
-attr 	 	: '=' var_attr ';'
+attr 	 	: '=' marcellus ';'
 				| TK_OC_SL expr ';'
 				| TK_OC_SR expr ';'
 				| bin_op expr ';'
@@ -135,7 +141,17 @@ local_var_begin : TK_PR_CONST local_var_body | local_var_body
 local_var_body  : type local_var_end | TK_IDENTIFICADOR local_var_end
 local_var_end   : ';' | TK_OC_LE var_attr ';'
 
-var_attr  		: TK_IDENTIFICADOR id_seq var_attr_fix
+marcellus: var_attr marcellus2
+marcellus2: %empty | '?' var_attr ':' var_attr
+
+var_attr  		: expr 
+					| TK_LIT_STRING
+					| TK_LIT_CHAR 
+					
+					//| expr_vals expr_begin '?' expr ':' expr
+
+/*
+	var_attr  		: TK_IDENTIFICADOR id_seq var_attr_fix
 					| TK_LIT_STRING
 					| TK_LIT_CHAR 
 					| TK_LIT_INT expr_begin
@@ -143,9 +159,14 @@ var_attr  		: TK_IDENTIFICADOR id_seq var_attr_fix
 					| not_null_un_op un_op expr_vals expr_begin
 					| bool expr_begin
 
+*/					
+					
+/*
 var_attr_fix 	: bin_op expr
 					| pipe TK_IDENTIFICADOR id_seq piped_expr
 					| %empty
+					//| expr_vals '?' expr ':' expr
+*/
 
 bin_op		: '+' | '-' | '*' | '/' | '%'
 				| '^' | '|' | '&' | '>' | '<'
@@ -156,9 +177,11 @@ not_null_un_op  : '+' | '-' | '!' | '&' | '*' | '?' | '#'
 
 expr 			: un_op expr_vals expr_begin
 expr_begin 		: bin_op expr | %empty
-expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR id_seq | '(' expr ')' | bool
+expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR id_seq naoSei | '(' expr ')' | bool
 
-id_seq			: '[' expr ']' id_seq_field |  id_seq_field | '(' func_call_params
+naoSei : %empty | pipe TK_IDENTIFICADOR id_seq piped_expr
+
+id_seq			: '[' expr ']' id_seq_field |  id_seq_field | '(' func_call_params 
 id_seq_field 	: '$' TK_IDENTIFICADOR | %empty
 
 func_call_params		: ')' | expr func_call_params_body | '.' func_call_params_body

@@ -1,3 +1,9 @@
+int func1() {}
+
+var1 int;
+
+x int;
+class ponto1d[ int x];
 class ponto1d[private int x];
 class ponto2d[public int x : protected float y];
 class ponto3d[public int x : private float w : protected float y];
@@ -10,9 +16,14 @@ var5 bool[+20];
 var6 string[x + 4];
 var7 int[x[10] + -(y*2)];
 
+var marcellus;
+
+var INT;
+
 var8 ponto1d;
 
-int func1() {}
+
+static int func1(const int x) {}
 bool func2(int x, int y) {}
 char func3(bool isAbc) {
 	c char;
@@ -20,9 +31,39 @@ char func3(bool isAbc) {
 	k static const int <= 3;
 	l const int <= 8;
 	i static ponto;
+	funcMarcellus1(.);
+
+	//const static int[] x;
+	x static const int;
+	c tipoMarcellus <= 0;
+
+	output marcellus, marcellus;
+	x << -1;
+	x << 0;
+	return 1;
+	if (true + 1) then {x=1;}
 
 
+	classeMarcellus[x] = 0;
+
+	//| TK_PR_FOR '(' expr for_list ':'
+	//				expr ':' expr for_list ')' '{' cmd_block
+	//for_list	: ',' expr for_list | %empty
+	
+	/*
+	for(x + 1, case: 1 x+1 : x+1 : x+1){
+		x + 1;
+	}*/
+
+	
+	case 1: x+1;
+
+	case 1: x <= 3; X<= 4; break;
+	x = (y == 2) ? x : z;
+	x = funcao();
 }
+
+
 
 string func4(int a1, int a2, int a3) {
 	yz bool;
@@ -165,6 +206,11 @@ string teste_operadores() {
 static int abc(const int x) {
 	if (3+3) then {
 		a = teste(a[x[1] + 2^6]$d, a$d) %>% f1() %>% f2(1,2,3,4);
+
+		x = 1 + f(x) %>% g();
+		x = f(x) %>% g() + 2;
+		x = f(x) %>% g() || h(z);
+
 		/*x && y && z;
 		x || y;
 		x || y && z;*/
