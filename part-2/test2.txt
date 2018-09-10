@@ -1,0 +1,490 @@
+//Tipos de usuário
+class pessoa [int idade : string nome];
+class animal [protected string name : private int eyes];
+class fake [public string fals: private string tru];
+class oneArg [int o];
+
+//Variáveis globais
+g1 int;
+g2 static string;
+v1[34] static float;
+g3 float;
+v4 [20] char;
+v5 [21] static pessoa;
+
+//Funções
+int main(){}
+static pessoa someone(int idade, const string name, float alura){}
+float Double (float a){}
+static int foo(int a, int b){}
+
+//Blocos de comandos - Precisam de mais testes quando comandos simples estiverem disponíveis
+int main(){
+	{
+		//Bloco de comandos como comando simples
+	};
+}
+
+//Definicao de tipo primitivo sem inicializar
+int main(){
+	{
+		var int;
+	};
+}
+
+//Definicao de tipo primitivo com static
+int main(){
+	{
+		var static int;
+	};
+}
+
+//Definicao de tipo primitivo com const
+int main(){
+	{
+		var const int;
+	};
+}
+
+//Definicao de tipo primitivo com static e const na ordem correta
+int main(){
+	{
+		var static const int;
+	};
+}
+
+//Definicao de tipo primitivo com static e const na ordem errada
+int main(){
+	{
+		// var const static int; // se descomentar esse dá erro, garantindo a ordem correta
+	};
+}
+
+//Definicao de tipo primitivo inicializando com identificador
+int main(){
+	{
+		var int <= var2;
+	};
+}
+
+//Definicao de tipo primitivo inicializando com literal
+int main(){
+	{
+		var int <= 12;
+		var int <= 22;
+		var int <= 12.2;
+		var static const int <= ----++++-12;
+		var static const int <= -+-+-+-+-+-+++++---+zorzo;
+		var static const int <= 12;
+		var static const int <= 12;
+		var static const int <= 12;
+		var int <= 'w';
+		var int <= false;
+		var int <= true;
+		var int <= "stringzinha bem nice"; // um comentario só pra ver se n vai dar nada
+	};
+}
+
+//Definicao de variavel com tipo definido pelo usuario
+int main(){
+	{
+		var tipo_usuario;
+	};
+}
+
+//Definicao de tipo primitivo inicializando com literal
+int main(){
+	{
+		//var tipo_usuario <= 12; // caso descomentado gera erro, pois não podemos inicializar uma variável de tipo definido pelo usuário
+	};
+}
+
+//atribuicao a um tipo primitivo não-vetor
+int main(){
+	{
+		var = -1;
+	};
+}
+int main(){
+	{
+		var = +1;
+	};
+}
+int main(){
+	{
+		var = 1;
+	};
+}
+
+//atribuicao a um tipo primitivo vetor (NOTAR QUE A EXPRESSAO QUE DETERMINA O INDICE DO VETOR É NEGATIVA)
+int main(){
+	{
+		var[-1] = -1;
+	};
+}
+
+//atribuicao a um tipo novo não-vetor
+int main(){
+	{
+		var$campo = -1;
+	};
+}
+
+//atribuicao a um tipo novo vetor
+int main(){
+	{
+		var[-1]$campo = -1;
+	};
+}
+
+//expressao unaria negativa com literal int
+int main(){
+	{
+		var = -1;
+	};
+}
+
+//expressao unaria negativa com literal float
+int main(){
+	{
+		var = -1.1;
+	};
+}
+
+//expressao unaria negativa com identificador
+int main(){
+	{
+		var = -algumidentificador;
+	};
+}
+
+//expressao unaria negativa com vetor
+int main(){
+	{
+		var = -vetor[-1];
+	};
+}
+
+//expressao unaria positiva com vetor
+int main(){
+	{
+		var = +vetor[+1];
+	};
+}
+
+//expressao unaria positiva com vetor com expressao positiva
+int main(){
+	{
+		var = -vetor[+1];
+	};
+}
+
+//expressao unaria positiva com vetor com expressao negativa
+int main(){
+	{
+		var = +vetor[-1];
+	};
+}
+
+//expressoes formadas por apenas um operando simples, sem nenhum operador
+int main(){
+	{
+		var = 1;
+		var = 1.2;
+		var = algumidentificador;
+		var = 1;
+		var = vetor[identificadorqualquer];
+	};
+}
+
+//expressoes aritmeticas binarias
+int main(){
+	{
+		var = 1/-2;
+		var = 1.5*-2;
+	};
+}
+
+//expressoes recursivas com parenteses
+int main(){
+	{
+		resultado = (1*2+3-4/5^6);
+		resultado = 1*2+3-4/(5^6);
+		resultado = (1*2+3-4)/5^6;
+		resultado = -(1*2+3-4)/5^6;
+		resultado = +(1*2+3-4/5^6);
+		resultado = -(1);
+		resultado = +(7.2);
+	};
+}
+
+//expressoes recursivas sem parenteses
+int main(){
+	{
+		resultado = 1*2+3-4/5^6;
+		resultado = 2*--1; //dá errado, como deveria 
+		resultado = 1 - -1;
+		resultado = 1 - --1; //deve dar errado
+		resultado = 1**1; //deve dar errado
+		resultado = 1 * -1;
+	};
+}
+
+//input
+int main(){
+	{
+		input 1 * -1;
+	};
+}
+
+//output
+int main(){
+	{
+		output 1 * -1, 1 * -1;
+	};
+}
+int main(){
+	{
+		//output 1 * -1,, 1 * -1; //deve dar errado pq tem expressao vazia
+	};
+}
+int main(){
+	{
+		output 1 * -1, 2, 3;
+	};
+}
+int main(){
+	{
+		output 1 * -1;
+	};
+}
+
+//chamada de função
+int main(){
+	{
+		func(arg1, arg2, (2*3*(7-4)/2));
+	};
+}
+int main(){
+	{
+		func(arg1, arg2, ., (2*3*(7-4)/2));
+	};
+}
+
+//shifts
+int main(){
+	{
+		var << var2;
+		var << 12;
+		var << 17.07;
+		var << -17.07;
+		var << +17.07;
+		var << vetor[+7];
+		var << (2*3*(7-4)/2);
+		var$algumcampo << (2*3*(7-4)/2);
+		var [17-var2/-(-5)] << (2*3*(7-4)/2);
+		var[17-var2/-(-5)]$algumcampo << (2*3*(7-4)/2);
+		var << -1;
+
+		var >> var2;
+		var >> 12;
+		var >> 17.07;
+		var >> -17.07;
+		var >> +17.07;
+		var >> vetor[+7];
+		var >> (2*3*(7-4)/2);
+		var$algumcampo >> (2*3*(7-4)/2);
+		var [17-var2/-(-5)] >> (2*3*(7-4)/2);
+		var[17-var2/-(-5)]$algumcampo >> (2*3*(7-4)/2);
+	};
+}
+
+//return, continue e break
+int main(){
+	{
+		return var(arg1, arg2, ., (2*3*(7-4)/2));
+		return -var(arg1, arg2, ., (2*3*(7-4)/2));
+		return +var(arg1, arg2, ., (2*3*(7-4)/2));
+		return -(-var(arg1, arg2, ., (2*3*(7-4)/2)));
+		return +(var(arg1, arg2, ., (2*3*(7-4)/2)));
+		return var2;
+		return 12;
+	 	return 17.07;
+		return -17.07;
+		return +17.07;
+		return vetor[+7];
+		return (2*3*(7-4)/2);
+		return -(-var);
+		return +(+var);
+		return -var;
+		continue;
+		break;
+	};
+}
+
+//testes booleanos
+int main(){
+	{
+		var = !!!!!!!!!!!!!!!!!var;
+		var = var && var;
+		var = var || var;
+		var = var & var;
+		var = var | var;
+		var = 1 == 2 == 3 == 4 + 7 && true - false == 12 | var2 & john;
+		var = 1 && true;
+		// var = 1 ! 2; //essa linha dá errado, já que ! é o único operador unicamente unario
+		var = *******ptr;
+		var = *ptr;
+		var = 12 * val;
+		var = #hashtable;
+		var = 1?+2&&true; // nesse caso ? avalia 1 para true ou false, e depois a expressao é continuada
+		var = 1?????+2&&true;
+		var = (1+2&&true)?;
+		var = (1+2&&true)????? + z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)???????;
+		var = 1???? + -7.7;
+		var = 1? + -7.28985;
+		var = 1 + ops?;
+		var = 1 + ops???;
+		var = ---!+&#***(*ptr) + ops???;
+		var = ((teste?)?)?;
+		var = (((teste?)?)?);
+		var = &var1 && &var2???;
+		var = &var1? && &var2???;
+	};
+}
+
+// pipes
+int main(){
+	{
+		var = z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		func(arg1, arg2, z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func));
+		output 1 * -1, z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func), 1 * -1;
+		input z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		resultado = z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		var = -vetor[z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)];
+		var = 2 + -----3 / ----+++---vetor[z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)];
+		var = z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		var [z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)] >> z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+		var[z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)]$algumcampo >> z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+
+	};
+}
+
+//controle de fluxo
+int main(){
+	//Esta função é uma função que vai tester comandos de controle de fluxo bem como comentários desnecessariamente extensos como esse só para garantir que estão sendo ignorados
+	/**
+		Comentário
+		Multilinha
+		Sem
+		Propósito
+	*/
+	x int <= 12;
+	y float <= 3.14;
+	z const string <= "zorzo";
+	w const string <= "will";
+	//expressão relacional no if then sem else
+	if (x > y) then {
+		x = y;
+		//if com else usando expressão aritmética
+		if (2 + 3 * 4 ^ 9 - 91) then {
+			//lista do foreach é uma lista de expressões separadas por vírgula
+			foreach (i : 1, 2, 3, 5, a<b, true && false) {
+				output 1, 2, 3, 4^(5-5)+3;
+			};
+
+			//listas de comando do for não permite case, nem comandos que contenham vígula
+			for (i int <= 12, j float <= 900, x = 3 : true && false || true : i = j ^ (1/2), j = i + 94*x, x = i*13){
+				var int;
+				input var;
+				continue;
+			};
+		} else {
+			while (true) do{
+				v = sleep(987);
+				switch (v){
+					case 2:
+					case 3:
+					output 12;
+					break;
+				};
+			};
+			do {
+				goto string <= "Pq não tem goto?";
+			}while (x == y);
+		};
+	};
+}
+
+// EXPRESSOES COM STRINGS E CHARS
+int main(){
+	x static int <= "abc";
+	var4[4] = 'a';
+	var['c' && 1 + "will e zorzo estiveram aqui"] = "stringzinha bem nice pro pai";
+	var = "tropecei no teclado";
+	var = 1/"stringdivisora"&&true||'c'+'b';
+	endereco = &var;
+	 endereco = &(var); //deve dar erro, queremos acessar diretamente uma variavel, nao tem pq usar parenteses ou permitir qualquer coisa alem de um identificador
+}
+
+//testes com campos
+int main(){
+	identificador[1 + "expressao"]$campo = identificador[1 + "expressao"]$campo;
+	identificador$campo = identificador[1 + "expressao"]$campo;
+	resultado = identificador[1 + "expressao"]$campo - identificador[1 + "expressao"]$campo;
+	resultado = identificador$campo && identificador[1 + "expressao"]$campo;
+}
+
+//testes com & (acesso ao endereco de um identificador) e * (acesso ao valor do ponteiro)
+int main(){	
+	bitwise = var1 & var2;
+	endereco = &var;
+	endereco = -!+&x;
+	endereco = &(var);
+	endereco = &(&var2);
+	//endereco = &&var; // da errado devido ao operador &&	
+	val = var1 && &var2;
+	val = &var1 && &var2;
+	val = &var1 && & &var2;
+	val = &var1 && &(&var2);
+	val = &var1 && &(&(&(&var2)));
+	//val = &var1 && &&&&var2; // mesmo exemplo acima, mas sem parenteses: da errado devido a conflito com operador &&	
+	var = *******ptr;
+	var = *ptr;
+	var = 12 * val;
+	var = 12 * *12;
+	var = 12 * *identificador;
+	var = 12 + (*ptr - 7);
+	var = (******ptr);
+	var = (((*****ptr)));
+	var = ****(*(*****ptr));
+	var = ****(*((*****ptr)));
+	var = *****-17.5;
+	var = #######zorzo + ##########----+-+----&zorzo;
+	var = !!!!!!!!!!!!!****(*((*****ptr))) % ---++!!-#######zorzo + ##########----+-+----&zorzo;
+}
+
+//testes misturando pipe com as demais expressoes
+int main(){
+	identificador = 1 + true && zorzo || z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func);
+	identificador = 1 + true && zorzo || (((((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func))))));
+	identificador = 1 + true && zorzo || *!!#&*****((*(((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func))))));
+	identificador = 1 + true && zorzo || *!!#&(&*****((*(((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func)))))));
+	identificador[1 + "expressao" - *!!#&*****((*(((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func))))))]$campo = identificador[1 + "expressao" % *!!#&*****((*(((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func))))))]$campo || *!!#&*****((*(((z(.) %>% w(arg1, arg2, ., atg4) %|% w() %>% last(func))))));
+	identificador$campo = identificador[1 + "expressao" - -z(.) %>% w(arg1, arg2, ., atg4)]$campo / z(.) %>% w(arg1, arg2, ., atg4) * z(.) %>% w(arg1, arg2, ., atg4);
+	resultado = identificador[1 + "expressao" + ###(*z(.) %>% w(arg1, arg2, ., atg4))]$campo - identificador[1 + "expressao"]$campo;
+	resultado = identificador$campo && identificador[1 + "expressao"]$campo + 'c' + "string" + z(.) %>% w(arg1, arg2, ., atg4) + ---12.7;
+}
+
+int main(){
+	//teste segundo a issue 50	
+	for(i = 0, j = 9, k = 20, if (true) then {output "will", 3;} : 2 * 3 + true ^ 4 / false : {for(s = 9, t = s + 3: true: s = s + t){};}){
+		input a;
+		output a, a*a, a*a*a;
+		//testes segundo issue 52
+		id = f() %>% g(.) + 2;
+		id = f() %>% g(.) || h(z);
+	};
+	return 0;
+}
