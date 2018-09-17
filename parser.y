@@ -68,13 +68,14 @@ start : new_type start | global_var start | func start | %empty
 type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : TK_PR_CONST types TK_IDENTIFICADOR | types TK_IDENTIFICADOR
+prim_var: TK_PR_CONST type TK_IDENTIFICADOR | type TK_IDENTIFICADOR
 types 	: type | TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope param_body | param_body
-param_body  : var param_end
+param_body  : prim_var param_end
 param_end   : ':' param_begin | ']' 
 
 global_var       : TK_IDENTIFICADOR global_var_vec 
@@ -92,6 +93,9 @@ func_body       : '{' cmd_block
 
 cmd_block	: '}' | cmd cmd_block 
 cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
+				| TK_PR_STATIC static_var ';'
+				| TK_PR_CONST const_var ';'
+				| type TK_IDENTIFICADOR var_end ';'
 				| if_then ';'
 				| while ';'
 				| do_while ';'
@@ -130,6 +134,9 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 						'{' cmd_block
 
 cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
+				| type TK_IDENTIFICADOR var_end
+				| TK_PR_STATIC static_var
+				| TK_PR_CONST const_var
 				| if_then 
 				| while 
 				| do_while 
@@ -155,16 +162,14 @@ foreach_list: ',' expr foreach_list | ')'
 switch 		: TK_PR_SWITCH '(' expr ')' '{' cmd_block
 case 		: TK_PR_CASE TK_LIT_INT ':'
 
-cmd_id_fix	: TK_IDENTIFICADOR 
-			| type var_end 
-			| id_seq attr
-			| TK_PR_STATIC static_var
-			| TK_PR_CONST const_var
+cmd_id_fix	: TK_IDENTIFICADOR | id_seq attr
 
 static_var	: TK_PR_CONST const_var
 			| const_var
-const_var	: type var_end
-			| TK_IDENTIFICADOR
+			
+const_var	: type TK_IDENTIFICADOR var_end
+			| TK_IDENTIFICADOR TK_IDENTIFICADOR
+
 var_end 	: TK_OC_LE expr
 			| %empty
 
@@ -189,7 +194,8 @@ expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR id_seq piped | TK_LIT_
 piped 			: %empty | pipe TK_IDENTIFICADOR id_seq piped_expr
 
 id_seq			: '[' expr ']' id_seq_field |  id_seq_field | '(' func_call_params 
-id_seq_field 	: '$' TK_IDENTIFICADOR | %empty
+id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec | %empty
+id_seq_field_vec: '[' expr ']' | %empty
 
 func_call_params		: ')' | expr func_call_params_body | '.' func_call_params_body
 func_call_params_body 	: ')' | ',' func_call_params_end
