@@ -17,4 +17,5 @@ clean:
 	rm -f parser.output
 	rm -f lex.yy.o
 	rm -f lex.yy.c
+	rm -f report
 

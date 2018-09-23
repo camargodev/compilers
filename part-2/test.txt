@@ -26,17 +26,17 @@ var8 ponto1d;
 static int func1(const int x) {}
 bool func2(int x, int y) {}
 char func3(bool isAbc) {
-	c char;
-	x static int <= "abc";
-	k static const int <= 3;
-	l const int <= 8;
-	i static ponto;
+	char c;
+	static int x   <= "abc";
+	static const int k <= 3;
+	const int l <= 8;
+	static i ponto;
 	funcMarcellus1(.);
 
 	//const static int[] x;
-	x static const int;
-	c tipoMarcellus;
-	c int <= 0;
+	static const int x;
+	tipoMarcellus c;
+	int c <= 0;
 	c x;
 
 	output marcellus, marcellus;
@@ -77,13 +77,13 @@ char func3(bool isAbc) {
 
 
 string func4(int a1, int a2, int a3) {
-	yz bool;
-	ab bool  <= true;
+	bool yz;
+	bool ab  <= true;
 	x ponto;
 	y ponto;
-	abc bool <= 1+1;
-	abcd int <= 1+(1+x);
-	j int <= 1+(1+x[1+1]);
+	bool abc <= 1+1;
+	int abcd <= 1+(1+x);
+	int j <= 1+(1+x[1+1]);
 }
 
 
@@ -146,8 +146,8 @@ string fun5() {
 	var18 = z || y;
 	var39232a = z && y || z && a;
 	var7 = x && y;
-	var8 = x && y && z;
-	//true && x[1];
+	var8 = x && y && z
+;	//true && x[1];
 	//true;
 	//false;
 	//a && false && b && true;
@@ -282,7 +282,7 @@ pessoa x() {
 
 abc defg(ponto w) {
 	for(a=x+1 : x+1 : a=x+1) {
-
+		x$a[0] = 12;
 	};
 	for(a=x+1 : x+1 : a=x+1) {
 		if (3+3) then {
