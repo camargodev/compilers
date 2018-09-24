@@ -8,6 +8,12 @@
 
 #define NO_CHILDREN		0
 
+void print_string(char* str);
+void print_char(char c);
+void print_int(int i);
+void print_float(int f);
+void print_bool(int b);
+
 Tree_Node* new_node(struct lex_value* token) {
 	
 	Tree_Node* node = malloc(sizeof(Tree_Node));
@@ -24,27 +30,8 @@ void add_node(Tree_Node *root, Tree_Node *child) {
 	root->children_num++;
 	root->children = (Tree_Node**) realloc(root->children, 
 									root->children_num* sizeof(Tree_Node**));
+	
 	root->children[root->children_num - 1] = child;
-}
-
-void print_string(char* str) {
-	printf("%s ", str);
-}
-
-void print_char(char c) {
-	printf("%c ", c);
-}
-
-void print_int(int i) {
-	printf("%i\n", i);
-}
-
-void print_float(int f) {
-	printf("%i\n", f);
-}
-
-void print_bool(int b) {
-	printf("%s\n", b == 0 ? "FALSE" : "TRUE");
 }
 
 void print_token(struct lex_value* lex_val) {
@@ -76,6 +63,46 @@ void print_token(struct lex_value* lex_val) {
 
 void descompila(void *node) {
 	Tree_Node *tree_node = (Tree_Node*) node;
+	int children_counter = tree_node->children_num;
+	
+	print_token(tree_node->token);
+	
+	while(children_counter > NO_CHILDREN) {
+		descompila(tree_node->children[tree_node->children_num - children_counter]);
+		children_counter--;
+	}
 }
 
-void libera(void *node) ;
+void libera(void *node) {
+	Tree_Node *tree_node = (Tree_Node*) node;
+	int children_counter = tree_node->children_num;
+	
+	while(children_counter > NO_CHILDREN) {
+		libera(tree_node->children[tree_node->children_num - children_counter]);
+		children_counter--;
+	}
+
+	free(tree_node->children);
+	free(tree_node);
+
+}
+
+void print_string(char* str) {
+	printf("%s ", str);
+}
+
+void print_char(char c) {
+	printf("%c ", c);
+}
+
+void print_int(int i) {
+	printf("%i\n", i);
+}
+
+void print_float(int f) {
+	printf("%i\n", f);
+}
+
+void print_bool(int b) {
+	printf("%s\n", b == FALSE ? "false" : "true");
+}

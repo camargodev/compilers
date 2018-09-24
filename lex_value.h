@@ -33,6 +33,9 @@
 
 #define NOT_LITERAL		15
 
+#define FALSE			000
+#define TRUE			100
+
 union Literal {
 	int 	v_int;
 	float 	v_float;
