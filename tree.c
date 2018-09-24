@@ -74,6 +74,8 @@ void print_token(struct lex_value* lex_val) {
 	}
 }
 
-void descompila(void *node);
+void descompila(void *node) {
+	Tree_Node *tree_node = (Tree_Node*) node;
+}
 
 void libera(void *node) ;

@@ -68,14 +68,13 @@ start : new_type start | global_var start | func start | %empty
 type    : TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING
 scope   : TK_PR_PRIVATE | TK_PR_PUBLIC | TK_PR_PROTECTED
 var     : TK_PR_CONST types TK_IDENTIFICADOR | types TK_IDENTIFICADOR
-prim_var: TK_PR_CONST type TK_IDENTIFICADOR | type TK_IDENTIFICADOR
 types 	: type | TK_IDENTIFICADOR
 bool    : TK_LIT_TRUE | TK_LIT_FALSE
 pipe 	: TK_OC_FORWARD_PIPE | TK_OC_BASH_PIPE
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope param_body | param_body
-param_body  : prim_var param_end
+param_body  : type TK_IDENTIFICADOR param_end
 param_end   : ':' param_begin | ']' 
 
 global_var       : TK_IDENTIFICADOR global_var_vec 
@@ -162,7 +161,9 @@ foreach_list: ',' expr foreach_list | ')'
 switch 		: TK_PR_SWITCH '(' expr ')' '{' cmd_block
 case 		: TK_PR_CASE TK_LIT_INT ':'
 
-cmd_id_fix	: TK_IDENTIFICADOR | id_seq attr
+cmd_id_fix	: TK_IDENTIFICADOR
+			| id_seq_simple attr
+			| '(' func_call_params piped_expr
 
 static_var	: TK_PR_CONST const_var
 			| const_var
@@ -170,13 +171,21 @@ static_var	: TK_PR_CONST const_var
 const_var	: type TK_IDENTIFICADOR var_end
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 
-var_end 	: TK_OC_LE expr
+var_end 	: TK_OC_LE var_lit
 			| %empty
+
+var_lit		: TK_IDENTIFICADOR
+			| TK_LIT_INT
+			| TK_LIT_FLOAT
+			| TK_LIT_CHAR
+			| TK_LIT_STRING
+			| TK_LIT_TRUE
+			| TK_LIT_FALSE	
 
 attr 		: '=' expr
 			| TK_OC_SL expr 
 			| TK_OC_SR expr 
-			| piped_expr 
+			| pipe un_op TK_IDENTIFICADOR id_seq piped_expr 
 
 piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr | %empty 
 
@@ -193,9 +202,11 @@ expr_vals		: TK_LIT_FLOAT | TK_LIT_INT | TK_IDENTIFICADOR id_seq piped | TK_LIT_
 
 piped 			: %empty | pipe TK_IDENTIFICADOR id_seq piped_expr
 
-id_seq			: '[' expr ']' id_seq_field |  id_seq_field | '(' func_call_params 
+id_seq			:  id_seq_simple | '(' func_call_params 
 id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec | %empty
 id_seq_field_vec: '[' expr ']' | %empty
+
+id_seq_simple	: '[' expr ']' id_seq_field |  id_seq_field
 
 func_call_params		: ')' | expr func_call_params_body | '.' func_call_params_body
 func_call_params_body 	: ')' | ',' func_call_params_end
