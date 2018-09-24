@@ -2,7 +2,7 @@
 	// João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
 	#include "tree.h"
-	#include "lex_value.h"
+	#include "lexeme.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -15,7 +15,7 @@
 %define parse.error verbose
 
 %union {
-	struct lex_value* valor_lexico;
+	struct lexeme* valor_lexico;
 	struct Tree_Node* tree_node;
 }
 

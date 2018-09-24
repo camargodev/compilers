@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lex_value.h"
+#include "lexeme.h"
 #include "tree.h"
 
 #define NO_CHILDREN		0
@@ -14,27 +14,27 @@ void print_int(int i);
 void print_float(int f);
 void print_bool(int b);
 
-Tree_Node* new_node(struct lex_value* token) {
+Node* new_node(struct Lexeme* token) {
 	
-	Tree_Node* node = malloc(sizeof(Tree_Node));
+	Node* node = malloc(sizeof(Node));
 	
 	node->token = token;
 	node->children_num = NO_CHILDREN;
-	node->children = (Tree_Node**) malloc(sizeof(Tree_Node**));
+	node->children = (Node**) malloc(sizeof(Node**));
 
 	return node;
 }
 
-void add_node(Tree_Node *root, Tree_Node *child) {
+void add_node(Node *root, Node *child) {
 
 	root->children_num++;
-	root->children = (Tree_Node**) realloc(root->children, 
-									root->children_num* sizeof(Tree_Node**));
+	root->children = (Node**) realloc(root->children, 
+									root->children_num* sizeof(Node**));
 	
 	root->children[root->children_num - 1] = child;
 }
 
-void print_token(struct lex_value* lex_val) {
+void print_token(struct Lexeme* lex_val) {
 	
 	if (lex_val->token_type == KEYWORD || lex_val->token_type == OPERATOR || lex_val->token_type == IDENTIFIER) {
 		print_string(lex_val->value.v_string);
@@ -62,7 +62,7 @@ void print_token(struct lex_value* lex_val) {
 }
 
 void descompila(void *node) {
-	Tree_Node *tree_node = (Tree_Node*) node;
+	Node *tree_node = (Node*) node;
 	int children_counter = tree_node->children_num;
 	
 	print_token(tree_node->token);
@@ -74,7 +74,7 @@ void descompila(void *node) {
 }
 
 void libera(void *node) {
-	Tree_Node *tree_node = (Tree_Node*) node;
+	Node *tree_node = (Node*) node;
 	int children_counter = tree_node->children_num;
 	
 	while(children_counter > NO_CHILDREN) {

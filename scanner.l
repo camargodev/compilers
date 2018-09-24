@@ -283,6 +283,6 @@ void non_literal() {
 }
 
 void config_token() {
-	yylval.valor_lexico = (struct lex_value*) malloc(sizeof(struct lex_value));
+	yylval.valor_lexico = (struct lexeme*) malloc(sizeof(struct lexeme));
 	yylval.valor_lexico->line_number = yylineno;
 }

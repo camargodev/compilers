@@ -27,7 +27,7 @@ Also, with ```make```, you automatically generates the AST (Abstract Syntax Tree
 ## Running the tests
 
 To test, you can use ```make test```.
-Also, each part has a different set of test.
+Also, each part has a different set of tests.
 You can just get into the part specific folder and run the same command.
 
 ## Parts
@@ -53,7 +53,7 @@ Again, ```make``` and ```make test``` do the tricks for these one.
 ### Part 3 [IN DEVELOPMENT]
 
 In this part, the AST will be build together with the syntactic analysis.
-For this, structs like the ones ```tree.h``` and ```lex_value.h``` were developed.
+For this, structs like the ones ```tree.h``` and ```lexeme.h``` were developed.
 Also, values were added to tokens on ```scanner.l``` and tree construction functions were used on ```parser.y```.
 I don't need to write again about ```make``` and ```make test```.
 
