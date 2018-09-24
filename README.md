@@ -32,6 +32,9 @@ You can just get into the part specific folder and run the same command.
 
 ## Parts
 
+The root folder has everything that is necessary for running this compiler.
+Each specific part folder just marks the evolution of the project.
+
 ### Part 1 [Aug 2018]
 
 Basically, a lexer scanner was developed to accept the tokens of the language.
@@ -68,7 +71,7 @@ Although this was developed for a college course, it has a huge potential for le
 
 ## Authors
 
-* **João Vitor de Camargo** - *Developer* - 
+* **João Vitor de Camargo** - *Developer*
 * **Marcellus Farias** - *Developer* 
 
 ## Acknowledgments
