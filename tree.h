@@ -11,6 +11,8 @@ Tree_Node* new_node(struct lex_value* token);
 
 void add_node(Tree_Node *root, Tree_Node *child);
 
+void print_token(struct lex_value* lex_val);
+
 /*
 	The following functions may have
 	automated use, so the portugues name
