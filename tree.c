@@ -9,6 +9,7 @@
 #define NO_CHILDREN		0
 
 void print_string(char* str);
+void print_special_char(char c);
 void print_char(char c);
 void print_int(int i);
 void print_float(int f);
@@ -39,7 +40,9 @@ void print_token(struct Lexeme* lex_val) {
 	if (lex_val->token_type == KEYWORD || lex_val->token_type == OPERATOR || lex_val->token_type == IDENTIFIER) {
 		print_string(lex_val->value.v_string);
 	} else if (lex_val->token_type == SPECIAL_CHAR) {
-		print_char(lex_val->value.v_char);
+		print_special_char(lex_val->value.v_char);
+		if (lex_val->value.v_char == '{' || lex_val->value.v_char == '}' || lex_val->value.v_char == ';')
+			printf("\n"); 
 	} else if (lex_val->token_type == LITERAL) {
 		switch (lex_val->literal_type) {
 			case INT:
@@ -92,8 +95,12 @@ void print_string(char* str) {
 	printf("%s ", str);
 }
 
-void print_char(char c) {
+void print_special_char(char c) {
 	printf("%c ", c);
+}
+
+void print_char(char c) {
+	printf("\'%c\' ", c);
 }
 
 void print_int(int i) {
