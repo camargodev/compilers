@@ -97,13 +97,13 @@ void print_char(char c) {
 }
 
 void print_int(int i) {
-	printf("%i\n", i);
+	printf("%i ", i);
 }
 
 void print_float(int f) {
-	printf("%i\n", f);
+	printf("%i ", f);
 }
 
 void print_bool(int b) {
-	printf("%s\n", b == FALSE ? "false" : "true");
+	printf("%s ", b == FALSE ? "false" : "true");
 }

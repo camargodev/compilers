@@ -239,8 +239,10 @@ void identifier() {
 }
 
 void special_char() {
-	non_literal();
+	config_token();
+	yylval.valor_lexico->literal_type = NOT_LITERAL;
 	yylval.valor_lexico->token_type = SPECIAL_CHAR;	
+	yylval.valor_lexico->value.v_char = yytext[0];
 }
 
 void boolean(int bool_value) {
@@ -275,7 +277,7 @@ void string() {
 
 void literal() {
 	config_token();
-	yylval.valor_lexico->literal_type = NOT_LITERAL;
+	yylval.valor_lexico->token_type = LITERAL;
 }
 
 void non_literal() {
