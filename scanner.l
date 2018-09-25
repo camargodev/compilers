@@ -5,6 +5,8 @@
 	#include <string.h>
 	#include <stdlib.h>
 	#include "parser.tab.h"
+	#include "lexeme.h"
+	#include "tree.h"
 
 	int get_line_number(void);
 	
@@ -268,7 +270,7 @@ void character() {
 void string() {
 	literal();
 	yylval.valor_lexico->literal_type = STRING;
-	yylval.valor_lexico->value.v_char = strdup(yytext);
+	yylval.valor_lexico->value.v_string = strdup(yytext);
 }
 
 void literal() {
@@ -283,6 +285,6 @@ void non_literal() {
 }
 
 void config_token() {
-	yylval.valor_lexico = (struct lexeme*) malloc(sizeof(struct lexeme));
+	yylval.valor_lexico = (struct Lexeme*) malloc(sizeof(struct Lexeme));
 	yylval.valor_lexico->line_number = yylineno;
 }

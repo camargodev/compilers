@@ -65,7 +65,8 @@ void descompila(void *node) {
 	Node *tree_node = (Node*) node;
 	int children_counter = tree_node->children_num;
 	
-	print_token(tree_node->token);
+	if (tree_node->token != NULL)
+		print_token(tree_node->token);
 	
 	while(children_counter > NO_CHILDREN) {
 		descompila(tree_node->children[tree_node->children_num - children_counter]);
