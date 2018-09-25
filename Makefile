@@ -12,9 +12,9 @@ test_tree: tree.c tree_test.c
 	gcc -o tree tree.o lexeme.h tree_test.o 
 
 test: ./etapa3 test.txt
-	./etapa3 < test.txt > eq1.txt
-	./etapa3 < eq1.txt > eq2.txt
-	diff eq1.txt eq2.txt
+	./etapa3 < test.txt > ast1.txt
+	./etapa3 < ast1.txt > ast2.txt
+	diff ast1.txt ast2.txt
 	echo $?
 
 clean:
@@ -31,5 +31,7 @@ clean:
 	rm -f tree_test.o
 	rm -f lexeme.o
 	rm -f main.o
-	rm -f .parser.y.swf
+	rm -f .parser.y.swp
+	rm -f ast1.txt
+	rm -f ast2.txt
 
