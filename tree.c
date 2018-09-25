@@ -12,7 +12,7 @@ void print_string(char* str);
 void print_special_char(char c);
 void print_char(char c);
 void print_int(int i);
-void print_float(int f);
+void print_float(float f);
 void print_bool(int b);
 
 Node* new_node(struct Lexeme* token) {
@@ -107,8 +107,8 @@ void print_int(int i) {
 	printf("%i ", i);
 }
 
-void print_float(int f) {
-	printf("%i ", f);
+void print_float(float f) {
+	printf("%f ", f);
 }
 
 void print_bool(int b) {
