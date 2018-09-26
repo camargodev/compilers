@@ -65,29 +65,38 @@ void print_token(struct Lexeme* lex_val) {
 }
 
 void descompila(void *node) {
+
 	Node *tree_node = (Node*) node;
-	int children_counter = tree_node->children_num;
+
+	if (tree_node != NULL) {
 	
-	if (tree_node->token != NULL)
-		print_token(tree_node->token);
-	
-	while(children_counter > NO_CHILDREN) {
-		descompila(tree_node->children[tree_node->children_num - children_counter]);
-		children_counter--;
+		int children_counter = tree_node->children_num;
+		
+		if (tree_node->token != NULL)
+			print_token(tree_node->token);
+		
+		while(children_counter > NO_CHILDREN) {
+			descompila(tree_node->children[tree_node->children_num - children_counter]);
+			children_counter--;
+		}
 	}
 }
 
 void libera(void *node) {
 	Node *tree_node = (Node*) node;
-	int children_counter = tree_node->children_num;
-	
-	while(children_counter > NO_CHILDREN) {
-		libera(tree_node->children[tree_node->children_num - children_counter]);
-		children_counter--;
-	}
 
-	free(tree_node->children);
-	free(tree_node);
+	if (tree_node != NULL) {
+	
+		int children_counter = tree_node->children_num;
+		
+		while(children_counter > NO_CHILDREN) {
+			libera(tree_node->children[tree_node->children_num - children_counter]);
+			children_counter--;
+		}
+
+		free(tree_node->children);
+		free(tree_node);
+	}
 
 }
 
