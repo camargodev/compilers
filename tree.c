@@ -88,10 +88,26 @@ void libera(void *node) {
 	if (tree_node != NULL) {
 	
 		int children_counter = tree_node->children_num;
-		
+
+
 		while(children_counter > NO_CHILDREN) {
 			libera(tree_node->children[tree_node->children_num - children_counter]);
 			children_counter--;
+		}
+
+		if (tree_node->token != NULL) {
+			if (tree_node->token->token_type == KEYWORD
+				|| tree_node->token->token_type == OPERATOR
+				|| tree_node->token->token_type == IDENTIFIER) {
+				free(tree_node->token->value.v_string);
+			} else if (tree_node->token->token_type == LITERAL) {			
+				switch (tree_node->token->literal_type) {
+					case STRING:
+						free(tree_node->token->value.v_string);
+						break;
+				}
+			}
+		free(tree_node->token);
 		}
 
 		free(tree_node->children);

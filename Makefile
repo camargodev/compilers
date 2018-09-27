@@ -17,6 +17,9 @@ test: ./etapa3 test.txt
 	diff ast1.txt ast2.txt
 	echo $?
 
+leak_test: ./etapa3 simple_test.txt
+	valgrind --leak-check=full --show-leak-kinds=all -v ./etapa3 < simple_test.txt 
+
 clean:
 	rm -f etapa3
 	rm -f parser.tab.c
