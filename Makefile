@@ -38,6 +38,6 @@ clean:
 	rm -f lexeme.o
 	rm -f main.o
 	rm -f .parser.y.swp
-	rm -f ast1.txt
-	rm -f ast2.txt
+	rm -f eq1.txt
+	rm -f eq2.txt
 

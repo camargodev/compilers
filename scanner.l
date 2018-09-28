@@ -9,6 +9,8 @@
 	#include "tree.h"
 
 	int get_line_number(void);
+
+	struct Lexeme **last_token;
 	
 	void operator();
 	void keyword();
@@ -289,4 +291,5 @@ void non_literal() {
 void config_token() {
 	yylval.valor_lexico = (struct Lexeme*) malloc(sizeof(struct Lexeme));
 	yylval.valor_lexico->line_number = yylineno;
+	last_token = &yylval.valor_lexico;
 }

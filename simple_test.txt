@@ -1,3 +1,1 @@
-int x() {
-	input a;
-}
+x 1

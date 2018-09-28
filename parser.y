@@ -6,6 +6,7 @@
 	
 	extern int yylineno;
 	extern void* arvore;
+	extern struct Lexeme **last_token; 
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -1095,5 +1096,20 @@ func_call_params_end 	: expr func_call_params_body
 
 void yyerror(char const *s)
 {
+	if ((*last_token) != NULL) {
+		printf("%i\n", (*last_token)->token_type);
+		if ((*last_token)->token_type == KEYWORD
+			|| (*last_token)->token_type == OPERATOR
+			|| (*last_token)->token_type == IDENTIFIER) {
+			free((*last_token)->value.v_string);
+		} else if ((*last_token)->token_type == LITERAL) {			
+			switch ((*last_token)->literal_type) {
+				case STRING:
+					free((*last_token)->value.v_string);
+					break;
+			}
+		}
+		free((*last_token));
+	}
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
 }
