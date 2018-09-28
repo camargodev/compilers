@@ -12,15 +12,15 @@ test_tree: tree.c tree_test.c
 	gcc -o tree tree.o lexeme.h tree_test.o 
 
 test: ./etapa3 test.txt
-	./etapa3 < test.txt > ast1.txt
-	./etapa3 < ast1.txt > ast2.txt
-	diff ast1.txt ast2.txt
+	./etapa3 < test.txt > eq1.txt
+	./etapa3 < eq1.txt > eq2.txt
+	diff eq1.txt eq2.txt
 	echo $?
 
 simple_test: ./etapa3 simple_test.txt
 	./etapa3 < simple_test.txt
 
-leak_test: ./etapa3 simple_test.txt
+leak_test: ./etapa3 test.txt
 	valgrind --leak-check=full --show-leak-kinds=all -v ./etapa3 < test.txt 
 
 clean:

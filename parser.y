@@ -131,8 +131,6 @@
 
 %start programa
 
-%locations
-
 %%
 
 /*
