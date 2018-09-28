@@ -10,11 +10,11 @@
 	5) a literal
 */
 
-#define KEYWORD			0
-#define SPECIAL_CHAR	1
-#define OPERATOR		2
-#define IDENTIFIER		3
-#define LITERAL 		4
+#define KEYWORD			100
+#define SPECIAL_CHAR	101
+#define OPERATOR		102
+#define IDENTIFIER		103
+#define LITERAL 		104
 
 /*
 	A literal can be:
@@ -25,16 +25,16 @@
 	5) a string of characteres
 */
 
-#define INT 	10
-#define FLOAT 	11
-#define CHAR 	12
-#define BOOL 	13
-#define STRING 	14
+#define INT 	105
+#define FLOAT 	106
+#define CHAR 	107
+#define BOOL 	108
+#define STRING 	109
 
-#define NOT_LITERAL		15
+#define NOT_LITERAL		110
 
-#define FALSE			000
-#define TRUE			100
+#define FALSE			0
+#define TRUE			1
 
 union Literal {
 	int 	v_int;

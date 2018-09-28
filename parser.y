@@ -980,6 +980,7 @@ expr_vals		: TK_LIT_FLOAT
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
+						add_node($$, $3);
 					}
 				| TK_LIT_CHAR 
 					{

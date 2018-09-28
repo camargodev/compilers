@@ -72,8 +72,9 @@ void descompila(void *node) {
 	
 		int children_counter = tree_node->children_num;
 		
-		if (tree_node->token != NULL)
+		if (tree_node->token != NULL) {
 			print_token(tree_node->token);
+		}
 		
 		while(children_counter > NO_CHILDREN) {
 			descompila(tree_node->children[tree_node->children_num - children_counter]);
@@ -83,6 +84,7 @@ void descompila(void *node) {
 }
 
 void libera(void *node) {
+	
 	Node *tree_node = (Node*) node;
 
 	if (tree_node != NULL) {
@@ -107,12 +109,12 @@ void libera(void *node) {
 						break;
 				}
 			}
-		free(tree_node->token);
+			free(tree_node->token);
 		}
 
 		free(tree_node->children);
 		free(tree_node);
-	}
+	} 
 
 }
 
