@@ -6,6 +6,8 @@ Este arquivo não pode ser modificado.
 #include <stdio.h>
 #include "parser.tab.h" //arquivo gerado com bison -d parser.y
 
+extern int yylex_destroy(void);
+
 void *arvore = NULL;
 void descompila (void *arvore);
 void libera (void *arvore);
@@ -16,5 +18,6 @@ int main (int argc, char **argv)
   descompila (arvore);
   libera(arvore);
   arvore = NULL;
+  yylex_destroy();
   return ret;
 }
