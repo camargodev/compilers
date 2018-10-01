@@ -1,12 +1,15 @@
 %{
 	// João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
+	#include <stdlib.h>
 	#include "tree.h"
 	#include "lexeme.h"
 	
 	extern int yylineno;
 	extern void* arvore;
 	extern struct Lexeme **last_token; 
+
+	extern struct Lexeme **errorsArray;
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -154,7 +157,7 @@ programa :  start
 start : new_type start
 			{ 
 				$$ = $1; 
-				add_node($$, $2); 
+				add_node($$, $2); 				
 			}
 		| global_var start 
 			{ 
@@ -168,16 +171,16 @@ start : new_type start
 			}
 		| %empty 
 			{ 
-				$$ = new_node(NULL); 
+				$$ = new_node(NULL); 				
 			}
 
 type    : TK_PR_INT
 			{ 
-				$$ = new_node($1); 
+				$$ = new_node($1); 				
 			}
 		| TK_PR_FLOAT
 			{ 
-				$$ = new_node($1); 
+				$$ = new_node($1);
 			}
 		| TK_PR_BOOL
 			{ 
@@ -185,7 +188,7 @@ type    : TK_PR_INT
 			}
 		| TK_PR_CHAR
 			{ 
-				$$ = new_node($1); 
+				$$ = new_node($1);
 			}
 		| TK_PR_STRING
 			{ 
@@ -1096,20 +1099,45 @@ func_call_params_end 	: expr func_call_params_body
 
 void yyerror(char const *s)
 {
+	/*
+	//printf("valor de s: %s\n", s);
+	//printf("valor de last_token: %s", (*last_token)->value.v_string);
+	
 	if ((*last_token) != NULL) {
-		printf("%i\n", (*last_token)->token_type);
+		//printf("valor de token1 %i\n", (*last_token)->token_type);
 		if ((*last_token)->token_type == KEYWORD
 			|| (*last_token)->token_type == OPERATOR
 			|| (*last_token)->token_type == IDENTIFIER) {
+			
+			//printf("é identificador\n");
+			printf("string %s\n", (*last_token)->value.v_string);
+
 			free((*last_token)->value.v_string);
 		} else if ((*last_token)->token_type == LITERAL) {			
 			switch ((*last_token)->literal_type) {
 				case STRING:
 					free((*last_token)->value.v_string);
+					
+					printf("é string\n");
+					
 					break;
 			}
 		}
-		free((*last_token));
-	}
+		free((last_token));
+
+		
+		if((*last_token) == NULL)
+			printf("é null\n");
+		else
+			printf("Não é null\n");
+	}*/
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
 }
+
+
+
+
+
+
+
+
