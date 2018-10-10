@@ -1,0 +1,4114 @@
+Terminals unused in grammar
+
+   TOKEN_ERRO
+
+
+Grammar
+
+    0 $accept: programa $end
+
+    1 programa: start
+
+    2 start: new_type start
+    3      | global_var start
+    4      | func start
+    5      | %empty
+
+    6 type: TK_PR_INT
+    7     | TK_PR_FLOAT
+    8     | TK_PR_BOOL
+    9     | TK_PR_CHAR
+   10     | TK_PR_STRING
+
+   11 scope: TK_PR_PRIVATE
+   12      | TK_PR_PUBLIC
+   13      | TK_PR_PROTECTED
+
+   14 var: TK_PR_CONST types TK_IDENTIFICADOR
+   15    | types TK_IDENTIFICADOR
+
+   16 types: type
+   17      | TK_IDENTIFICADOR
+
+   18 bool: TK_LIT_TRUE
+   19     | TK_LIT_FALSE
+
+   20 pipe: TK_OC_FORWARD_PIPE
+   21     | TK_OC_BASH_PIPE
+
+   22 new_type: TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
+
+   23 param_begin: scope param_body
+   24            | param_body
+
+   25 param_body: type TK_IDENTIFICADOR param_end
+
+   26 param_end: ':' param_begin
+   27          | ']'
+
+   28 global_var: TK_IDENTIFICADOR global_var_vec
+
+   29 global_var_vec: '[' index ']' globar_var_begin
+   30               | globar_var_begin
+
+   31 globar_var_begin: TK_PR_STATIC global_var_type
+   32                 | global_var_type
+
+   33 global_var_type: type ';'
+   34                | TK_IDENTIFICADOR ';'
+
+   35 index: TK_LIT_INT
+   36      | '+' TK_LIT_INT
+
+   37 func: TK_PR_STATIC func_begin
+   38     | func_begin
+
+   39 func_begin: type TK_IDENTIFICADOR '(' func_params
+   40           | TK_IDENTIFICADOR TK_IDENTIFICADOR '(' func_params
+
+   41 func_params: ')' func_body
+   42            | var func_params_end
+
+   43 func_params_end: ')' func_body
+   44                | ',' var func_params_end
+
+   45 func_body: '{' cmd_block
+
+   46 cmd_block: '}'
+   47          | cmd cmd_block
+
+   48 cmd: TK_IDENTIFICADOR cmd_id_fix ';'
+   49    | TK_PR_STATIC static_var ';'
+   50    | TK_PR_CONST const_var ';'
+   51    | type TK_IDENTIFICADOR var_end ';'
+   52    | if_then ';'
+   53    | while ';'
+   54    | do_while ';'
+   55    | continue ';'
+   56    | break ';'
+   57    | return ';'
+   58    | for ';'
+   59    | foreach ';'
+   60    | switch ';'
+   61    | input ';'
+   62    | '{' cmd_block ';'
+   63    | output
+   64    | case
+
+   65 input: TK_PR_INPUT expr
+
+   66 output: TK_PR_OUTPUT expr output_vals
+
+   67 output_vals: ';'
+   68            | ',' expr output_vals
+
+   69 if_then: TK_PR_IF '(' expr ')' TK_PR_THEN '{' cmd_block else
+
+   70 else: TK_PR_ELSE '{' cmd_block
+   71     | %empty
+
+   72 while: TK_PR_WHILE '(' expr ')' TK_PR_DO '{' cmd_block
+
+   73 do_while: TK_PR_DO '{' cmd_block TK_PR_WHILE '(' expr ')'
+
+   74 continue: TK_PR_CONTINUE
+
+   75 break: TK_PR_BREAK
+
+   76 return: TK_PR_RETURN expr
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' cmd_for for_scd_list '{' cmd_block
+
+   78 cmd_for: TK_IDENTIFICADOR cmd_id_fix
+   79        | type TK_IDENTIFICADOR var_end
+   80        | TK_PR_STATIC static_var
+   81        | TK_PR_CONST const_var
+   82        | if_then
+   83        | while
+   84        | do_while
+   85        | continue
+   86        | break
+   87        | return
+   88        | for
+   89        | foreach
+   90        | switch
+   91        | input
+   92        | TK_PR_OUTPUT expr
+   93        | '{' cmd_block
+
+   94 for_fst_list: ',' cmd_for for_fst_list
+   95             | ':'
+
+   96 for_scd_list: ',' cmd_for for_scd_list
+   97             | ')'
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' expr foreach_list '{' cmd_block
+
+   99 foreach_list: ',' expr foreach_list
+  100             | ')'
+
+  101 switch: TK_PR_SWITCH '(' expr ')' '{' cmd_block
+
+  102 case: TK_PR_CASE TK_LIT_INT ':'
+
+  103 cmd_id_fix: TK_IDENTIFICADOR
+  104           | id_seq_simple attr
+  105           | '(' func_call_params piped_expr
+
+  106 static_var: TK_PR_CONST const_var
+  107           | const_var
+
+  108 const_var: type TK_IDENTIFICADOR var_end
+  109          | TK_IDENTIFICADOR TK_IDENTIFICADOR
+
+  110 var_end: TK_OC_LE var_lit
+  111        | %empty
+
+  112 var_lit: TK_IDENTIFICADOR
+  113        | TK_LIT_INT
+  114        | TK_LIT_FLOAT
+  115        | TK_LIT_CHAR
+  116        | TK_LIT_STRING
+  117        | TK_LIT_TRUE
+  118        | TK_LIT_FALSE
+
+  119 attr: '=' expr
+  120     | TK_OC_SL expr
+  121     | TK_OC_SR expr
+  122     | pipe un_op TK_IDENTIFICADOR id_seq piped_expr
+
+  123 piped_expr: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
+  124           | %empty
+
+  125 bin_op: '+'
+  126       | '-'
+  127       | '*'
+  128       | '/'
+  129       | '%'
+  130       | '^'
+  131       | '|'
+  132       | '&'
+  133       | '>'
+  134       | '<'
+  135       | TK_OC_AND
+  136       | TK_OC_OR
+  137       | TK_OC_LE
+  138       | TK_OC_NE
+  139       | TK_OC_EQ
+  140       | TK_OC_GE
+
+  141 un_op: not_null_un_op un_op
+  142      | %empty
+
+  143 not_null_un_op: '+'
+  144               | '-'
+  145               | '!'
+  146               | '&'
+  147               | '*'
+  148               | '?'
+  149               | '#'
+
+  150 expr: un_op expr_vals expr_begin
+
+  151 expr_begin: bin_op expr
+  152           | '?' expr ':' expr
+  153           | %empty
+
+  154 expr_vals: TK_LIT_FLOAT
+  155          | TK_LIT_INT
+  156          | TK_IDENTIFICADOR id_seq piped
+  157          | TK_LIT_CHAR
+  158          | TK_LIT_STRING
+  159          | '(' expr ')'
+  160          | bool
+
+  161 piped: %empty
+  162      | pipe TK_IDENTIFICADOR id_seq piped_expr
+
+  163 id_seq: id_seq_simple
+  164       | '(' func_call_params
+
+  165 id_seq_field: '$' TK_IDENTIFICADOR id_seq_field_vec
+  166             | %empty
+
+  167 id_seq_field_vec: '[' expr ']'
+  168                 | %empty
+
+  169 id_seq_simple: '[' expr ']' id_seq_field
+  170              | id_seq_field
+
+  171 func_call_params: ')'
+  172                 | expr func_call_params_body
+  173                 | '.' func_call_params_body
+
+  174 func_call_params_body: ')'
+  175                      | ',' func_call_params_end
+
+  176 func_call_params_end: expr func_call_params_body
+  177                     | '.' func_call_params_body
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'!' (33) 145
+'#' (35) 149
+'$' (36) 165
+'%' (37) 129
+'&' (38) 132 146
+'(' (40) 39 40 69 72 73 77 98 101 105 159 164
+')' (41) 41 43 69 72 73 97 100 101 159 171 174
+'*' (42) 127 147
+'+' (43) 36 125 143
+',' (44) 44 68 94 96 99 175
+'-' (45) 126 144
+'.' (46) 173 177
+'/' (47) 128
+':' (58) 26 77 95 98 102 152
+';' (59) 22 33 34 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 67
+'<' (60) 134
+'=' (61) 119
+'>' (62) 133
+'?' (63) 148 152
+'[' (91) 22 29 167 169
+']' (93) 27 29 167 169
+'^' (94) 130
+'{' (123) 45 62 69 70 72 73 77 93 98 101
+'|' (124) 131
+'}' (125) 46
+error (256)
+TK_PR_INT (258) 6
+TK_PR_FLOAT (259) 7
+TK_PR_BOOL (260) 8
+TK_PR_CHAR (261) 9
+TK_PR_STRING (262) 10
+TK_PR_IF (263) 69
+TK_PR_THEN (264) 69
+TK_PR_ELSE (265) 70
+TK_PR_WHILE (266) 72 73
+TK_PR_DO (267) 72 73
+TK_PR_INPUT (268) 65
+TK_PR_OUTPUT (269) 66 92
+TK_PR_RETURN (270) 76
+TK_PR_CONST (271) 14 50 81 106
+TK_PR_STATIC (272) 31 37 49 80
+TK_PR_FOREACH (273) 98
+TK_PR_FOR (274) 77
+TK_PR_SWITCH (275) 101
+TK_PR_CASE (276) 102
+TK_PR_BREAK (277) 75
+TK_PR_CONTINUE (278) 74
+TK_PR_CLASS (279) 22
+TK_PR_PRIVATE (280) 11
+TK_PR_PUBLIC (281) 12
+TK_PR_PROTECTED (282) 13
+TK_OC_LE (283) 110 137
+TK_OC_GE (284) 140
+TK_OC_EQ (285) 139
+TK_OC_NE (286) 138
+TK_OC_AND (287) 135
+TK_OC_OR (288) 136
+TK_OC_SL (289) 120
+TK_OC_SR (290) 121
+TK_OC_FORWARD_PIPE (291) 20
+TK_OC_BASH_PIPE (292) 21
+TK_LIT_INT (293) 35 36 102 113 155
+TK_LIT_FLOAT (294) 114 154
+TK_LIT_FALSE (295) 19 118
+TK_LIT_TRUE (296) 18 117
+TK_LIT_CHAR (297) 115 157
+TK_LIT_STRING (298) 116 158
+TK_IDENTIFICADOR (299) 14 15 17 22 25 28 34 39 40 48 51 78 79 98 103
+    108 109 112 122 123 156 162 165
+TOKEN_ERRO (300)
+
+
+Nonterminals, with rules where they appear
+
+$accept (71)
+    on left: 0
+programa (72)
+    on left: 1, on right: 0
+start (73)
+    on left: 2 3 4 5, on right: 1 2 3 4
+type (74)
+    on left: 6 7 8 9 10, on right: 16 25 33 39 51 79 108
+scope (75)
+    on left: 11 12 13, on right: 23
+var (76)
+    on left: 14 15, on right: 42 44
+types (77)
+    on left: 16 17, on right: 14 15
+bool (78)
+    on left: 18 19, on right: 160
+pipe (79)
+    on left: 20 21, on right: 122 123 162
+new_type (80)
+    on left: 22, on right: 2
+param_begin (81)
+    on left: 23 24, on right: 22 26
+param_body (82)
+    on left: 25, on right: 23 24
+param_end (83)
+    on left: 26 27, on right: 25
+global_var (84)
+    on left: 28, on right: 3
+global_var_vec (85)
+    on left: 29 30, on right: 28
+globar_var_begin (86)
+    on left: 31 32, on right: 29 30
+global_var_type (87)
+    on left: 33 34, on right: 31 32
+index (88)
+    on left: 35 36, on right: 29
+func (89)
+    on left: 37 38, on right: 4
+func_begin (90)
+    on left: 39 40, on right: 37 38
+func_params (91)
+    on left: 41 42, on right: 39 40
+func_params_end (92)
+    on left: 43 44, on right: 42 44
+func_body (93)
+    on left: 45, on right: 41 43
+cmd_block (94)
+    on left: 46 47, on right: 45 47 62 69 70 72 73 77 93 98 101
+cmd (95)
+    on left: 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64, on right:
+    47
+input (96)
+    on left: 65, on right: 61 91
+output (97)
+    on left: 66, on right: 63
+output_vals (98)
+    on left: 67 68, on right: 66 68
+if_then (99)
+    on left: 69, on right: 52 82
+else (100)
+    on left: 70 71, on right: 69
+while (101)
+    on left: 72, on right: 53 83
+do_while (102)
+    on left: 73, on right: 54 84
+continue (103)
+    on left: 74, on right: 55 85
+break (104)
+    on left: 75, on right: 56 86
+return (105)
+    on left: 76, on right: 57 87
+for (106)
+    on left: 77, on right: 58 88
+cmd_for (107)
+    on left: 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93, on right:
+    77 94 96
+for_fst_list (108)
+    on left: 94 95, on right: 77 94
+for_scd_list (109)
+    on left: 96 97, on right: 77 96
+foreach (110)
+    on left: 98, on right: 59 89
+foreach_list (111)
+    on left: 99 100, on right: 98 99
+switch (112)
+    on left: 101, on right: 60 90
+case (113)
+    on left: 102, on right: 64
+cmd_id_fix (114)
+    on left: 103 104 105, on right: 48 78
+static_var (115)
+    on left: 106 107, on right: 49 80
+const_var (116)
+    on left: 108 109, on right: 50 81 106 107
+var_end (117)
+    on left: 110 111, on right: 51 79 108
+var_lit (118)
+    on left: 112 113 114 115 116 117 118, on right: 110
+attr (119)
+    on left: 119 120 121 122, on right: 104
+piped_expr (120)
+    on left: 123 124, on right: 105 122 123 162
+bin_op (121)
+    on left: 125 126 127 128 129 130 131 132 133 134 135 136 137 138
+    139 140, on right: 151
+un_op (122)
+    on left: 141 142, on right: 122 123 141 150
+not_null_un_op (123)
+    on left: 143 144 145 146 147 148 149, on right: 141
+expr (124)
+    on left: 150, on right: 65 66 68 69 72 73 76 77 92 98 99 101 119
+    120 121 151 152 159 167 169 172 176
+expr_begin (125)
+    on left: 151 152 153, on right: 150
+expr_vals (126)
+    on left: 154 155 156 157 158 159 160, on right: 150
+piped (127)
+    on left: 161 162, on right: 156
+id_seq (128)
+    on left: 163 164, on right: 122 123 156 162
+id_seq_field (129)
+    on left: 165 166, on right: 169 170
+id_seq_field_vec (130)
+    on left: 167 168, on right: 165
+id_seq_simple (131)
+    on left: 169 170, on right: 104 163
+func_call_params (132)
+    on left: 171 172 173, on right: 105 164
+func_call_params_body (133)
+    on left: 174 175, on right: 172 173 176 177
+func_call_params_end (134)
+    on left: 176 177, on right: 175
+
+
+State 0
+
+    0 $accept: . programa $end
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 6
+    TK_PR_CLASS       shift, and go to state 7
+    TK_IDENTIFICADOR  shift, and go to state 8
+
+    $default  reduce using rule 5 (start)
+
+    programa    go to state 9
+    start       go to state 10
+    type        go to state 11
+    new_type    go to state 12
+    global_var  go to state 13
+    func        go to state 14
+    func_begin  go to state 15
+
+
+State 1
+
+    6 type: TK_PR_INT .
+
+    $default  reduce using rule 6 (type)
+
+
+State 2
+
+    7 type: TK_PR_FLOAT .
+
+    $default  reduce using rule 7 (type)
+
+
+State 3
+
+    8 type: TK_PR_BOOL .
+
+    $default  reduce using rule 8 (type)
+
+
+State 4
+
+    9 type: TK_PR_CHAR .
+
+    $default  reduce using rule 9 (type)
+
+
+State 5
+
+   10 type: TK_PR_STRING .
+
+    $default  reduce using rule 10 (type)
+
+
+State 6
+
+   37 func: TK_PR_STATIC . func_begin
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 16
+
+    type        go to state 11
+    func_begin  go to state 17
+
+
+State 7
+
+   22 new_type: TK_PR_CLASS . TK_IDENTIFICADOR '[' param_begin ';'
+
+    TK_IDENTIFICADOR  shift, and go to state 18
+
+
+State 8
+
+   28 global_var: TK_IDENTIFICADOR . global_var_vec
+   40 func_begin: TK_IDENTIFICADOR . TK_IDENTIFICADOR '(' func_params
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 19
+    TK_IDENTIFICADOR  shift, and go to state 20
+    '['               shift, and go to state 21
+
+    type              go to state 22
+    global_var_vec    go to state 23
+    globar_var_begin  go to state 24
+    global_var_type   go to state 25
+
+
+State 9
+
+    0 $accept: programa . $end
+
+    $end  shift, and go to state 26
+
+
+State 10
+
+    1 programa: start .
+
+    $default  reduce using rule 1 (programa)
+
+
+State 11
+
+   39 func_begin: type . TK_IDENTIFICADOR '(' func_params
+
+    TK_IDENTIFICADOR  shift, and go to state 27
+
+
+State 12
+
+    2 start: new_type . start
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 6
+    TK_PR_CLASS       shift, and go to state 7
+    TK_IDENTIFICADOR  shift, and go to state 8
+
+    $default  reduce using rule 5 (start)
+
+    start       go to state 28
+    type        go to state 11
+    new_type    go to state 12
+    global_var  go to state 13
+    func        go to state 14
+    func_begin  go to state 15
+
+
+State 13
+
+    3 start: global_var . start
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 6
+    TK_PR_CLASS       shift, and go to state 7
+    TK_IDENTIFICADOR  shift, and go to state 8
+
+    $default  reduce using rule 5 (start)
+
+    start       go to state 29
+    type        go to state 11
+    new_type    go to state 12
+    global_var  go to state 13
+    func        go to state 14
+    func_begin  go to state 15
+
+
+State 14
+
+    4 start: func . start
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 6
+    TK_PR_CLASS       shift, and go to state 7
+    TK_IDENTIFICADOR  shift, and go to state 8
+
+    $default  reduce using rule 5 (start)
+
+    start       go to state 30
+    type        go to state 11
+    new_type    go to state 12
+    global_var  go to state 13
+    func        go to state 14
+    func_begin  go to state 15
+
+
+State 15
+
+   38 func: func_begin .
+
+    $default  reduce using rule 38 (func)
+
+
+State 16
+
+   40 func_begin: TK_IDENTIFICADOR . TK_IDENTIFICADOR '(' func_params
+
+    TK_IDENTIFICADOR  shift, and go to state 31
+
+
+State 17
+
+   37 func: TK_PR_STATIC func_begin .
+
+    $default  reduce using rule 37 (func)
+
+
+State 18
+
+   22 new_type: TK_PR_CLASS TK_IDENTIFICADOR . '[' param_begin ';'
+
+    '['  shift, and go to state 32
+
+
+State 19
+
+   31 globar_var_begin: TK_PR_STATIC . global_var_type
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 33
+
+    type             go to state 22
+    global_var_type  go to state 34
+
+
+State 20
+
+   34 global_var_type: TK_IDENTIFICADOR . ';'
+   40 func_begin: TK_IDENTIFICADOR TK_IDENTIFICADOR . '(' func_params
+
+    ';'  shift, and go to state 35
+    '('  shift, and go to state 36
+
+
+State 21
+
+   29 global_var_vec: '[' . index ']' globar_var_begin
+
+    TK_LIT_INT  shift, and go to state 37
+    '+'         shift, and go to state 38
+
+    index  go to state 39
+
+
+State 22
+
+   33 global_var_type: type . ';'
+
+    ';'  shift, and go to state 40
+
+
+State 23
+
+   28 global_var: TK_IDENTIFICADOR global_var_vec .
+
+    $default  reduce using rule 28 (global_var)
+
+
+State 24
+
+   30 global_var_vec: globar_var_begin .
+
+    $default  reduce using rule 30 (global_var_vec)
+
+
+State 25
+
+   32 globar_var_begin: global_var_type .
+
+    $default  reduce using rule 32 (globar_var_begin)
+
+
+State 26
+
+    0 $accept: programa $end .
+
+    $default  accept
+
+
+State 27
+
+   39 func_begin: type TK_IDENTIFICADOR . '(' func_params
+
+    '('  shift, and go to state 41
+
+
+State 28
+
+    2 start: new_type start .
+
+    $default  reduce using rule 2 (start)
+
+
+State 29
+
+    3 start: global_var start .
+
+    $default  reduce using rule 3 (start)
+
+
+State 30
+
+    4 start: func start .
+
+    $default  reduce using rule 4 (start)
+
+
+State 31
+
+   40 func_begin: TK_IDENTIFICADOR TK_IDENTIFICADOR . '(' func_params
+
+    '('  shift, and go to state 36
+
+
+State 32
+
+   22 new_type: TK_PR_CLASS TK_IDENTIFICADOR '[' . param_begin ';'
+
+    TK_PR_INT        shift, and go to state 1
+    TK_PR_FLOAT      shift, and go to state 2
+    TK_PR_BOOL       shift, and go to state 3
+    TK_PR_CHAR       shift, and go to state 4
+    TK_PR_STRING     shift, and go to state 5
+    TK_PR_PRIVATE    shift, and go to state 42
+    TK_PR_PUBLIC     shift, and go to state 43
+    TK_PR_PROTECTED  shift, and go to state 44
+
+    type         go to state 45
+    scope        go to state 46
+    param_begin  go to state 47
+    param_body   go to state 48
+
+
+State 33
+
+   34 global_var_type: TK_IDENTIFICADOR . ';'
+
+    ';'  shift, and go to state 35
+
+
+State 34
+
+   31 globar_var_begin: TK_PR_STATIC global_var_type .
+
+    $default  reduce using rule 31 (globar_var_begin)
+
+
+State 35
+
+   34 global_var_type: TK_IDENTIFICADOR ';' .
+
+    $default  reduce using rule 34 (global_var_type)
+
+
+State 36
+
+   40 func_begin: TK_IDENTIFICADOR TK_IDENTIFICADOR '(' . func_params
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_CONST       shift, and go to state 49
+    TK_IDENTIFICADOR  shift, and go to state 50
+    ')'               shift, and go to state 51
+
+    type         go to state 52
+    var          go to state 53
+    types        go to state 54
+    func_params  go to state 55
+
+
+State 37
+
+   35 index: TK_LIT_INT .
+
+    $default  reduce using rule 35 (index)
+
+
+State 38
+
+   36 index: '+' . TK_LIT_INT
+
+    TK_LIT_INT  shift, and go to state 56
+
+
+State 39
+
+   29 global_var_vec: '[' index . ']' globar_var_begin
+
+    ']'  shift, and go to state 57
+
+
+State 40
+
+   33 global_var_type: type ';' .
+
+    $default  reduce using rule 33 (global_var_type)
+
+
+State 41
+
+   39 func_begin: type TK_IDENTIFICADOR '(' . func_params
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_CONST       shift, and go to state 49
+    TK_IDENTIFICADOR  shift, and go to state 50
+    ')'               shift, and go to state 51
+
+    type         go to state 52
+    var          go to state 53
+    types        go to state 54
+    func_params  go to state 58
+
+
+State 42
+
+   11 scope: TK_PR_PRIVATE .
+
+    $default  reduce using rule 11 (scope)
+
+
+State 43
+
+   12 scope: TK_PR_PUBLIC .
+
+    $default  reduce using rule 12 (scope)
+
+
+State 44
+
+   13 scope: TK_PR_PROTECTED .
+
+    $default  reduce using rule 13 (scope)
+
+
+State 45
+
+   25 param_body: type . TK_IDENTIFICADOR param_end
+
+    TK_IDENTIFICADOR  shift, and go to state 59
+
+
+State 46
+
+   23 param_begin: scope . param_body
+
+    TK_PR_INT     shift, and go to state 1
+    TK_PR_FLOAT   shift, and go to state 2
+    TK_PR_BOOL    shift, and go to state 3
+    TK_PR_CHAR    shift, and go to state 4
+    TK_PR_STRING  shift, and go to state 5
+
+    type        go to state 45
+    param_body  go to state 60
+
+
+State 47
+
+   22 new_type: TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin . ';'
+
+    ';'  shift, and go to state 61
+
+
+State 48
+
+   24 param_begin: param_body .
+
+    $default  reduce using rule 24 (param_begin)
+
+
+State 49
+
+   14 var: TK_PR_CONST . types TK_IDENTIFICADOR
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 50
+
+    type   go to state 52
+    types  go to state 62
+
+
+State 50
+
+   17 types: TK_IDENTIFICADOR .
+
+    $default  reduce using rule 17 (types)
+
+
+State 51
+
+   41 func_params: ')' . func_body
+
+    '{'  shift, and go to state 63
+
+    func_body  go to state 64
+
+
+State 52
+
+   16 types: type .
+
+    $default  reduce using rule 16 (types)
+
+
+State 53
+
+   42 func_params: var . func_params_end
+
+    ','  shift, and go to state 65
+    ')'  shift, and go to state 66
+
+    func_params_end  go to state 67
+
+
+State 54
+
+   15 var: types . TK_IDENTIFICADOR
+
+    TK_IDENTIFICADOR  shift, and go to state 68
+
+
+State 55
+
+   40 func_begin: TK_IDENTIFICADOR TK_IDENTIFICADOR '(' func_params .
+
+    $default  reduce using rule 40 (func_begin)
+
+
+State 56
+
+   36 index: '+' TK_LIT_INT .
+
+    $default  reduce using rule 36 (index)
+
+
+State 57
+
+   29 global_var_vec: '[' index ']' . globar_var_begin
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_STATIC      shift, and go to state 19
+    TK_IDENTIFICADOR  shift, and go to state 33
+
+    type              go to state 22
+    globar_var_begin  go to state 69
+    global_var_type   go to state 25
+
+
+State 58
+
+   39 func_begin: type TK_IDENTIFICADOR '(' func_params .
+
+    $default  reduce using rule 39 (func_begin)
+
+
+State 59
+
+   25 param_body: type TK_IDENTIFICADOR . param_end
+
+    ':'  shift, and go to state 70
+    ']'  shift, and go to state 71
+
+    param_end  go to state 72
+
+
+State 60
+
+   23 param_begin: scope param_body .
+
+    $default  reduce using rule 23 (param_begin)
+
+
+State 61
+
+   22 new_type: TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';' .
+
+    $default  reduce using rule 22 (new_type)
+
+
+State 62
+
+   14 var: TK_PR_CONST types . TK_IDENTIFICADOR
+
+    TK_IDENTIFICADOR  shift, and go to state 73
+
+
+State 63
+
+   45 func_body: '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 92
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 64
+
+   41 func_params: ')' func_body .
+
+    $default  reduce using rule 41 (func_params)
+
+
+State 65
+
+   44 func_params_end: ',' . var func_params_end
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_CONST       shift, and go to state 49
+    TK_IDENTIFICADOR  shift, and go to state 50
+
+    type   go to state 52
+    var    go to state 106
+    types  go to state 54
+
+
+State 66
+
+   43 func_params_end: ')' . func_body
+
+    '{'  shift, and go to state 63
+
+    func_body  go to state 107
+
+
+State 67
+
+   42 func_params: var func_params_end .
+
+    $default  reduce using rule 42 (func_params)
+
+
+State 68
+
+   15 var: types TK_IDENTIFICADOR .
+
+    $default  reduce using rule 15 (var)
+
+
+State 69
+
+   29 global_var_vec: '[' index ']' globar_var_begin .
+
+    $default  reduce using rule 29 (global_var_vec)
+
+
+State 70
+
+   26 param_end: ':' . param_begin
+
+    TK_PR_INT        shift, and go to state 1
+    TK_PR_FLOAT      shift, and go to state 2
+    TK_PR_BOOL       shift, and go to state 3
+    TK_PR_CHAR       shift, and go to state 4
+    TK_PR_STRING     shift, and go to state 5
+    TK_PR_PRIVATE    shift, and go to state 42
+    TK_PR_PUBLIC     shift, and go to state 43
+    TK_PR_PROTECTED  shift, and go to state 44
+
+    type         go to state 45
+    scope        go to state 46
+    param_begin  go to state 108
+    param_body   go to state 48
+
+
+State 71
+
+   27 param_end: ']' .
+
+    $default  reduce using rule 27 (param_end)
+
+
+State 72
+
+   25 param_body: type TK_IDENTIFICADOR param_end .
+
+    $default  reduce using rule 25 (param_body)
+
+
+State 73
+
+   14 var: TK_PR_CONST types TK_IDENTIFICADOR .
+
+    $default  reduce using rule 14 (var)
+
+
+State 74
+
+   69 if_then: TK_PR_IF . '(' expr ')' TK_PR_THEN '{' cmd_block else
+
+    '('  shift, and go to state 109
+
+
+State 75
+
+   72 while: TK_PR_WHILE . '(' expr ')' TK_PR_DO '{' cmd_block
+
+    '('  shift, and go to state 110
+
+
+State 76
+
+   73 do_while: TK_PR_DO . '{' cmd_block TK_PR_WHILE '(' expr ')'
+
+    '{'  shift, and go to state 111
+
+
+State 77
+
+   65 input: TK_PR_INPUT . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 121
+
+
+State 78
+
+   66 output: TK_PR_OUTPUT . expr output_vals
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 122
+
+
+State 79
+
+   76 return: TK_PR_RETURN . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 123
+
+
+State 80
+
+   50 cmd: TK_PR_CONST . const_var ';'
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 124
+
+    type       go to state 125
+    const_var  go to state 126
+
+
+State 81
+
+   49 cmd: TK_PR_STATIC . static_var ';'
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_CONST       shift, and go to state 127
+    TK_IDENTIFICADOR  shift, and go to state 124
+
+    type        go to state 125
+    static_var  go to state 128
+    const_var   go to state 129
+
+
+State 82
+
+   98 foreach: TK_PR_FOREACH . '(' TK_IDENTIFICADOR ':' expr foreach_list '{' cmd_block
+
+    '('  shift, and go to state 130
+
+
+State 83
+
+   77 for: TK_PR_FOR . '(' cmd_for for_fst_list expr ':' cmd_for for_scd_list '{' cmd_block
+
+    '('  shift, and go to state 131
+
+
+State 84
+
+  101 switch: TK_PR_SWITCH . '(' expr ')' '{' cmd_block
+
+    '('  shift, and go to state 132
+
+
+State 85
+
+  102 case: TK_PR_CASE . TK_LIT_INT ':'
+
+    TK_LIT_INT  shift, and go to state 133
+
+
+State 86
+
+   75 break: TK_PR_BREAK .
+
+    $default  reduce using rule 75 (break)
+
+
+State 87
+
+   74 continue: TK_PR_CONTINUE .
+
+    $default  reduce using rule 74 (continue)
+
+
+State 88
+
+   48 cmd: TK_IDENTIFICADOR . cmd_id_fix ';'
+
+    TK_IDENTIFICADOR  shift, and go to state 134
+    '('               shift, and go to state 135
+    '['               shift, and go to state 136
+    '$'               shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    cmd_id_fix     go to state 138
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 140
+
+
+State 89
+
+   62 cmd: '{' . cmd_block ';'
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 141
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 90
+
+   46 cmd_block: '}' .
+
+    $default  reduce using rule 46 (cmd_block)
+
+
+State 91
+
+   51 cmd: type . TK_IDENTIFICADOR var_end ';'
+
+    TK_IDENTIFICADOR  shift, and go to state 142
+
+
+State 92
+
+   45 func_body: '{' cmd_block .
+
+    $default  reduce using rule 45 (func_body)
+
+
+State 93
+
+   47 cmd_block: cmd . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 143
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 94
+
+   61 cmd: input . ';'
+
+    ';'  shift, and go to state 144
+
+
+State 95
+
+   63 cmd: output .
+
+    $default  reduce using rule 63 (cmd)
+
+
+State 96
+
+   52 cmd: if_then . ';'
+
+    ';'  shift, and go to state 145
+
+
+State 97
+
+   53 cmd: while . ';'
+
+    ';'  shift, and go to state 146
+
+
+State 98
+
+   54 cmd: do_while . ';'
+
+    ';'  shift, and go to state 147
+
+
+State 99
+
+   55 cmd: continue . ';'
+
+    ';'  shift, and go to state 148
+
+
+State 100
+
+   56 cmd: break . ';'
+
+    ';'  shift, and go to state 149
+
+
+State 101
+
+   57 cmd: return . ';'
+
+    ';'  shift, and go to state 150
+
+
+State 102
+
+   58 cmd: for . ';'
+
+    ';'  shift, and go to state 151
+
+
+State 103
+
+   59 cmd: foreach . ';'
+
+    ';'  shift, and go to state 152
+
+
+State 104
+
+   60 cmd: switch . ';'
+
+    ';'  shift, and go to state 153
+
+
+State 105
+
+   64 cmd: case .
+
+    $default  reduce using rule 64 (cmd)
+
+
+State 106
+
+   44 func_params_end: ',' var . func_params_end
+
+    ','  shift, and go to state 65
+    ')'  shift, and go to state 66
+
+    func_params_end  go to state 154
+
+
+State 107
+
+   43 func_params_end: ')' func_body .
+
+    $default  reduce using rule 43 (func_params_end)
+
+
+State 108
+
+   26 param_end: ':' param_begin .
+
+    $default  reduce using rule 26 (param_end)
+
+
+State 109
+
+   69 if_then: TK_PR_IF '(' . expr ')' TK_PR_THEN '{' cmd_block else
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 155
+
+
+State 110
+
+   72 while: TK_PR_WHILE '(' . expr ')' TK_PR_DO '{' cmd_block
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 156
+
+
+State 111
+
+   73 do_while: TK_PR_DO '{' . cmd_block TK_PR_WHILE '(' expr ')'
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 157
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 112
+
+  143 not_null_un_op: '+' .
+
+    $default  reduce using rule 143 (not_null_un_op)
+
+
+State 113
+
+  144 not_null_un_op: '-' .
+
+    $default  reduce using rule 144 (not_null_un_op)
+
+
+State 114
+
+  148 not_null_un_op: '?' .
+
+    $default  reduce using rule 148 (not_null_un_op)
+
+
+State 115
+
+  147 not_null_un_op: '*' .
+
+    $default  reduce using rule 147 (not_null_un_op)
+
+
+State 116
+
+  145 not_null_un_op: '!' .
+
+    $default  reduce using rule 145 (not_null_un_op)
+
+
+State 117
+
+  146 not_null_un_op: '&' .
+
+    $default  reduce using rule 146 (not_null_un_op)
+
+
+State 118
+
+  149 not_null_un_op: '#' .
+
+    $default  reduce using rule 149 (not_null_un_op)
+
+
+State 119
+
+  150 expr: un_op . expr_vals expr_begin
+
+    TK_LIT_INT        shift, and go to state 158
+    TK_LIT_FLOAT      shift, and go to state 159
+    TK_LIT_FALSE      shift, and go to state 160
+    TK_LIT_TRUE       shift, and go to state 161
+    TK_LIT_CHAR       shift, and go to state 162
+    TK_LIT_STRING     shift, and go to state 163
+    TK_IDENTIFICADOR  shift, and go to state 164
+    '('               shift, and go to state 165
+
+    bool       go to state 166
+    expr_vals  go to state 167
+
+
+State 120
+
+  141 un_op: not_null_un_op . un_op
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 168
+    not_null_un_op  go to state 120
+
+
+State 121
+
+   65 input: TK_PR_INPUT expr .
+
+    $default  reduce using rule 65 (input)
+
+
+State 122
+
+   66 output: TK_PR_OUTPUT expr . output_vals
+
+    ','  shift, and go to state 169
+    ';'  shift, and go to state 170
+
+    output_vals  go to state 171
+
+
+State 123
+
+   76 return: TK_PR_RETURN expr .
+
+    $default  reduce using rule 76 (return)
+
+
+State 124
+
+  109 const_var: TK_IDENTIFICADOR . TK_IDENTIFICADOR
+
+    TK_IDENTIFICADOR  shift, and go to state 172
+
+
+State 125
+
+  108 const_var: type . TK_IDENTIFICADOR var_end
+
+    TK_IDENTIFICADOR  shift, and go to state 173
+
+
+State 126
+
+   50 cmd: TK_PR_CONST const_var . ';'
+
+    ';'  shift, and go to state 174
+
+
+State 127
+
+  106 static_var: TK_PR_CONST . const_var
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 124
+
+    type       go to state 125
+    const_var  go to state 175
+
+
+State 128
+
+   49 cmd: TK_PR_STATIC static_var . ';'
+
+    ';'  shift, and go to state 176
+
+
+State 129
+
+  107 static_var: const_var .
+
+    $default  reduce using rule 107 (static_var)
+
+
+State 130
+
+   98 foreach: TK_PR_FOREACH '(' . TK_IDENTIFICADOR ':' expr foreach_list '{' cmd_block
+
+    TK_IDENTIFICADOR  shift, and go to state 177
+
+
+State 131
+
+   77 for: TK_PR_FOR '(' . cmd_for for_fst_list expr ':' cmd_for for_scd_list '{' cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 178
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 179
+    TK_PR_STATIC      shift, and go to state 180
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 181
+    '{'               shift, and go to state 182
+
+    type      go to state 183
+    input     go to state 184
+    if_then   go to state 185
+    while     go to state 186
+    do_while  go to state 187
+    continue  go to state 188
+    break     go to state 189
+    return    go to state 190
+    for       go to state 191
+    cmd_for   go to state 192
+    foreach   go to state 193
+    switch    go to state 194
+
+
+State 132
+
+  101 switch: TK_PR_SWITCH '(' . expr ')' '{' cmd_block
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 195
+
+
+State 133
+
+  102 case: TK_PR_CASE TK_LIT_INT . ':'
+
+    ':'  shift, and go to state 196
+
+
+State 134
+
+  103 cmd_id_fix: TK_IDENTIFICADOR .
+
+    $default  reduce using rule 103 (cmd_id_fix)
+
+
+State 135
+
+  105 cmd_id_fix: '(' . func_call_params piped_expr
+
+    ')'  shift, and go to state 197
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+    '.'  shift, and go to state 198
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op             go to state 119
+    not_null_un_op    go to state 120
+    expr              go to state 199
+    func_call_params  go to state 200
+
+
+State 136
+
+  169 id_seq_simple: '[' . expr ']' id_seq_field
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 201
+
+
+State 137
+
+  165 id_seq_field: '$' . TK_IDENTIFICADOR id_seq_field_vec
+
+    TK_IDENTIFICADOR  shift, and go to state 202
+
+
+State 138
+
+   48 cmd: TK_IDENTIFICADOR cmd_id_fix . ';'
+
+    ';'  shift, and go to state 203
+
+
+State 139
+
+  170 id_seq_simple: id_seq_field .
+
+    $default  reduce using rule 170 (id_seq_simple)
+
+
+State 140
+
+  104 cmd_id_fix: id_seq_simple . attr
+
+    TK_OC_SL            shift, and go to state 204
+    TK_OC_SR            shift, and go to state 205
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+    '='                 shift, and go to state 208
+
+    pipe  go to state 209
+    attr  go to state 210
+
+
+State 141
+
+   62 cmd: '{' cmd_block . ';'
+
+    ';'  shift, and go to state 211
+
+
+State 142
+
+   51 cmd: type TK_IDENTIFICADOR . var_end ';'
+
+    TK_OC_LE  shift, and go to state 212
+
+    $default  reduce using rule 111 (var_end)
+
+    var_end  go to state 213
+
+
+State 143
+
+   47 cmd_block: cmd cmd_block .
+
+    $default  reduce using rule 47 (cmd_block)
+
+
+State 144
+
+   61 cmd: input ';' .
+
+    $default  reduce using rule 61 (cmd)
+
+
+State 145
+
+   52 cmd: if_then ';' .
+
+    $default  reduce using rule 52 (cmd)
+
+
+State 146
+
+   53 cmd: while ';' .
+
+    $default  reduce using rule 53 (cmd)
+
+
+State 147
+
+   54 cmd: do_while ';' .
+
+    $default  reduce using rule 54 (cmd)
+
+
+State 148
+
+   55 cmd: continue ';' .
+
+    $default  reduce using rule 55 (cmd)
+
+
+State 149
+
+   56 cmd: break ';' .
+
+    $default  reduce using rule 56 (cmd)
+
+
+State 150
+
+   57 cmd: return ';' .
+
+    $default  reduce using rule 57 (cmd)
+
+
+State 151
+
+   58 cmd: for ';' .
+
+    $default  reduce using rule 58 (cmd)
+
+
+State 152
+
+   59 cmd: foreach ';' .
+
+    $default  reduce using rule 59 (cmd)
+
+
+State 153
+
+   60 cmd: switch ';' .
+
+    $default  reduce using rule 60 (cmd)
+
+
+State 154
+
+   44 func_params_end: ',' var func_params_end .
+
+    $default  reduce using rule 44 (func_params_end)
+
+
+State 155
+
+   69 if_then: TK_PR_IF '(' expr . ')' TK_PR_THEN '{' cmd_block else
+
+    ')'  shift, and go to state 214
+
+
+State 156
+
+   72 while: TK_PR_WHILE '(' expr . ')' TK_PR_DO '{' cmd_block
+
+    ')'  shift, and go to state 215
+
+
+State 157
+
+   73 do_while: TK_PR_DO '{' cmd_block . TK_PR_WHILE '(' expr ')'
+
+    TK_PR_WHILE  shift, and go to state 216
+
+
+State 158
+
+  155 expr_vals: TK_LIT_INT .
+
+    $default  reduce using rule 155 (expr_vals)
+
+
+State 159
+
+  154 expr_vals: TK_LIT_FLOAT .
+
+    $default  reduce using rule 154 (expr_vals)
+
+
+State 160
+
+   19 bool: TK_LIT_FALSE .
+
+    $default  reduce using rule 19 (bool)
+
+
+State 161
+
+   18 bool: TK_LIT_TRUE .
+
+    $default  reduce using rule 18 (bool)
+
+
+State 162
+
+  157 expr_vals: TK_LIT_CHAR .
+
+    $default  reduce using rule 157 (expr_vals)
+
+
+State 163
+
+  158 expr_vals: TK_LIT_STRING .
+
+    $default  reduce using rule 158 (expr_vals)
+
+
+State 164
+
+  156 expr_vals: TK_IDENTIFICADOR . id_seq piped
+
+    '('  shift, and go to state 217
+    '['  shift, and go to state 136
+    '$'  shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    id_seq         go to state 218
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 219
+
+
+State 165
+
+  159 expr_vals: '(' . expr ')'
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 220
+
+
+State 166
+
+  160 expr_vals: bool .
+
+    $default  reduce using rule 160 (expr_vals)
+
+
+State 167
+
+  150 expr: un_op expr_vals . expr_begin
+
+    TK_OC_LE   shift, and go to state 221
+    TK_OC_GE   shift, and go to state 222
+    TK_OC_EQ   shift, and go to state 223
+    TK_OC_NE   shift, and go to state 224
+    TK_OC_AND  shift, and go to state 225
+    TK_OC_OR   shift, and go to state 226
+    '+'        shift, and go to state 227
+    '-'        shift, and go to state 228
+    '|'        shift, and go to state 229
+    '?'        shift, and go to state 230
+    '*'        shift, and go to state 231
+    '/'        shift, and go to state 232
+    '<'        shift, and go to state 233
+    '>'        shift, and go to state 234
+    '&'        shift, and go to state 235
+    '%'        shift, and go to state 236
+    '^'        shift, and go to state 237
+
+    $default  reduce using rule 153 (expr_begin)
+
+    bin_op      go to state 238
+    expr_begin  go to state 239
+
+
+State 168
+
+  141 un_op: not_null_un_op un_op .
+
+    $default  reduce using rule 141 (un_op)
+
+
+State 169
+
+   68 output_vals: ',' . expr output_vals
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 240
+
+
+State 170
+
+   67 output_vals: ';' .
+
+    $default  reduce using rule 67 (output_vals)
+
+
+State 171
+
+   66 output: TK_PR_OUTPUT expr output_vals .
+
+    $default  reduce using rule 66 (output)
+
+
+State 172
+
+  109 const_var: TK_IDENTIFICADOR TK_IDENTIFICADOR .
+
+    $default  reduce using rule 109 (const_var)
+
+
+State 173
+
+  108 const_var: type TK_IDENTIFICADOR . var_end
+
+    TK_OC_LE  shift, and go to state 212
+
+    $default  reduce using rule 111 (var_end)
+
+    var_end  go to state 241
+
+
+State 174
+
+   50 cmd: TK_PR_CONST const_var ';' .
+
+    $default  reduce using rule 50 (cmd)
+
+
+State 175
+
+  106 static_var: TK_PR_CONST const_var .
+
+    $default  reduce using rule 106 (static_var)
+
+
+State 176
+
+   49 cmd: TK_PR_STATIC static_var ';' .
+
+    $default  reduce using rule 49 (cmd)
+
+
+State 177
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR . ':' expr foreach_list '{' cmd_block
+
+    ':'  shift, and go to state 242
+
+
+State 178
+
+   92 cmd_for: TK_PR_OUTPUT . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 243
+
+
+State 179
+
+   81 cmd_for: TK_PR_CONST . const_var
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_IDENTIFICADOR  shift, and go to state 124
+
+    type       go to state 125
+    const_var  go to state 244
+
+
+State 180
+
+   80 cmd_for: TK_PR_STATIC . static_var
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_CONST       shift, and go to state 127
+    TK_IDENTIFICADOR  shift, and go to state 124
+
+    type        go to state 125
+    static_var  go to state 245
+    const_var   go to state 129
+
+
+State 181
+
+   78 cmd_for: TK_IDENTIFICADOR . cmd_id_fix
+
+    TK_IDENTIFICADOR  shift, and go to state 134
+    '('               shift, and go to state 135
+    '['               shift, and go to state 136
+    '$'               shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    cmd_id_fix     go to state 246
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 140
+
+
+State 182
+
+   93 cmd_for: '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 247
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 183
+
+   79 cmd_for: type . TK_IDENTIFICADOR var_end
+
+    TK_IDENTIFICADOR  shift, and go to state 248
+
+
+State 184
+
+   91 cmd_for: input .
+
+    $default  reduce using rule 91 (cmd_for)
+
+
+State 185
+
+   82 cmd_for: if_then .
+
+    $default  reduce using rule 82 (cmd_for)
+
+
+State 186
+
+   83 cmd_for: while .
+
+    $default  reduce using rule 83 (cmd_for)
+
+
+State 187
+
+   84 cmd_for: do_while .
+
+    $default  reduce using rule 84 (cmd_for)
+
+
+State 188
+
+   85 cmd_for: continue .
+
+    $default  reduce using rule 85 (cmd_for)
+
+
+State 189
+
+   86 cmd_for: break .
+
+    $default  reduce using rule 86 (cmd_for)
+
+
+State 190
+
+   87 cmd_for: return .
+
+    $default  reduce using rule 87 (cmd_for)
+
+
+State 191
+
+   88 cmd_for: for .
+
+    $default  reduce using rule 88 (cmd_for)
+
+
+State 192
+
+   77 for: TK_PR_FOR '(' cmd_for . for_fst_list expr ':' cmd_for for_scd_list '{' cmd_block
+
+    ','  shift, and go to state 249
+    ':'  shift, and go to state 250
+
+    for_fst_list  go to state 251
+
+
+State 193
+
+   89 cmd_for: foreach .
+
+    $default  reduce using rule 89 (cmd_for)
+
+
+State 194
+
+   90 cmd_for: switch .
+
+    $default  reduce using rule 90 (cmd_for)
+
+
+State 195
+
+  101 switch: TK_PR_SWITCH '(' expr . ')' '{' cmd_block
+
+    ')'  shift, and go to state 252
+
+
+State 196
+
+  102 case: TK_PR_CASE TK_LIT_INT ':' .
+
+    $default  reduce using rule 102 (case)
+
+
+State 197
+
+  171 func_call_params: ')' .
+
+    $default  reduce using rule 171 (func_call_params)
+
+
+State 198
+
+  173 func_call_params: '.' . func_call_params_body
+
+    ','  shift, and go to state 253
+    ')'  shift, and go to state 254
+
+    func_call_params_body  go to state 255
+
+
+State 199
+
+  172 func_call_params: expr . func_call_params_body
+
+    ','  shift, and go to state 253
+    ')'  shift, and go to state 254
+
+    func_call_params_body  go to state 256
+
+
+State 200
+
+  105 cmd_id_fix: '(' func_call_params . piped_expr
+
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+
+    $default  reduce using rule 124 (piped_expr)
+
+    pipe        go to state 257
+    piped_expr  go to state 258
+
+
+State 201
+
+  169 id_seq_simple: '[' expr . ']' id_seq_field
+
+    ']'  shift, and go to state 259
+
+
+State 202
+
+  165 id_seq_field: '$' TK_IDENTIFICADOR . id_seq_field_vec
+
+    '['  shift, and go to state 260
+
+    $default  reduce using rule 168 (id_seq_field_vec)
+
+    id_seq_field_vec  go to state 261
+
+
+State 203
+
+   48 cmd: TK_IDENTIFICADOR cmd_id_fix ';' .
+
+    $default  reduce using rule 48 (cmd)
+
+
+State 204
+
+  120 attr: TK_OC_SL . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 262
+
+
+State 205
+
+  121 attr: TK_OC_SR . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 263
+
+
+State 206
+
+   20 pipe: TK_OC_FORWARD_PIPE .
+
+    $default  reduce using rule 20 (pipe)
+
+
+State 207
+
+   21 pipe: TK_OC_BASH_PIPE .
+
+    $default  reduce using rule 21 (pipe)
+
+
+State 208
+
+  119 attr: '=' . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 264
+
+
+State 209
+
+  122 attr: pipe . un_op TK_IDENTIFICADOR id_seq piped_expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 265
+    not_null_un_op  go to state 120
+
+
+State 210
+
+  104 cmd_id_fix: id_seq_simple attr .
+
+    $default  reduce using rule 104 (cmd_id_fix)
+
+
+State 211
+
+   62 cmd: '{' cmd_block ';' .
+
+    $default  reduce using rule 62 (cmd)
+
+
+State 212
+
+  110 var_end: TK_OC_LE . var_lit
+
+    TK_LIT_INT        shift, and go to state 266
+    TK_LIT_FLOAT      shift, and go to state 267
+    TK_LIT_FALSE      shift, and go to state 268
+    TK_LIT_TRUE       shift, and go to state 269
+    TK_LIT_CHAR       shift, and go to state 270
+    TK_LIT_STRING     shift, and go to state 271
+    TK_IDENTIFICADOR  shift, and go to state 272
+
+    var_lit  go to state 273
+
+
+State 213
+
+   51 cmd: type TK_IDENTIFICADOR var_end . ';'
+
+    ';'  shift, and go to state 274
+
+
+State 214
+
+   69 if_then: TK_PR_IF '(' expr ')' . TK_PR_THEN '{' cmd_block else
+
+    TK_PR_THEN  shift, and go to state 275
+
+
+State 215
+
+   72 while: TK_PR_WHILE '(' expr ')' . TK_PR_DO '{' cmd_block
+
+    TK_PR_DO  shift, and go to state 276
+
+
+State 216
+
+   73 do_while: TK_PR_DO '{' cmd_block TK_PR_WHILE . '(' expr ')'
+
+    '('  shift, and go to state 277
+
+
+State 217
+
+  164 id_seq: '(' . func_call_params
+
+    ')'  shift, and go to state 197
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+    '.'  shift, and go to state 198
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op             go to state 119
+    not_null_un_op    go to state 120
+    expr              go to state 199
+    func_call_params  go to state 278
+
+
+State 218
+
+  156 expr_vals: TK_IDENTIFICADOR id_seq . piped
+
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+
+    $default  reduce using rule 161 (piped)
+
+    pipe   go to state 279
+    piped  go to state 280
+
+
+State 219
+
+  163 id_seq: id_seq_simple .
+
+    $default  reduce using rule 163 (id_seq)
+
+
+State 220
+
+  159 expr_vals: '(' expr . ')'
+
+    ')'  shift, and go to state 281
+
+
+State 221
+
+  137 bin_op: TK_OC_LE .
+
+    $default  reduce using rule 137 (bin_op)
+
+
+State 222
+
+  140 bin_op: TK_OC_GE .
+
+    $default  reduce using rule 140 (bin_op)
+
+
+State 223
+
+  139 bin_op: TK_OC_EQ .
+
+    $default  reduce using rule 139 (bin_op)
+
+
+State 224
+
+  138 bin_op: TK_OC_NE .
+
+    $default  reduce using rule 138 (bin_op)
+
+
+State 225
+
+  135 bin_op: TK_OC_AND .
+
+    $default  reduce using rule 135 (bin_op)
+
+
+State 226
+
+  136 bin_op: TK_OC_OR .
+
+    $default  reduce using rule 136 (bin_op)
+
+
+State 227
+
+  125 bin_op: '+' .
+
+    $default  reduce using rule 125 (bin_op)
+
+
+State 228
+
+  126 bin_op: '-' .
+
+    $default  reduce using rule 126 (bin_op)
+
+
+State 229
+
+  131 bin_op: '|' .
+
+    $default  reduce using rule 131 (bin_op)
+
+
+State 230
+
+  152 expr_begin: '?' . expr ':' expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 282
+
+
+State 231
+
+  127 bin_op: '*' .
+
+    $default  reduce using rule 127 (bin_op)
+
+
+State 232
+
+  128 bin_op: '/' .
+
+    $default  reduce using rule 128 (bin_op)
+
+
+State 233
+
+  134 bin_op: '<' .
+
+    $default  reduce using rule 134 (bin_op)
+
+
+State 234
+
+  133 bin_op: '>' .
+
+    $default  reduce using rule 133 (bin_op)
+
+
+State 235
+
+  132 bin_op: '&' .
+
+    $default  reduce using rule 132 (bin_op)
+
+
+State 236
+
+  129 bin_op: '%' .
+
+    $default  reduce using rule 129 (bin_op)
+
+
+State 237
+
+  130 bin_op: '^' .
+
+    $default  reduce using rule 130 (bin_op)
+
+
+State 238
+
+  151 expr_begin: bin_op . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 283
+
+
+State 239
+
+  150 expr: un_op expr_vals expr_begin .
+
+    $default  reduce using rule 150 (expr)
+
+
+State 240
+
+   68 output_vals: ',' expr . output_vals
+
+    ','  shift, and go to state 169
+    ';'  shift, and go to state 170
+
+    output_vals  go to state 284
+
+
+State 241
+
+  108 const_var: type TK_IDENTIFICADOR var_end .
+
+    $default  reduce using rule 108 (const_var)
+
+
+State 242
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' . expr foreach_list '{' cmd_block
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 285
+
+
+State 243
+
+   92 cmd_for: TK_PR_OUTPUT expr .
+
+    $default  reduce using rule 92 (cmd_for)
+
+
+State 244
+
+   81 cmd_for: TK_PR_CONST const_var .
+
+    $default  reduce using rule 81 (cmd_for)
+
+
+State 245
+
+   80 cmd_for: TK_PR_STATIC static_var .
+
+    $default  reduce using rule 80 (cmd_for)
+
+
+State 246
+
+   78 cmd_for: TK_IDENTIFICADOR cmd_id_fix .
+
+    $default  reduce using rule 78 (cmd_for)
+
+
+State 247
+
+   93 cmd_for: '{' cmd_block .
+
+    $default  reduce using rule 93 (cmd_for)
+
+
+State 248
+
+   79 cmd_for: type TK_IDENTIFICADOR . var_end
+
+    TK_OC_LE  shift, and go to state 212
+
+    $default  reduce using rule 111 (var_end)
+
+    var_end  go to state 286
+
+
+State 249
+
+   94 for_fst_list: ',' . cmd_for for_fst_list
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 178
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 179
+    TK_PR_STATIC      shift, and go to state 180
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 181
+    '{'               shift, and go to state 182
+
+    type      go to state 183
+    input     go to state 184
+    if_then   go to state 185
+    while     go to state 186
+    do_while  go to state 187
+    continue  go to state 188
+    break     go to state 189
+    return    go to state 190
+    for       go to state 191
+    cmd_for   go to state 287
+    foreach   go to state 193
+    switch    go to state 194
+
+
+State 250
+
+   95 for_fst_list: ':' .
+
+    $default  reduce using rule 95 (for_fst_list)
+
+
+State 251
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list . expr ':' cmd_for for_scd_list '{' cmd_block
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 288
+
+
+State 252
+
+  101 switch: TK_PR_SWITCH '(' expr ')' . '{' cmd_block
+
+    '{'  shift, and go to state 289
+
+
+State 253
+
+  175 func_call_params_body: ',' . func_call_params_end
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+    '.'  shift, and go to state 290
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op                 go to state 119
+    not_null_un_op        go to state 120
+    expr                  go to state 291
+    func_call_params_end  go to state 292
+
+
+State 254
+
+  174 func_call_params_body: ')' .
+
+    $default  reduce using rule 174 (func_call_params_body)
+
+
+State 255
+
+  173 func_call_params: '.' func_call_params_body .
+
+    $default  reduce using rule 173 (func_call_params)
+
+
+State 256
+
+  172 func_call_params: expr func_call_params_body .
+
+    $default  reduce using rule 172 (func_call_params)
+
+
+State 257
+
+  123 piped_expr: pipe . un_op TK_IDENTIFICADOR id_seq piped_expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 293
+    not_null_un_op  go to state 120
+
+
+State 258
+
+  105 cmd_id_fix: '(' func_call_params piped_expr .
+
+    $default  reduce using rule 105 (cmd_id_fix)
+
+
+State 259
+
+  169 id_seq_simple: '[' expr ']' . id_seq_field
+
+    '$'  shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    id_seq_field  go to state 294
+
+
+State 260
+
+  167 id_seq_field_vec: '[' . expr ']'
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 295
+
+
+State 261
+
+  165 id_seq_field: '$' TK_IDENTIFICADOR id_seq_field_vec .
+
+    $default  reduce using rule 165 (id_seq_field)
+
+
+State 262
+
+  120 attr: TK_OC_SL expr .
+
+    $default  reduce using rule 120 (attr)
+
+
+State 263
+
+  121 attr: TK_OC_SR expr .
+
+    $default  reduce using rule 121 (attr)
+
+
+State 264
+
+  119 attr: '=' expr .
+
+    $default  reduce using rule 119 (attr)
+
+
+State 265
+
+  122 attr: pipe un_op . TK_IDENTIFICADOR id_seq piped_expr
+
+    TK_IDENTIFICADOR  shift, and go to state 296
+
+
+State 266
+
+  113 var_lit: TK_LIT_INT .
+
+    $default  reduce using rule 113 (var_lit)
+
+
+State 267
+
+  114 var_lit: TK_LIT_FLOAT .
+
+    $default  reduce using rule 114 (var_lit)
+
+
+State 268
+
+  118 var_lit: TK_LIT_FALSE .
+
+    $default  reduce using rule 118 (var_lit)
+
+
+State 269
+
+  117 var_lit: TK_LIT_TRUE .
+
+    $default  reduce using rule 117 (var_lit)
+
+
+State 270
+
+  115 var_lit: TK_LIT_CHAR .
+
+    $default  reduce using rule 115 (var_lit)
+
+
+State 271
+
+  116 var_lit: TK_LIT_STRING .
+
+    $default  reduce using rule 116 (var_lit)
+
+
+State 272
+
+  112 var_lit: TK_IDENTIFICADOR .
+
+    $default  reduce using rule 112 (var_lit)
+
+
+State 273
+
+  110 var_end: TK_OC_LE var_lit .
+
+    $default  reduce using rule 110 (var_end)
+
+
+State 274
+
+   51 cmd: type TK_IDENTIFICADOR var_end ';' .
+
+    $default  reduce using rule 51 (cmd)
+
+
+State 275
+
+   69 if_then: TK_PR_IF '(' expr ')' TK_PR_THEN . '{' cmd_block else
+
+    '{'  shift, and go to state 297
+
+
+State 276
+
+   72 while: TK_PR_WHILE '(' expr ')' TK_PR_DO . '{' cmd_block
+
+    '{'  shift, and go to state 298
+
+
+State 277
+
+   73 do_while: TK_PR_DO '{' cmd_block TK_PR_WHILE '(' . expr ')'
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 299
+
+
+State 278
+
+  164 id_seq: '(' func_call_params .
+
+    $default  reduce using rule 164 (id_seq)
+
+
+State 279
+
+  162 piped: pipe . TK_IDENTIFICADOR id_seq piped_expr
+
+    TK_IDENTIFICADOR  shift, and go to state 300
+
+
+State 280
+
+  156 expr_vals: TK_IDENTIFICADOR id_seq piped .
+
+    $default  reduce using rule 156 (expr_vals)
+
+
+State 281
+
+  159 expr_vals: '(' expr ')' .
+
+    $default  reduce using rule 159 (expr_vals)
+
+
+State 282
+
+  152 expr_begin: '?' expr . ':' expr
+
+    ':'  shift, and go to state 301
+
+
+State 283
+
+  151 expr_begin: bin_op expr .
+
+    $default  reduce using rule 151 (expr_begin)
+
+
+State 284
+
+   68 output_vals: ',' expr output_vals .
+
+    $default  reduce using rule 68 (output_vals)
+
+
+State 285
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' expr . foreach_list '{' cmd_block
+
+    ','  shift, and go to state 302
+    ')'  shift, and go to state 303
+
+    foreach_list  go to state 304
+
+
+State 286
+
+   79 cmd_for: type TK_IDENTIFICADOR var_end .
+
+    $default  reduce using rule 79 (cmd_for)
+
+
+State 287
+
+   94 for_fst_list: ',' cmd_for . for_fst_list
+
+    ','  shift, and go to state 249
+    ':'  shift, and go to state 250
+
+    for_fst_list  go to state 305
+
+
+State 288
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr . ':' cmd_for for_scd_list '{' cmd_block
+
+    ':'  shift, and go to state 306
+
+
+State 289
+
+  101 switch: TK_PR_SWITCH '(' expr ')' '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 307
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 290
+
+  177 func_call_params_end: '.' . func_call_params_body
+
+    ','  shift, and go to state 253
+    ')'  shift, and go to state 254
+
+    func_call_params_body  go to state 308
+
+
+State 291
+
+  176 func_call_params_end: expr . func_call_params_body
+
+    ','  shift, and go to state 253
+    ')'  shift, and go to state 254
+
+    func_call_params_body  go to state 309
+
+
+State 292
+
+  175 func_call_params_body: ',' func_call_params_end .
+
+    $default  reduce using rule 175 (func_call_params_body)
+
+
+State 293
+
+  123 piped_expr: pipe un_op . TK_IDENTIFICADOR id_seq piped_expr
+
+    TK_IDENTIFICADOR  shift, and go to state 310
+
+
+State 294
+
+  169 id_seq_simple: '[' expr ']' id_seq_field .
+
+    $default  reduce using rule 169 (id_seq_simple)
+
+
+State 295
+
+  167 id_seq_field_vec: '[' expr . ']'
+
+    ']'  shift, and go to state 311
+
+
+State 296
+
+  122 attr: pipe un_op TK_IDENTIFICADOR . id_seq piped_expr
+
+    '('  shift, and go to state 217
+    '['  shift, and go to state 136
+    '$'  shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    id_seq         go to state 312
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 219
+
+
+State 297
+
+   69 if_then: TK_PR_IF '(' expr ')' TK_PR_THEN '{' . cmd_block else
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 313
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 298
+
+   72 while: TK_PR_WHILE '(' expr ')' TK_PR_DO '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 314
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 299
+
+   73 do_while: TK_PR_DO '{' cmd_block TK_PR_WHILE '(' expr . ')'
+
+    ')'  shift, and go to state 315
+
+
+State 300
+
+  162 piped: pipe TK_IDENTIFICADOR . id_seq piped_expr
+
+    '('  shift, and go to state 217
+    '['  shift, and go to state 136
+    '$'  shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    id_seq         go to state 316
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 219
+
+
+State 301
+
+  152 expr_begin: '?' expr ':' . expr
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 317
+
+
+State 302
+
+   99 foreach_list: ',' . expr foreach_list
+
+    '+'  shift, and go to state 112
+    '-'  shift, and go to state 113
+    '?'  shift, and go to state 114
+    '*'  shift, and go to state 115
+    '!'  shift, and go to state 116
+    '&'  shift, and go to state 117
+    '#'  shift, and go to state 118
+
+    $default  reduce using rule 142 (un_op)
+
+    un_op           go to state 119
+    not_null_un_op  go to state 120
+    expr            go to state 318
+
+
+State 303
+
+  100 foreach_list: ')' .
+
+    $default  reduce using rule 100 (foreach_list)
+
+
+State 304
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' expr foreach_list . '{' cmd_block
+
+    '{'  shift, and go to state 319
+
+
+State 305
+
+   94 for_fst_list: ',' cmd_for for_fst_list .
+
+    $default  reduce using rule 94 (for_fst_list)
+
+
+State 306
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' . cmd_for for_scd_list '{' cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 178
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 179
+    TK_PR_STATIC      shift, and go to state 180
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 181
+    '{'               shift, and go to state 182
+
+    type      go to state 183
+    input     go to state 184
+    if_then   go to state 185
+    while     go to state 186
+    do_while  go to state 187
+    continue  go to state 188
+    break     go to state 189
+    return    go to state 190
+    for       go to state 191
+    cmd_for   go to state 320
+    foreach   go to state 193
+    switch    go to state 194
+
+
+State 307
+
+  101 switch: TK_PR_SWITCH '(' expr ')' '{' cmd_block .
+
+    $default  reduce using rule 101 (switch)
+
+
+State 308
+
+  177 func_call_params_end: '.' func_call_params_body .
+
+    $default  reduce using rule 177 (func_call_params_end)
+
+
+State 309
+
+  176 func_call_params_end: expr func_call_params_body .
+
+    $default  reduce using rule 176 (func_call_params_end)
+
+
+State 310
+
+  123 piped_expr: pipe un_op TK_IDENTIFICADOR . id_seq piped_expr
+
+    '('  shift, and go to state 217
+    '['  shift, and go to state 136
+    '$'  shift, and go to state 137
+
+    $default  reduce using rule 166 (id_seq_field)
+
+    id_seq         go to state 321
+    id_seq_field   go to state 139
+    id_seq_simple  go to state 219
+
+
+State 311
+
+  167 id_seq_field_vec: '[' expr ']' .
+
+    $default  reduce using rule 167 (id_seq_field_vec)
+
+
+State 312
+
+  122 attr: pipe un_op TK_IDENTIFICADOR id_seq . piped_expr
+
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+
+    $default  reduce using rule 124 (piped_expr)
+
+    pipe        go to state 257
+    piped_expr  go to state 322
+
+
+State 313
+
+   69 if_then: TK_PR_IF '(' expr ')' TK_PR_THEN '{' cmd_block . else
+
+    TK_PR_ELSE  shift, and go to state 323
+
+    $default  reduce using rule 71 (else)
+
+    else  go to state 324
+
+
+State 314
+
+   72 while: TK_PR_WHILE '(' expr ')' TK_PR_DO '{' cmd_block .
+
+    $default  reduce using rule 72 (while)
+
+
+State 315
+
+   73 do_while: TK_PR_DO '{' cmd_block TK_PR_WHILE '(' expr ')' .
+
+    $default  reduce using rule 73 (do_while)
+
+
+State 316
+
+  162 piped: pipe TK_IDENTIFICADOR id_seq . piped_expr
+
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+
+    $default  reduce using rule 124 (piped_expr)
+
+    pipe        go to state 257
+    piped_expr  go to state 325
+
+
+State 317
+
+  152 expr_begin: '?' expr ':' expr .
+
+    $default  reduce using rule 152 (expr_begin)
+
+
+State 318
+
+   99 foreach_list: ',' expr . foreach_list
+
+    ','  shift, and go to state 302
+    ')'  shift, and go to state 303
+
+    foreach_list  go to state 326
+
+
+State 319
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' expr foreach_list '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 327
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 320
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' cmd_for . for_scd_list '{' cmd_block
+
+    ','  shift, and go to state 328
+    ')'  shift, and go to state 329
+
+    for_scd_list  go to state 330
+
+
+State 321
+
+  123 piped_expr: pipe un_op TK_IDENTIFICADOR id_seq . piped_expr
+
+    TK_OC_FORWARD_PIPE  shift, and go to state 206
+    TK_OC_BASH_PIPE     shift, and go to state 207
+
+    $default  reduce using rule 124 (piped_expr)
+
+    pipe        go to state 257
+    piped_expr  go to state 331
+
+
+State 322
+
+  122 attr: pipe un_op TK_IDENTIFICADOR id_seq piped_expr .
+
+    $default  reduce using rule 122 (attr)
+
+
+State 323
+
+   70 else: TK_PR_ELSE . '{' cmd_block
+
+    '{'  shift, and go to state 332
+
+
+State 324
+
+   69 if_then: TK_PR_IF '(' expr ')' TK_PR_THEN '{' cmd_block else .
+
+    $default  reduce using rule 69 (if_then)
+
+
+State 325
+
+  162 piped: pipe TK_IDENTIFICADOR id_seq piped_expr .
+
+    $default  reduce using rule 162 (piped)
+
+
+State 326
+
+   99 foreach_list: ',' expr foreach_list .
+
+    $default  reduce using rule 99 (foreach_list)
+
+
+State 327
+
+   98 foreach: TK_PR_FOREACH '(' TK_IDENTIFICADOR ':' expr foreach_list '{' cmd_block .
+
+    $default  reduce using rule 98 (foreach)
+
+
+State 328
+
+   96 for_scd_list: ',' . cmd_for for_scd_list
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 178
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 179
+    TK_PR_STATIC      shift, and go to state 180
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 181
+    '{'               shift, and go to state 182
+
+    type      go to state 183
+    input     go to state 184
+    if_then   go to state 185
+    while     go to state 186
+    do_while  go to state 187
+    continue  go to state 188
+    break     go to state 189
+    return    go to state 190
+    for       go to state 191
+    cmd_for   go to state 333
+    foreach   go to state 193
+    switch    go to state 194
+
+
+State 329
+
+   97 for_scd_list: ')' .
+
+    $default  reduce using rule 97 (for_scd_list)
+
+
+State 330
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' cmd_for for_scd_list . '{' cmd_block
+
+    '{'  shift, and go to state 334
+
+
+State 331
+
+  123 piped_expr: pipe un_op TK_IDENTIFICADOR id_seq piped_expr .
+
+    $default  reduce using rule 123 (piped_expr)
+
+
+State 332
+
+   70 else: TK_PR_ELSE '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 335
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 333
+
+   96 for_scd_list: ',' cmd_for . for_scd_list
+
+    ','  shift, and go to state 328
+    ')'  shift, and go to state 329
+
+    for_scd_list  go to state 336
+
+
+State 334
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' cmd_for for_scd_list '{' . cmd_block
+
+    TK_PR_INT         shift, and go to state 1
+    TK_PR_FLOAT       shift, and go to state 2
+    TK_PR_BOOL        shift, and go to state 3
+    TK_PR_CHAR        shift, and go to state 4
+    TK_PR_STRING      shift, and go to state 5
+    TK_PR_IF          shift, and go to state 74
+    TK_PR_WHILE       shift, and go to state 75
+    TK_PR_DO          shift, and go to state 76
+    TK_PR_INPUT       shift, and go to state 77
+    TK_PR_OUTPUT      shift, and go to state 78
+    TK_PR_RETURN      shift, and go to state 79
+    TK_PR_CONST       shift, and go to state 80
+    TK_PR_STATIC      shift, and go to state 81
+    TK_PR_FOREACH     shift, and go to state 82
+    TK_PR_FOR         shift, and go to state 83
+    TK_PR_SWITCH      shift, and go to state 84
+    TK_PR_CASE        shift, and go to state 85
+    TK_PR_BREAK       shift, and go to state 86
+    TK_PR_CONTINUE    shift, and go to state 87
+    TK_IDENTIFICADOR  shift, and go to state 88
+    '{'               shift, and go to state 89
+    '}'               shift, and go to state 90
+
+    type       go to state 91
+    cmd_block  go to state 337
+    cmd        go to state 93
+    input      go to state 94
+    output     go to state 95
+    if_then    go to state 96
+    while      go to state 97
+    do_while   go to state 98
+    continue   go to state 99
+    break      go to state 100
+    return     go to state 101
+    for        go to state 102
+    foreach    go to state 103
+    switch     go to state 104
+    case       go to state 105
+
+
+State 335
+
+   70 else: TK_PR_ELSE '{' cmd_block .
+
+    $default  reduce using rule 70 (else)
+
+
+State 336
+
+   96 for_scd_list: ',' cmd_for for_scd_list .
+
+    $default  reduce using rule 96 (for_scd_list)
+
+
+State 337
+
+   77 for: TK_PR_FOR '(' cmd_for for_fst_list expr ':' cmd_for for_scd_list '{' cmd_block .
+
+    $default  reduce using rule 77 (for)
