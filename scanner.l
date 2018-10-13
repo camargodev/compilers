@@ -9,9 +9,7 @@
 	#include "tree.h"
 
 	int get_line_number(void);
-
-	struct Lexeme **last_token;
-
+	
 	void operator();
 	void keyword();
 	void identifier();
@@ -24,10 +22,6 @@
 	void literal();
 	void non_literal();
 	void config_token();
-
-	struct Lexeme **arrayTokens;
-	void adicionaPtrToken(struct Lexeme* valor_lexico);
-
 %}
 
 %option noyywrap
@@ -295,25 +289,4 @@ void non_literal() {
 void config_token() {
 	yylval.valor_lexico = (struct Lexeme*) malloc(sizeof(struct Lexeme));
 	yylval.valor_lexico->line_number = yylineno;
-	last_token = &yylval.valor_lexico;
-
-	adicionaPtrToken(yylval.valor_lexico);
-}
-
-void adicionaPtrToken(struct Lexeme* valor_lexico)
-{
-	int numPointers;
-
-	if(arrayTokens == NULL)
-	{
-		arrayTokens = (struct Lexeme **)malloc(sizeof(struct Lexeme *));		
-	}
-	else
-	{
-		arrayTokens = (struct Lexeme **)realloc(arrayTokens, sizeof(arrayTokens) + sizeof(struct Lexeme *));		
-	}
-
-	numPointers = sizeof(arrayTokens) / sizeof(struct Lexeme *);
-
-	arrayTokens[numPointers - 1] = valor_lexico;
 }

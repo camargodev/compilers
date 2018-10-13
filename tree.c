@@ -14,11 +14,6 @@ void print_char(char c);
 void print_int(int i);
 void print_float(float f);
 void print_bool(int b);
-void adicionaPtrNode(Node* newNode);
-
-
-Node **arrayNodes;
-extern struct Lexeme **arrayTokens;
 
 Node* new_node(struct Lexeme* token) {
 	
@@ -38,56 +33,6 @@ void add_node(Node *root, Node *child) {
 									root->children_num* sizeof(Node**));
 	
 	root->children[root->children_num - 1] = child;
-
-	adicionaPtrNode(child);
-}
-
-void adicionaPtrNode(Node* newNode)
-{
-	int numPointers;
-
-	//root->children = (Node**) realloc(root->children, 
-	//								root->children_num* sizeof(Node**));
-
-	if(arrayNodes == NULL)
-	{
-		//printf("arraNodes é NULL\n");
-		arrayNodes = (Node **)malloc(sizeof(Node **));	
-		arrayNodes[0] = newNode;
-	}
-	else
-	{
-		numPointers = sizeof(**arrayNodes) / sizeof(Node);
-
-		arrayNodes = (Node **)realloc(arrayNodes, numPointers * sizeof(Node **) + sizeof(Node **));	
-
-		printf("size realloc: %ld\n", numPointers * sizeof(Node **) + sizeof(Node **));
-
-		printf("numPointers: %i\n", numPointers);
-	
-		printf("sizeof arrayNodes **: %ld\n", sizeof(**arrayNodes));
-		printf("sizeof Node**: %ld\n", sizeof(Node **));
-		printf("sizeof Node*: %ld\n", sizeof(Node *));
-		printf("sizeof Node: %ld\n", sizeof(Node));
-
-		print_token(arrayNodes[numPointers - 1]->token);
-	
-		arrayNodes[numPointers - 1] = newNode;		
-	}
-}
-
-void printArrayNodes()
-{
-	int numPointers = sizeof(arrayNodes) / sizeof(Node);
-	int i = 0;
-	Node* node;
-	
-	for(i = 0; i < numPointers; i++)
-	{
-		*node = *arrayNodes[i * sizeof(Node)];
-		printf("Cheguei aqui\n");
-		print_token(node->token);
-	}
 }
 
 void print_token(struct Lexeme* lex_val) {
@@ -96,7 +41,6 @@ void print_token(struct Lexeme* lex_val) {
 		print_string(lex_val->value.v_string);
 	} else if (lex_val->token_type == SPECIAL_CHAR) {
 		print_special_char(lex_val->value.v_char);
-		
 		if (lex_val->value.v_char == '{' || lex_val->value.v_char == '}' || lex_val->value.v_char == ';')
 			printf("\n"); 
 	} else if (lex_val->token_type == LITERAL) {
@@ -141,8 +85,6 @@ void descompila(void *node) {
 
 void libera(void *node) {
 	
-	//printArrayNodes();
-
 	Node *tree_node = (Node*) node;
 
 	if (tree_node != NULL) {
@@ -172,9 +114,6 @@ void libera(void *node) {
 
 		free(tree_node->children);
 		free(tree_node);
-
-		free(*arrayNodes);
-		free(*arrayTokens);
 	} 
 
 }
