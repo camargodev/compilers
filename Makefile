@@ -3,8 +3,8 @@
 all: parser.y scanner.l main.c
 	bison -d parser.y --report-file=report
 	flex scanner.l
-	gcc -g -c lex.yy.c parser.tab.c tree.c main.c
-	gcc -g -o etapa3 lex.yy.o parser.tab.o tree.o main.o -lfl
+	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c
+	gcc -g -o etapa3 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
 
 clean:
 	rm -f etapa3
@@ -17,6 +17,8 @@ clean:
 	rm -f report
 	rm -f tree
 	rm -f tree.o
+	rm -f table
+	rm -f table.o
 	rm -f tree_test.o
 	rm -f lexeme.o
 	rm -f main.o
