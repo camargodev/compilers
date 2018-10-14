@@ -1,6 +1,9 @@
 // João Vitor de Camargo
 // Marcellus Farias
 
+#ifndef LEXEME_H
+#define LEXEME_H
+
 /*
 	A token can be:
 	1) a keyword
@@ -53,12 +56,12 @@ union Literal {
 		- valor do token
 */
 
-struct Lexeme {
+typedef struct Lexeme {
 	int 	line_number;
 	int 	token_type;
 	int 	literal_type;
 	union 	Literal value;
-};
+} Lexeme;
 
 /*
 	Essa função recebe:
@@ -68,3 +71,5 @@ struct Lexeme {
 	- o valor
 
 */
+
+#endif

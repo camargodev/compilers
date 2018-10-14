@@ -5,12 +5,15 @@ Este arquivo não pode ser modificado.
 */
 #include <stdio.h>
 #include "parser.tab.h" //arquivo gerado com bison -d parser.y
+#include "table.h"
 
 extern int yylex_destroy(void);
 
 void *arvore = NULL;
 void descompila (void *arvore);
 void libera (void *arvore);
+
+table_stack * stack;
 
 int main (int argc, char **argv)
 {

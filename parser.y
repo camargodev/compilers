@@ -3,9 +3,11 @@
 	#include <stdio.h>
 	#include "tree.h"
 	#include "lexeme.h"
+	#include "table.h"
 	
 	extern int yylineno;
 	extern void* arvore;
+	extern table_stack * stack;
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -148,6 +150,10 @@ programa :  start
 			{ 
 				$$ = $1;
 				arvore = $$;
+
+				stack = (table_stack *) malloc(sizeof(table_stack));
+				stack->array = NULL;
+				stack->num_tables = NO_TABLES;
 			}
 
 start : new_type start
