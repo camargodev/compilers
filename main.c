@@ -14,6 +14,8 @@ void descompila (void *arvore);
 void libera (void *arvore);
 
 table_stack * stack;
+int error_code = 0;
+char * current_token;
 
 int main (int argc, char **argv)
 {
@@ -22,5 +24,5 @@ int main (int argc, char **argv)
   libera(arvore);
   arvore = NULL;
   yylex_destroy();
-  return ret;
+  return error_code;
 }

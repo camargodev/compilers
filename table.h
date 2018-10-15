@@ -2,6 +2,8 @@
 // Marcellus Farias
 
 #include "lexeme.h"
+#include "nature.h"
+#include "size.h"
 
 #define NO_TABLES -1
 
@@ -23,7 +25,7 @@ typedef struct function_arguments {
 
 typedef struct user_type_arguments {
 
-	int access_modification;
+	char * scope;
 	int token_type;
 
 	char * token_name;
@@ -49,8 +51,10 @@ typedef struct line {
 	func_args * function_args;
 	user_type_args * user_type_args;
 
+	int num_user_type_args;
+
 	// The real value from the token
-	Lexeme yyval;
+	Lexeme lexeme; //Really need this?
 
 	//	Values if it is an array
 	Lexeme * array_vals;
@@ -85,5 +89,7 @@ void pop(table_stack * table_stack);
 
 // FUNCTIONS that manage the information of the tables.
 
-int is_declared (table_stack * stack, Lexeme token);
-void declare_token(table_stack * stack, Lexeme token, int global_declaration);
+int is_declared (table_stack * stack, char* token);
+void add_user_type(table_stack * stack, Lexeme * token);
+void add_user_type_properties(table_stack * stack, char * key, char * current_scope, Lexeme * token);
+table_line inicialize_line(Lexeme * token_name);

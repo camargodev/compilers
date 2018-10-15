@@ -1,13 +1,21 @@
 %{
 	// João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
+	#include <stdlib.h>
 	#include "tree.h"
 	#include "lexeme.h"
 	#include "table.h"
+	#include "errors.h"
 	
 	extern int yylineno;
 	extern void* arvore;
 	extern table_stack * stack;
+	extern int error_code;
+
+	//The bison's structure made us do this gambiarra
+	extern char * current_token;
+	char * current_scope;
+
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -151,9 +159,16 @@ programa :  start
 				$$ = $1;
 				arvore = $$;
 
+				//initializing stack
 				stack = (table_stack *) malloc(sizeof(table_stack));
 				stack->array = NULL;
 				stack->num_tables = NO_TABLES;
+
+				//first table will be global scope table
+				table table = create_table();
+				stack->num_tables++;
+				stack->array = malloc(sizeof(table) * stack->num_tables);
+				stack->array[0] = table;
 			}
 
 start : new_type start
@@ -199,14 +214,17 @@ type    : TK_PR_INT
 
 scope   : TK_PR_PRIVATE
 			{ 
+				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
 			}
 		| TK_PR_PUBLIC
 			{ 
+				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
 			}
 		| TK_PR_PROTECTED
 			{ 
+				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
 			}
 
@@ -251,6 +269,14 @@ pipe 	: TK_OC_FORWARD_PIPE
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 				{	
+					// first try
+					if(is_declared(stack, $2->value.v_string))
+						exit(ERR_DECLARED);
+					else
+						add_user_type(stack, $2);
+
+					current_token = $2->value.v_string;
+
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, new_node($3));
@@ -261,15 +287,17 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope param_body
 				{ 	
 					$$ = $1;
-					add_node($$, $2);
+					add_node($$, $2);					
 				}
 			| param_body
 				{	
+					current_scope = "public";
 					$$ = $1; 
 				}
 
 param_body  : type TK_IDENTIFICADOR param_end
 				{	
+					add_user_type_properties(stack, current_token, current_scope, $2);
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
