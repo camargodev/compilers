@@ -1,0 +1,2 @@
+class x [int y];
+class y [int x];

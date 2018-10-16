@@ -6,6 +6,12 @@ all: parser.y scanner.l main.c
 	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c
 	gcc -g -o etapa3 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
 
+test: ./etapa3 test.txt
+	./etapa3 < test.txt > eq1.txt
+	./etapa3 < eq1.txt > eq2.txt
+	diff eq1.txt eq2.txt
+	echo $?
+
 clean:
 	rm -f etapa3
 	rm -f parser.tab.c

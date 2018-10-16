@@ -156,19 +156,32 @@
 
 programa :  start  
 			{ 
-				$$ = $1;
-				arvore = $$;
-
+			//Foi pra MAIN por causa do Bug
+			/*
 				//initializing stack
 				stack = (table_stack *) malloc(sizeof(table_stack));
 				stack->array = NULL;
 				stack->num_tables = NO_TABLES;
 
+				printf("Inicializei stack->numtables\n");
+				
+				printf("\tPilha inicializada!\n");
+
+				printf("Primeiro print_stack\n");
+				print_stack(stack);
+
+				
 				//first table will be global scope table
 				table table = create_table();
 				stack->num_tables++;
 				stack->array = malloc(sizeof(table) * stack->num_tables);
 				stack->array[0] = table;
+
+				printf("\tSegundo print_stack\n");
+				print_stack(stack);	*/
+
+				$$ = $1;
+				arvore = $$;
 			}
 
 start : new_type start
@@ -214,18 +227,21 @@ type    : TK_PR_INT
 
 scope   : TK_PR_PRIVATE
 			{ 
-				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
+				current_scope = $1->value.v_string;
+				printf("Current_Scope : %s", $1->value.v_string);
 			}
 		| TK_PR_PUBLIC
 			{ 
-				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
+				current_scope = $1->value.v_string;
+				printf("Current_Scope : %s", $1->value.v_string);
 			}
 		| TK_PR_PROTECTED
 			{ 
-				current_scope = $1->value.v_string;
 				$$ = new_node($1); 
+				current_scope = $1->value.v_string;
+				printf("Current_Scope : %s", $1->value.v_string);
 			}
 
 var     : TK_PR_CONST types TK_IDENTIFICADOR
@@ -270,18 +286,26 @@ pipe 	: TK_OC_FORWARD_PIPE
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 				{	
 					// first try
-					if(is_declared(stack, $2->value.v_string))
-						exit(ERR_DECLARED);
-					else
-						add_user_type(stack, $2);
-
-					current_token = $2->value.v_string;
-
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, new_node($3));
 					add_node($$, $4);
 					add_node($$, new_node($5));
+
+					printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
+					if(is_declared(stack, $2->value.v_string))
+					{
+						printf("[NEW_TYPE] Erro: já foi declarado!\n");
+						exit(ERR_DECLARED);
+					}
+					else
+					{
+						add_user_type(stack, $2);
+					}
+
+					current_token = $2->value.v_string;
+
+					
 				}
 
 param_begin : scope param_body
@@ -291,14 +315,14 @@ param_begin : scope param_body
 				}
 			| param_body
 				{	
-					current_scope = "public";
 					$$ = $1; 
+					current_scope = "public";
 				}
 
 param_body  : type TK_IDENTIFICADOR param_end
 				{	
-					add_user_type_properties(stack, current_token, current_scope, $2);
 					$$ = $1;
+					add_user_type_properties(stack, current_token, current_scope, $2);
 					add_node($$, new_node($2));
 					add_node($$, $3);
 				}

@@ -7,16 +7,10 @@
 table create_table(){
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
-
-	table_line line;
-	
-	line.declaration_line = -1;
-	line.nature = -1;
-	line.token_type = -1;
-	line.token_size = -1;	
+	table.num_lines = NO_LINES;
 	//line.function_arguments = (struct Lexeme*) malloc(sizeof(struct Lexeme));
 
-	table.lines[0] = line;
+	//table.lines[0] = line;
 
 	return table;
 }
@@ -49,6 +43,97 @@ void pop(table_stack * table_stack){
 	}	
 }
 
+// DEBUGGING FUNCTIONS
+
+void print_line(table_line line)
+{
+
+	printf("[PRINT_LINE] Entreno print_line\n");
+	print_cabecalho_table_part1();
+	printf("\t%d\t", line.declaration_line);
+	printf("%d\t", line.nature);
+	printf("%d\t", line.token_type);
+	printf("%d\t", line.token_size);
+	printf("%d\t", line.is_function);
+	printf("%d\t", line.is_user_type);
+	printf("%d\t", line.array_size);
+	printf("%d\t", line.num_user_type_args);
+	/*print_cabecalho_table_part2();
+	printf("\tFunction_Args");
+	printf("\t\t\t\tUser_Type_Args");
+	printf("\t\t\t\tLexeme");
+	printf("\t\t\t\tArray_Vals");*/
+	printf("\n");
+}
+
+void print_table(table table)
+{
+	int i;
+
+	if (table.num_lines == NO_LINES)
+	{
+		printf("Tabela sem linhas!\n");
+	}
+	else
+	{
+		//print_cabecalho_table();
+
+		for(i = 0; i <= table.num_lines; i++)
+		{
+			printf("\tLinha de índice : %d\n", i);
+			print_line(table.lines[i]);			
+		}
+
+		printf("Tabela terminada de ser impressa!\n");
+	}
+	return;
+}
+
+void print_stack(table_stack * stack)
+{
+	int i;
+	
+	if(stack->num_tables == NO_TABLES)
+		printf("Sem tables na pilha!\n");
+	else
+	{
+		for(i = 0; i <= stack->num_tables; i++)
+		{
+			printf("\tTabela de índice : %d\n", i);
+			print_table(stack->array[i]);			
+		}
+
+		printf("Pilha terminada de ser impressa!\n");
+	}
+}
+
+void print_cabecalho_table_part1()
+{
+	printf("+----------------------------------------------------------+\n");
+	printf("\tDEC");
+	printf("\tNAT");
+	printf("\tTTY");
+	printf("\tTSI");
+	printf("\tIFU");
+	printf("\tIUT");
+	printf("\tASI");
+	printf("\tNUT");
+	
+	printf("\n");
+
+	return;
+}
+
+void print_cabecalho_table_part2()
+{
+	printf("\tFunction_Args");
+	printf("\t\t\t\tUser_Type_Args");
+	printf("\t\t\t\tLexeme");
+	printf("\t\t\t\tArray_Vals");
+
+	return;
+}
+
 /*
 	FIND A TOKEN IN TABLES
 	
@@ -69,14 +154,15 @@ int is_declared (table_stack * stack, char* token){
 		while(num_actual_table != NO_TABLES)
 		{
 			int line_counter = 0;
-			//table_line ** lines = &stack->array[actual_table].lines;
-
-			if (&stack->array[num_actual_table].lines != NULL)
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
 			{
-				//table_line ** line = &stack->array[actual_table].lines[line_counter];
-				while(&stack->array[num_actual_table].lines[line_counter] != NULL) 
-				{
-					if (stack->array[num_actual_table].lines[line_counter].token_name == token) 
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					//printf("Token do arraY : %s, Token parametro : %s, strcmp : %d", 
+					//	stack->array[num_actual_table].lines[line_counter].token_name, token, strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token));
+					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
 						return TRUE;
 					}
@@ -85,7 +171,7 @@ int is_declared (table_stack * stack, char* token){
 			}
 
 			num_actual_table--;
-		}
+		}		
 
 		return FALSE;
 	}
@@ -101,10 +187,10 @@ void add_user_type(table_stack * stack, Lexeme * token)
 {
 	int table_index = 0;
 
-	if (stack->array != NULL)
+	if (stack->num_tables != NO_TABLES)
 	{
 		table_line line;
-
+		
 		line = inicialize_line(token);
 		line.token_name = token->value.v_string;
 		line.declaration_line = token->line_number;
@@ -118,14 +204,17 @@ void add_user_type(table_stack * stack, Lexeme * token)
 		line.num_user_type_args = 0;
 		line.token_size = 0;
 		
-		//line.yyval
 		line.array_vals = NULL;
 
+		printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+				
 		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
-															 sizeof(table_line) * ++stack->array[table_index].num_lines);
-		
-		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;// arrumar aqui de acordo com o parametro
+															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+		print_line(line);
+		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
 	}
+
+	return;
 }
 
 
@@ -133,7 +222,7 @@ void add_user_type_properties(table_stack * stack, char * key, char * current_sc
 {
 	int table_index = 0;
 
-	if (stack->array != NULL)
+	if (stack->num_tables != NO_TABLES)
 	{
 		int line_index = 0;
 		table_line line;
@@ -141,11 +230,17 @@ void add_user_type_properties(table_stack * stack, char * key, char * current_sc
 		do
 		{
 			line = stack->array[table_index].lines[line_index];
+			printf("[ADD_USER_TYPE_PROPERTIES] line_index : %d, token_name = %s", line_index, line.token_name);
+			print_line(line);
 			line_index++;
-		} while (line_index < stack->array[table_index].num_lines
+		} while (line_index <= stack->array[table_index].num_lines
 				&& line.token_name != key);
 
 		line_index--;
+
+		printf("[ADD_USER_TYPE_PROPERTIES] Passou do while!\n");
+		
+		printf("[ADD_USER_TYPE_PROPERTIES] Token_Type : %d\n", token->token_type);
 
 		switch(token->token_type)
 		{
@@ -162,7 +257,7 @@ void add_user_type_properties(table_stack * stack, char * key, char * current_sc
 				line.token_size = SIZE_BOOL;
 				break;
 			case STRING:
-				line.token_size = -1;
+				line.token_size = strlen(token->value.v_string);
 				break;
 		}
 		line.num_user_type_args++;
@@ -203,3 +298,29 @@ table_line inicialize_line(Lexeme * token)
 
 	return line;
 }
+
+/*
+void initialize_stack()
+{
+	//initializing stack
+	stack = (table_stack *) malloc(sizeof(table_stack));
+	stack->array = NULL;
+	stack->num_tables = NO_TABLES;
+				
+	printf("\tPilha inicializada!\n");
+
+	printf("Primeiro print_stack\n");
+	print_stack(stack);
+
+				
+				//first table will be global scope table
+	table table = create_table();
+	stack->num_tables++;
+	stack->array = malloc(sizeof(table) * stack->num_tables);
+	stack->array[0] = table;
+
+	printf("\tSegundo print_stack\n");
+	print_stack(stack);	
+
+	return;
+}*/

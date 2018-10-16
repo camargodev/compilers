@@ -6,6 +6,7 @@
 #include "size.h"
 
 #define NO_TABLES -1
+#define NO_LINES -1
 
 typedef struct function_arguments {
 	int is_user_type;
@@ -93,3 +94,9 @@ int is_declared (table_stack * stack, char* token);
 void add_user_type(table_stack * stack, Lexeme * token);
 void add_user_type_properties(table_stack * stack, char * key, char * current_scope, Lexeme * token);
 table_line inicialize_line(Lexeme * token_name);
+
+void print_stack(table_stack * stack);
+void print_cabecalho_table_part1();
+void print_cabecalho_table_part2();
+
+void initialize_stack();
