@@ -243,7 +243,7 @@ void add_user_type(table_stack * stack, Lexeme * token)
 }
 
 //stack, $2->value.v_string, list_user_type_args[i]
-void add_user_type_properties2(table_stack * stack, char * key, user_type_args token)
+void add_user_type_properties(table_stack * stack, char * key, user_type_args token)
 {
 	int table_index = 0;
 
@@ -265,28 +265,34 @@ void add_user_type_properties2(table_stack * stack, char * key, user_type_args t
 
 		//printf("[ADD_USER_TYPE_PROPERTIES] Passou do while!\n");
 		
-		//printf("[ADD_USER_TYPE_PROPERTIES] Token_Type : %d\n", token.token_type);
-
 		switch(token.token_type)
 		{
 			case INT:
 				line.token_size = line.token_size + SIZE_INT;
 				break;
 			case FLOAT:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_FLOAT);
 				line.token_size = line.token_size + SIZE_FLOAT;
 				break;
 			case CHAR:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_CHAR);
 				line.token_size = line.token_size + SIZE_CHAR;
 				break;
 			case BOOL:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_BOOL);
 				line.token_size = line.token_size + SIZE_BOOL;
 				break;
 			case STRING:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %ld\n", line.token_size + strlen(token.token_name));
 				line.token_size = line.token_size + strlen(token.token_name);
+				break;
+			default:
+				//printf("[ADD_USER_TYPE_PROPERTIES] Default\n");
 				break;
 		}
 		
 		line.num_user_type_args++;
+		line.token_type = USER_TYPE;
 		//printf("[ADD_USER_TYPE_PROPERTIES] sizeof: %ld\n", sizeof(user_type_args));
 		//printf("[ADD_USER_TYPE_PROPERTIES] sizeof: %d\n", line.num_user_type_args);
 
@@ -301,61 +307,6 @@ void add_user_type_properties2(table_stack * stack, char * key, user_type_args t
 	}
 
 	return;
-}
-
-
-void add_user_type_properties(table_stack * stack, char * key, char * current_scope, Lexeme * token)
-{
-	int table_index = 0;
-
-	if (stack->num_tables != NO_TABLES)
-	{
-		int line_index = 0;
-		table_line line;
-		// in fact this first condition will always be true, its here for the tests
-		do
-		{
-			line = stack->array[table_index].lines[line_index];
-			printf("[ADD_USER_TYPE_PROPERTIES] line_index : %d, token_name = %s", line_index, line.token_name);
-			print_line(line);
-			line_index++;
-		} while (line_index <= stack->array[table_index].num_lines
-				&& line.token_name != key);
-
-		line_index--;
-
-		printf("[ADD_USER_TYPE_PROPERTIES] Passou do while!\n");
-		
-		printf("[ADD_USER_TYPE_PROPERTIES] Token_Type : %d\n", token->token_type);
-
-		switch(token->token_type)
-		{
-			case INT:
-				line.token_size = SIZE_INT;
-				break;
-			case FLOAT:
-				line.token_size = SIZE_FLOAT;
-				break;
-			case CHAR:
-				line.token_size = SIZE_CHAR;
-				break;
-			case BOOL:
-				line.token_size = SIZE_BOOL;
-				break;
-			case STRING:
-				line.token_size = strlen(token->value.v_string);
-				break;
-		}
-		line.num_user_type_args++;
-		line.user_type_args = realloc(line.user_type_args,
-										sizeof(line.user_type_args) * line.num_user_type_args);
-
-		line.user_type_args[line.num_user_type_args].scope = current_scope;
-		line.user_type_args[line.num_user_type_args].token_type = token->token_type;
-		line.user_type_args[line.num_user_type_args].token_name = token->value.v_string;	
-
-		stack->array[table_index].lines[line_index] = line;	
-	}
 }
 
 //TO DO: initialize line and table.

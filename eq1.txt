@@ -1,0 +1,46 @@
+
+
+*********************************************
+COMEÇANDO PRINT DA PILHA
+*********************************************
+
+Tabela [0]
+
+Linha [0]
++----------------------------------------------------------+
+NAM	DEC	NAT	TTY	TSI	IFU	IUT	ASI	NUT
+x	1	6	110	19	0	1	0	5	
+User_Type_Args
+[0] SCOPE : PUBLIC	[0] TOKEN_TYPE : 105	[0] TOKEN_NAME : y
+[1] SCOPE : private	[1] TOKEN_TYPE : 105	[1] TOKEN_NAME : x
+[2] SCOPE : protected	[2] TOKEN_TYPE : 107	[2] TOKEN_NAME : z
+[3] SCOPE : PUBLIC	[3] TOKEN_TYPE : 107	[3] TOKEN_NAME : w
+[4] SCOPE : private	[4] TOKEN_TYPE : 109	[4] TOKEN_NAME : dingobels
++----------------------------------------------------------+
+
+Linha [1]
++----------------------------------------------------------+
+NAM	DEC	NAT	TTY	TSI	IFU	IUT	ASI	NUT
+y	2	6	110	4	0	1	0	1	
+User_Type_Args
+[0] SCOPE : PUBLIC	[0] TOKEN_TYPE : 105	[0] TOKEN_NAME : x
++----------------------------------------------------------+
+
+Linha [2]
++----------------------------------------------------------+
+NAM	DEC	NAT	TTY	TSI	IFU	IUT	ASI	NUT
+marcellus	3	6	110	4	0	1	0	1	
+User_Type_Args
+[0] SCOPE : PUBLIC	[0] TOKEN_TYPE : 105	[0] TOKEN_NAME : m
++----------------------------------------------------------+
+
+Tabela terminada de ser impressa!
+
+
+*********************************************
+FIM PRINT DA PILHA
+*********************************************
+
+class x [ int y : private int x : protected char z : char w : private string dingobels ] ; 
+class y [ int x ] ; 
+class marcellus [ int m ] ; 

@@ -33,6 +33,7 @@
 #define CHAR 	107
 #define BOOL 	108
 #define STRING 	109
+#define USER_TYPE 110
 
 #define NOT_LITERAL		110
 

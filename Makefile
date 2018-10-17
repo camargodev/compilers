@@ -29,6 +29,5 @@ clean:
 	rm -f lexeme.o
 	rm -f main.o
 	rm -f .parser.y.swp
-	rm -f eq1.txt
-	rm -f eq2.txt
+	
 

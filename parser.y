@@ -20,6 +20,10 @@
 	int num_user_type_args = 0;
 	int num_types = 0;
 
+	int has_scope = FALSE;
+
+	int debug_user_type = FALSE;
+
 	int yylex(void);
 	void yyerror(char const *s);
 %}
@@ -188,79 +192,115 @@ start : new_type start
 
 type    : TK_PR_INT
 			{ 
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				list_user_type_args[num_types].token_type = $1->token_type;
+				if(has_scope == FALSE)
+					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+				has_scope = FALSE;
+
+				list_user_type_args[num_types].token_type = INT;
 				num_types++;
 
-				//printf("[TYPE] Hello\n");
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
 				$$ = new_node($1); 
 			}
 		| TK_PR_FLOAT
 			{ 
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				list_user_type_args[num_types].token_type = $1->token_type;
+				if(has_scope == FALSE)
+					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+				has_scope = FALSE;
+
+				list_user_type_args[num_types].token_type = FLOAT;
 				num_types++;
 
-				//printf("[TYPE] Hello\n");
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
 				$$ = new_node($1); 
 			}
 		| TK_PR_BOOL
 			{ 
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				list_user_type_args[num_types].token_type = $1->token_type;
+				if(has_scope == FALSE)
+					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+				has_scope = FALSE;
+
+				list_user_type_args[num_types].token_type = BOOL;
 				num_types++;
 
-				//printf("[TYPE] Hello\n");
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
-				$$ = new_node($1); 
+				$$ = new_node($1);   
 			}
 		| TK_PR_CHAR
 			{ 
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				list_user_type_args[num_types].token_type = $1->token_type;
+				if(has_scope == FALSE)
+					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+				has_scope = FALSE;
+
+				list_user_type_args[num_types].token_type = CHAR;
 				num_types++;
 
-				//printf("[TYPE] Hello\n");
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
-				$$ = new_node($1); 
+				$$ = new_node($1);  
 			}
 		| TK_PR_STRING
 			{ 
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				list_user_type_args[num_types].token_type = $1->token_type;
+				if(has_scope == FALSE)
+					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+				has_scope = FALSE;
+
+				list_user_type_args[num_types].token_type = STRING;
 				num_types++;
 
-				//printf("[TYPE] Hello\n");
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
 				$$ = new_node($1); 
 			}
 
 scope   : TK_PR_PRIVATE
 			{ 
-				//printf("[SCOPE] Hello\n");
-				list_user_type_args[num_types - 1].scope = $1->value.v_string;
+				has_scope = TRUE;
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+
+				list_user_type_args[num_types].scope = $1->value.v_string;
 
 				$$ = new_node($1); 
-				current_scope = $1->value.v_string;
-				//printf("Current_Scope : %s", $1->value.v_string);
+
+				if(debug_user_type)
+					printf("[SCOPE] Value : %s\n", $1->value.v_string);
 			}
 		| TK_PR_PUBLIC
 			{ 
-				//printf("[SCOPE] Hello\n");
-				list_user_type_args[num_types - 1].scope = $1->value.v_string;
+				has_scope = TRUE;
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+
+				list_user_type_args[num_types].scope = $1->value.v_string;
+
 				$$ = new_node($1); 
-				current_scope = $1->value.v_string;
-				//printf("Current_Scope : %s", $1->value.v_string);
+
+				if(debug_user_type)
+					printf("[SCOPE] Value : %s\n", $1->value.v_string);
 			}
 		| TK_PR_PROTECTED
 			{ 
-				//printf("[SCOPE] Hello\n");
-				list_user_type_args[num_types - 1].scope = $1->value.v_string;
+				has_scope = TRUE;
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+
+				list_user_type_args[num_types].scope = $1->value.v_string;
+
 				$$ = new_node($1); 
-				current_scope = $1->value.v_string;
-				//printf("Current_Scope : %s", $1->value.v_string);
+
+				if(debug_user_type)
+					printf("[SCOPE] Value : %s\n", $1->value.v_string);
 			}
 
 var     : TK_PR_CONST types TK_IDENTIFICADOR
@@ -313,7 +353,9 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					//printf("num_user_type_args : %d\n", num_user_type_args);
 					//print_user_type_list(list_user_type_args, num_user_type_args);
 					
-					//printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
+					if(debug_user_type)
+						printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
+					
 					if(is_declared(stack, $2->value.v_string))
 					{
 						printf("[NEW_TYPE] Erro: já foi declarado!\n");
@@ -326,13 +368,13 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					}
 
 					int i = 0;
+
 					for(i = 0; i < num_user_type_args; i++)
 					{
-						//printf("[NUM_TYPE] Dentro do for : %d\n", i);
-						add_user_type_properties2(stack, $2->value.v_string, list_user_type_args[i]);
+						add_user_type_properties(stack, $2->value.v_string, list_user_type_args[i]);
 					}						
 
-					free(list_user_type_args);
+					//free(list_user_type_args);
 					num_user_type_args = 0;
 					num_types = 0;					
 				}
@@ -340,46 +382,52 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 param_begin : scope param_body
 				{ 	
 					num_user_type_args++;
-					//printf("[PARAM_BEGIN] Hello\n");
+					num_types--;
+					
+					if(debug_user_type)
+						printf("[PARAM_BEGIN] Token Com Scope\n");
 					$$ = $1;
 					add_node($$, $2);					
 				}
 			| param_body
 				{	
-					//OLHA AQUI FDP
-					//list_user_type_args[num_user_type_args].scope = "PUBLIC";
-					if(list_user_type_args[num_user_type_args].scope == NULL)
+					if(debug_user_type)
+						printf("[PARAM_BEGIN] Token Sem Scope\n");
+
+					if(list_user_type_args[num_types - 1].scope == NULL)
 					{
-						printf("Scope is null\n");
+						if(debug_user_type)
+							printf("[PARAM_BEGIN] Scope is null\n");
 						//printf("num_user_type_args : %d\n", num_user_type_args);
-						list_user_type_args[num_user_type_args].scope = "PUBLIC";
+						list_user_type_args[num_types - 1].scope = "PUBLIC";
 					}
 
 					num_user_type_args++;
-					//printf("[PARAM_BEGIN 2] Hello\n");
-					$$ = $1; 
-					current_scope = "public";
+					num_types--;
+					$$ = $1; 					
 				}
 
 param_body  : type TK_IDENTIFICADOR param_end
 				{	
-					//printf("[PARAM_BODY] Hello\n");
-					list_user_type_args[num_user_type_args].token_name = $2->value.v_string;
+					if(debug_user_type)
+						printf("[PARAM_BODY] Token_Name : %s, num_types : %d\n", $2->value.v_string, num_types);
+					list_user_type_args[num_types - 1].token_name = $2->value.v_string;
 					$$ = $1;
-					//add_user_type_properties(stack, current_token, current_scope, $2);
 					add_node($$, new_node($2));
 					add_node($$, $3);
 				}
 
 param_end   : ':' param_begin
 				{	
-					//printf("[PARAM_END] Teste\n");
+					if(debug_user_type)
+						printf("\n[PARAM_END]\n");
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| ']'
 				{	
-					//printf("[PARAM_END] Teste\n");
+					if(debug_user_type)
+						printf("\n[PARAM_END]\n");
 					$$ = new_node($1);
 				} 
 

@@ -1,2 +1,3 @@
-class x [int y : int x : protected char y];
-class x [int x];
+class x [int y : private int x : protected char z : char w : private string dingobels];
+class y [int x];
+class marcellus [int m];
