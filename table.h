@@ -93,6 +93,7 @@ void pop(table_stack * table_stack);
 int is_declared (table_stack * stack, char* token);
 void add_user_type(table_stack * stack, Lexeme * token);
 void add_user_type_properties(table_stack * stack, char * key, char * current_scope, Lexeme * token);
+void add_user_type_properties2(table_stack * stack, char * key, user_type_args token);
 table_line inicialize_line(Lexeme * token_name);
 
 void print_stack(table_stack * stack);
@@ -100,3 +101,5 @@ void print_cabecalho_table_part1();
 void print_cabecalho_table_part2();
 
 void initialize_stack();
+
+void print_user_type_list(user_type_args * list_user_type_args, int num_types);

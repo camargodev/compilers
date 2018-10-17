@@ -1,2 +1,2 @@
-class x [int y];
-class y [int x];
+class x [int y : int x : protected char y];
+class x [int x];

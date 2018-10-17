@@ -25,12 +25,12 @@ int main (int argc, char **argv)
 				stack->array = NULL;
 				stack->num_tables = NO_TABLES;
 
-				printf("Inicializei stack->numtables\n");
+				//printf("Inicializei stack->numtables\n");
 				
-				printf("\tPilha inicializada!\n");
+				//printf("\tPilha inicializada!\n");
 
-				printf("Primeiro print_stack\n");
-				print_stack(stack);
+				//printf("Primeiro print_stack\n");
+				//print_stack(stack);
 
 				
 				//first table will be global scope table
@@ -39,8 +39,8 @@ int main (int argc, char **argv)
 				stack->array = malloc(sizeof(table) * stack->num_tables);
 				stack->array[0] = table;
 
-				printf("\tSegundo print_stack\n");
-				print_stack(stack);	
+				//printf("\tSegundo print_stack\n");
+				//print_stack(stack);	
 
   int ret = yyparse(); 
   descompila (arvore);

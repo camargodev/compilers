@@ -48,8 +48,8 @@ void pop(table_stack * table_stack){
 void print_line(table_line line)
 {
 
-	printf("[PRINT_LINE] Entreno print_line\n");
 	print_cabecalho_table_part1();
+	printf("%s", line.token_name);
 	printf("\t%d\t", line.declaration_line);
 	printf("%d\t", line.nature);
 	printf("%d\t", line.token_type);
@@ -58,11 +58,13 @@ void print_line(table_line line)
 	printf("%d\t", line.is_user_type);
 	printf("%d\t", line.array_size);
 	printf("%d\t", line.num_user_type_args);
+	print_user_type_list(line.user_type_args, line.num_user_type_args);
 	/*print_cabecalho_table_part2();
 	printf("\tFunction_Args");
 	printf("\t\t\t\tUser_Type_Args");
 	printf("\t\t\t\tLexeme");
 	printf("\t\t\t\tArray_Vals");*/
+	printf("+----------------------------------------------------------+\n");
 	printf("\n");
 }
 
@@ -80,7 +82,7 @@ void print_table(table table)
 
 		for(i = 0; i <= table.num_lines; i++)
 		{
-			printf("\tLinha de índice : %d\n", i);
+			printf("Linha [%d]\n", i);
 			print_line(table.lines[i]);			
 		}
 
@@ -93,23 +95,30 @@ void print_stack(table_stack * stack)
 {
 	int i;
 	
+	printf("\n\n*********************************************\n");
+	printf("COMEÇANDO PRINT DA PILHA\n");
+	printf("*********************************************\n\n");
+
 	if(stack->num_tables == NO_TABLES)
 		printf("Sem tables na pilha!\n");
 	else
 	{
 		for(i = 0; i <= stack->num_tables; i++)
 		{
-			printf("\tTabela de índice : %d\n", i);
+			printf("Tabela [%d]\n\n", i);
 			print_table(stack->array[i]);			
-		}
-
-		printf("Pilha terminada de ser impressa!\n");
+		}		
 	}
+
+	printf("\n\n*********************************************\n");
+	printf("FIM PRINT DA PILHA\n");
+	printf("*********************************************\n\n");
 }
 
 void print_cabecalho_table_part1()
 {
 	printf("+----------------------------------------------------------+\n");
+	printf("NAM");
 	printf("\tDEC");
 	printf("\tNAT");
 	printf("\tTTY");
@@ -132,6 +141,22 @@ void print_cabecalho_table_part2()
 	printf("\t\t\t\tArray_Vals");
 
 	return;
+}
+
+void print_user_type_list(user_type_args * list_user_type_args, int num_types)
+{
+	printf("\nUser_Type_Args\n");
+
+	int i = 0;
+	
+	for(i = 0; i < num_types; i++)
+	{
+		printf("[%d] SCOPE : %s", i, list_user_type_args[i].scope);
+		printf("\t[%d] TOKEN_TYPE : %d", i, list_user_type_args[i].token_type);
+		printf("\t[%d] TOKEN_NAME : %s\n", i, list_user_type_args[i].token_name);
+	}
+
+	return;		
 }
 
 /*
@@ -206,12 +231,73 @@ void add_user_type(table_stack * stack, Lexeme * token)
 		
 		line.array_vals = NULL;
 
-		printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
 				
 		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
 															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
-		print_line(line);
+		//print_line(line);
 		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
+	}
+
+	return;
+}
+
+//stack, $2->value.v_string, list_user_type_args[i]
+void add_user_type_properties2(table_stack * stack, char * key, user_type_args token)
+{
+	int table_index = 0;
+
+	if(stack->num_tables != NO_TABLES)
+	{
+		int line_index = 0;
+		table_line line;
+		// in fact this first condition will always be true, its here for the tests
+		do
+		{
+			line = stack->array[table_index].lines[line_index];
+			//printf("[ADD_USER_TYPE_PROPERTIES] line_index : %d, token_name = %s\n", line_index, line.token_name);
+			//print_line(line);
+			line_index++;
+		} while (line_index <= stack->array[table_index].num_lines
+				&& line.token_name != key);
+
+		line_index--;
+
+		//printf("[ADD_USER_TYPE_PROPERTIES] Passou do while!\n");
+		
+		//printf("[ADD_USER_TYPE_PROPERTIES] Token_Type : %d\n", token.token_type);
+
+		switch(token.token_type)
+		{
+			case INT:
+				line.token_size = line.token_size + SIZE_INT;
+				break;
+			case FLOAT:
+				line.token_size = line.token_size + SIZE_FLOAT;
+				break;
+			case CHAR:
+				line.token_size = line.token_size + SIZE_CHAR;
+				break;
+			case BOOL:
+				line.token_size = line.token_size + SIZE_BOOL;
+				break;
+			case STRING:
+				line.token_size = line.token_size + strlen(token.token_name);
+				break;
+		}
+		
+		line.num_user_type_args++;
+		//printf("[ADD_USER_TYPE_PROPERTIES] sizeof: %ld\n", sizeof(user_type_args));
+		//printf("[ADD_USER_TYPE_PROPERTIES] sizeof: %d\n", line.num_user_type_args);
+
+		line.user_type_args = realloc(line.user_type_args,
+										sizeof(user_type_args) * line.num_user_type_args);
+
+		line.user_type_args[line.num_user_type_args - 1].scope = token.scope;
+		line.user_type_args[line.num_user_type_args - 1].token_type = token.token_type;
+		line.user_type_args[line.num_user_type_args - 1].token_name = token.token_name;	
+
+		stack->array[table_index].lines[line_index] = line;	
 	}
 
 	return;

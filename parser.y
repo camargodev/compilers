@@ -15,7 +15,10 @@
 	//The bison's structure made us do this gambiarra
 	extern char * current_token;
 	char * current_scope;
-
+	
+	user_type_args * list_user_type_args;
+	int num_user_type_args = 0;
+	int num_types = 0;
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -156,32 +159,11 @@
 
 programa :  start  
 			{ 
-			//Foi pra MAIN por causa do Bug
-			/*
-				//initializing stack
-				stack = (table_stack *) malloc(sizeof(table_stack));
-				stack->array = NULL;
-				stack->num_tables = NO_TABLES;
-
-				printf("Inicializei stack->numtables\n");
-				
-				printf("\tPilha inicializada!\n");
-
-				printf("Primeiro print_stack\n");
-				print_stack(stack);
-
-				
-				//first table will be global scope table
-				table table = create_table();
-				stack->num_tables++;
-				stack->array = malloc(sizeof(table) * stack->num_tables);
-				stack->array[0] = table;
-
-				printf("\tSegundo print_stack\n");
-				print_stack(stack);	*/
-
+					
 				$$ = $1;
 				arvore = $$;
+
+				print_stack(stack);
 			}
 
 start : new_type start
@@ -206,42 +188,79 @@ start : new_type start
 
 type    : TK_PR_INT
 			{ 
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				list_user_type_args[num_types].token_type = $1->token_type;
+				num_types++;
+
+				//printf("[TYPE] Hello\n");
+
 				$$ = new_node($1); 
 			}
 		| TK_PR_FLOAT
 			{ 
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				list_user_type_args[num_types].token_type = $1->token_type;
+				num_types++;
+
+				//printf("[TYPE] Hello\n");
+
 				$$ = new_node($1); 
 			}
 		| TK_PR_BOOL
 			{ 
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				list_user_type_args[num_types].token_type = $1->token_type;
+				num_types++;
+
+				//printf("[TYPE] Hello\n");
+
 				$$ = new_node($1); 
 			}
 		| TK_PR_CHAR
 			{ 
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				list_user_type_args[num_types].token_type = $1->token_type;
+				num_types++;
+
+				//printf("[TYPE] Hello\n");
+
 				$$ = new_node($1); 
 			}
 		| TK_PR_STRING
 			{ 
+				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				list_user_type_args[num_types].token_type = $1->token_type;
+				num_types++;
+
+				//printf("[TYPE] Hello\n");
+
 				$$ = new_node($1); 
 			}
 
 scope   : TK_PR_PRIVATE
 			{ 
+				//printf("[SCOPE] Hello\n");
+				list_user_type_args[num_types - 1].scope = $1->value.v_string;
+
 				$$ = new_node($1); 
 				current_scope = $1->value.v_string;
-				printf("Current_Scope : %s", $1->value.v_string);
+				//printf("Current_Scope : %s", $1->value.v_string);
 			}
 		| TK_PR_PUBLIC
 			{ 
+				//printf("[SCOPE] Hello\n");
+				list_user_type_args[num_types - 1].scope = $1->value.v_string;
 				$$ = new_node($1); 
 				current_scope = $1->value.v_string;
-				printf("Current_Scope : %s", $1->value.v_string);
+				//printf("Current_Scope : %s", $1->value.v_string);
 			}
 		| TK_PR_PROTECTED
 			{ 
+				//printf("[SCOPE] Hello\n");
+				list_user_type_args[num_types - 1].scope = $1->value.v_string;
 				$$ = new_node($1); 
 				current_scope = $1->value.v_string;
-				printf("Current_Scope : %s", $1->value.v_string);
+				//printf("Current_Scope : %s", $1->value.v_string);
 			}
 
 var     : TK_PR_CONST types TK_IDENTIFICADOR
@@ -285,17 +304,20 @@ pipe 	: TK_OC_FORWARD_PIPE
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 				{	
-					// first try
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, new_node($3));
 					add_node($$, $4);
 					add_node($$, new_node($5));
 
-					printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
+					//printf("num_user_type_args : %d\n", num_user_type_args);
+					//print_user_type_list(list_user_type_args, num_user_type_args);
+					
+					//printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
 					if(is_declared(stack, $2->value.v_string))
 					{
 						printf("[NEW_TYPE] Erro: já foi declarado!\n");
+						error_code = ERR_DECLARED;
 						exit(ERR_DECLARED);
 					}
 					else
@@ -303,37 +325,61 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 						add_user_type(stack, $2);
 					}
 
-					current_token = $2->value.v_string;
+					int i = 0;
+					for(i = 0; i < num_user_type_args; i++)
+					{
+						//printf("[NUM_TYPE] Dentro do for : %d\n", i);
+						add_user_type_properties2(stack, $2->value.v_string, list_user_type_args[i]);
+					}						
 
-					
+					free(list_user_type_args);
+					num_user_type_args = 0;
+					num_types = 0;					
 				}
 
 param_begin : scope param_body
 				{ 	
+					num_user_type_args++;
+					//printf("[PARAM_BEGIN] Hello\n");
 					$$ = $1;
 					add_node($$, $2);					
 				}
 			| param_body
 				{	
+					//OLHA AQUI FDP
+					//list_user_type_args[num_user_type_args].scope = "PUBLIC";
+					if(list_user_type_args[num_user_type_args].scope == NULL)
+					{
+						printf("Scope is null\n");
+						//printf("num_user_type_args : %d\n", num_user_type_args);
+						list_user_type_args[num_user_type_args].scope = "PUBLIC";
+					}
+
+					num_user_type_args++;
+					//printf("[PARAM_BEGIN 2] Hello\n");
 					$$ = $1; 
 					current_scope = "public";
 				}
 
 param_body  : type TK_IDENTIFICADOR param_end
 				{	
+					//printf("[PARAM_BODY] Hello\n");
+					list_user_type_args[num_user_type_args].token_name = $2->value.v_string;
 					$$ = $1;
-					add_user_type_properties(stack, current_token, current_scope, $2);
+					//add_user_type_properties(stack, current_token, current_scope, $2);
 					add_node($$, new_node($2));
 					add_node($$, $3);
 				}
 
 param_end   : ':' param_begin
 				{	
+					//printf("[PARAM_END] Teste\n");
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| ']'
 				{	
+					//printf("[PARAM_END] Teste\n");
 					$$ = new_node($1);
 				} 
 
