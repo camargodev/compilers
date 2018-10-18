@@ -1,3 +1,16 @@
-class x [int y : private int x : protected char z : char w : private string dingobels];
-class y [int x];
-class marcellus [int m];
+class marcellus [int x : int y];
+
+var1 int;
+var2 static int;
+var3 char;
+var4[5] static char;
+var5[+20] bool;
+var6[+ 4] string;
+var7[10] int;
+//var7[10] int;
+
+var marcellus;
+
+//var INT;
+
+//var8 ponto1d;

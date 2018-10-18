@@ -8,6 +8,20 @@
 #define NO_TABLES -1
 #define NO_LINES -1
 
+typedef struct globar_var_arguments {
+	
+	int is_array;
+	int array_size;
+
+	int is_static;
+
+	int type;
+	char * name;
+
+	int user_type_size;
+
+} global_var_args;
+
 typedef struct function_arguments {
 	int is_user_type;
 	int is_const;
@@ -102,3 +116,7 @@ void print_cabecalho_table_part2();
 void initialize_stack();
 
 void print_user_type_list(user_type_args * list_user_type_args, int num_types);
+
+global_var_args initialize_global_var_args();
+void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token);
+int get_user_type_size(table_stack * stack, char * token);

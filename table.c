@@ -58,7 +58,9 @@ void print_line(table_line line)
 	printf("%d\t", line.is_user_type);
 	printf("%d\t", line.array_size);
 	printf("%d\t", line.num_user_type_args);
-	print_user_type_list(line.user_type_args, line.num_user_type_args);
+	
+	if(line.is_user_type)
+		print_user_type_list(line.user_type_args, line.num_user_type_args);
 	/*print_cabecalho_table_part2();
 	printf("\tFunction_Args");
 	printf("\t\t\t\tUser_Type_Args");
@@ -320,7 +322,7 @@ table_line inicialize_line(Lexeme * token)
 	line.declaration_line = token->line_number;
 	line.nature = -1;
 	line.token_type = -1;
-	line.token_size = -1;
+	line.token_size = 0;
 
 	line.is_function = -1;
 	line.is_user_type -1;
@@ -336,28 +338,122 @@ table_line inicialize_line(Lexeme * token)
 	return line;
 }
 
-/*
-void initialize_stack()
+global_var_args initialize_global_var_args()
 {
-	//initializing stack
-	stack = (table_stack *) malloc(sizeof(table_stack));
-	stack->array = NULL;
-	stack->num_tables = NO_TABLES;
+	global_var_args temp;
+	temp.is_array = FALSE;
+	temp.array_size = FALSE;
+	temp.is_static = FALSE;
+
+	temp.user_type_size = FALSE;
+
+	temp.name = NULL;
+	temp.type = -1;
+
+	return temp;
+}
+
+void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token)
+{
+	int table_index = 0;
+
+	if (stack->num_tables != NO_TABLES)
+	{
+		table_line line;
+		
+		line = inicialize_line(token);
+		line.token_name = globalvar_args.name;
+		line.declaration_line = token->line_number;
+		line.nature = NATUREZA_IDENTIFICADOR;
+		
+		line.is_function = FALSE;
+		line.is_user_type = FALSE;
+		
+		if(globalvar_args.is_array)
+			line.array_size = globalvar_args.array_size;
+		else
+			line.array_size = FALSE;
+
+		line.token_type = globalvar_args.type;
+
+		switch(globalvar_args.type)
+		{
+			case INT:
+				line.token_size = line.token_size + SIZE_INT;
+				break;
+			case FLOAT:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_FLOAT);
+				line.token_size = line.token_size + SIZE_FLOAT;
+				break;
+			case CHAR:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_CHAR);
+				line.token_size = line.token_size + SIZE_CHAR;
+				break;
+			case BOOL:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %d\n", line.token_size + SIZE_BOOL);
+				line.token_size = line.token_size + SIZE_BOOL;
+				break;
+			case STRING:
+				//printf("[ADD_USER_TYPE_PROPERTIES] token_size : %ld\n", line.token_size + strlen(token.token_name));
+				line.token_size = line.token_size + strlen(globalvar_args.name);
+				break;
+			case USER_TYPE:
+				line.token_size = globalvar_args.user_type_size;
+				break;
+			default:
+				break;
+		}
+
+		line.function_args = NULL;
+		line.num_user_type_args = 0;
+		
+		//buscar na tabela
+		//line.token_size = 0;
+		
+		line.array_vals = NULL;
+		line.lexeme = *token;
+
+		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
 				
-	printf("\tPilha inicializada!\n");
+		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
+															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+		//print_line(line);
+		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
+	}
+}
 
-	printf("Primeiro print_stack\n");
-	print_stack(stack);
+int get_user_type_size(table_stack * stack, char * token)
+{
+	if (stack->num_tables == NO_TABLES)
+	{
+		return FALSE;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
 
-				
-				//first table will be global scope table
-	table table = create_table();
-	stack->num_tables++;
-	stack->array = malloc(sizeof(table) * stack->num_tables);
-	stack->array[0] = table;
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					//printf("Token do arraY : %s, Token parametro : %s, strcmp : %d", 
+					//	stack->array[num_actual_table].lines[line_counter].token_name, token, strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token));
+					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						return stack->array[num_actual_table].lines[line_counter].token_size;
+					}
+					line_counter++;
+				}
+			}
 
-	printf("\tSegundo print_stack\n");
-	print_stack(stack);	
+			num_actual_table--;
+		}		
 
-	return;
-}*/
+		return FALSE;
+	}
+}

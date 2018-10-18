@@ -13,9 +13,7 @@
 	extern int error_code;
 
 	//The bison's structure made us do this gambiarra
-	extern char * current_token;
-	char * current_scope;
-	
+	// USER_TYPE		
 	user_type_args * list_user_type_args;
 	int num_user_type_args = 0;
 	int num_types = 0;
@@ -24,8 +22,14 @@
 
 	int debug_user_type = FALSE;
 
+
+	int debug_global_var = TRUE;
+
 	int yylex(void);
 	void yyerror(char const *s);
+
+	//GLOBAL_VAR
+	global_var_args globalvar_args;
 %}
 
 %verbose
@@ -203,6 +207,11 @@ type    : TK_PR_INT
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+
+				globalvar_args.type = INT;
+
 				$$ = new_node($1); 
 			}
 		| TK_PR_FLOAT
@@ -217,6 +226,11 @@ type    : TK_PR_INT
 
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				
+				globalvar_args.type = FLOAT;
 
 				$$ = new_node($1); 
 			}
@@ -233,6 +247,11 @@ type    : TK_PR_INT
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				
+				globalvar_args.type = BOOL;
+
 				$$ = new_node($1);   
 			}
 		| TK_PR_CHAR
@@ -248,6 +267,11 @@ type    : TK_PR_INT
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				
+				globalvar_args.type = CHAR;
+
 				$$ = new_node($1);  
 			}
 		| TK_PR_STRING
@@ -262,6 +286,11 @@ type    : TK_PR_INT
 
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				
+				globalvar_args.type = STRING;
 
 				$$ = new_node($1); 
 			}
@@ -433,12 +462,34 @@ param_end   : ':' param_begin
 
 global_var       : TK_IDENTIFICADOR global_var_vec 
 					{	
+						if(debug_global_var)
+							printf("[GLOBAL_VAR] Identificador: %s\n\n", $1->value.v_string);
+
+						if(is_declared(stack, $1->value.v_string))
+						{
+							printf("[GLOBAL_VAR] Erro: já foi declarado!\n");
+							error_code = ERR_DECLARED;
+							exit(ERR_DECLARED);
+						}
+
+						printf("[GLOBAL_VAR] Token_Type %d\n", globalvar_args.type);
+
+						globalvar_args.name = $1->value.v_string;
+
+						add_global_var(stack, globalvar_args, $1);
+						globalvar_args = initialize_global_var_args();
+
 						$$ = new_node($1);
 						add_node($$, $2);
 					}
 
 global_var_vec  : '[' index ']' globar_var_begin
 					{	
+						if(debug_global_var)
+							printf("[GLOBAL_VAR_VEC] Is Array\n");
+
+						globalvar_args.is_array = TRUE;
+
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
@@ -446,36 +497,80 @@ global_var_vec  : '[' index ']' globar_var_begin
 					}
 				| globar_var_begin
 					{
+						if(debug_global_var)
+							printf("[GLOBAL_VAR_VEC] Not array\n");
+
+						globalvar_args.is_array = FALSE;
+							
 						$$ = $1;
 					}
 
 globar_var_begin	: TK_PR_STATIC global_var_type
 						{
+							if(debug_global_var)
+								printf("[GLOBAL_VAR_BEGIN] Static\n");
+
+							globalvar_args.is_static = FALSE;
+
 							$$ = new_node($1);
 							add_node($$, $2);
 						}
 					| global_var_type
 						{
+							if(debug_global_var)
+								printf("[GLOBAL_VAR_BEGIN] Not Static\n");
+
+							globalvar_args.is_static = FALSE;
+
 							$$ = $1;
 						}
 
 global_var_type	: type ';'
 					{
+						if(debug_global_var)
+							printf("[GLOBAL_VAR_TYPE] Passou no type\n");
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
 				| TK_IDENTIFICADOR ';'
 					{
+						if(!is_declared(stack, $1->value.v_string))
+						{
+							printf("[GLOBAL_VAR_TYPE] Erro: tipo não foi declarado!\n");
+							error_code = ERR_UNDECLARED;
+							exit(ERR_UNDECLARED);
+						}
+
+						if(debug_global_var)
+							printf("[GLOBAL_VAR_TYPE] token_type : %s\n", $1->value.v_string);
+
+						globalvar_args.type = USER_TYPE;
+						globalvar_args.user_type_size = get_user_type_size(stack, $1->value.v_string);
+
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 					}
 
 index	: TK_LIT_INT 
 			{
+				if(debug_global_var)
+				{
+					printf("[INDEX] Without '+', Index : %d\n", $1->value.v_int);
+				}
+
+				globalvar_args.array_size = $1->value.v_int;
+					
 				$$ = new_node($1);
 			}
 		| '+' TK_LIT_INT
 			{
+				if(debug_global_var)
+				{
+					printf("[INDEX] With '+'. Index : %d\n", $2->value.v_int);
+				}
+
+				globalvar_args.array_size = $2->value.v_int;	
+
 				$$ = new_node($1);
 				add_node($$, new_node($2));
 			}
