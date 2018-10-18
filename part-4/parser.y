@@ -9,11 +9,9 @@
 	
 	extern int yylineno;
 	extern void* arvore;
-	extern table_stack * stack;
-	extern int error_code;
+	table_stack * stack;
 
-	//The bison's structure made us do this gambiarra
-	extern char * current_token;
+	char * current_token;
 	char * current_scope;
 	
 	/* Vars and functions for user type fields */
@@ -32,7 +30,7 @@
 	/* Vars and functions for global vars */
 	global_var_args globalvar_args;
 
-	int debug_global_var = TRUE;
+	int debug_global_var = FALSE;
 
 	void set_global_var_type(int type);
 	void set_global_var_user_type(char* type);
@@ -41,6 +39,7 @@
 	void set_global_var_name(char* name);
 	void set_global_var_size(int size);
 
+	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
 
@@ -181,13 +180,18 @@
 		rule itself. Follow the pattern.
 */
 
-programa :  start  
+programa :  initializer start  
 			{ 
 					
-				$$ = $1;
+				$$ = $2;
 				arvore = $$;
 
 				//print_stack(stack);
+			}
+
+initializer : %empty
+			{
+				init_table_stack();
 			}
 
 start : new_type start
@@ -1322,6 +1326,30 @@ func_call_params_end 	: expr func_call_params_body
 void yyerror(char const *s)
 {
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
+}
+
+void init_table_stack() {
+	
+	stack = (table_stack *) malloc(sizeof(table_stack));
+	stack->array = NULL;
+	stack->num_tables = NO_TABLES;
+
+	//printf("Inicializei stack->numtables\n");
+				
+	//printf("\tPilha inicializada!\n");
+
+	//printf("Primeiro print_stack\n");
+	//print_stack(stack);
+
+				
+	//first table will be global scope table
+	table table = create_table();
+	stack->num_tables++;
+	stack->array = malloc(sizeof(table) * stack->num_tables);
+	stack->array[0] = table;
+
+	//printf("\tSegundo print_stack\n");
+	//print_stack(stack);	
 }
 
 void set_field_scope(char *scope) {

@@ -1,0 +1,5 @@
+class ponto0[int x : int y];
+class ponto1[int x : int y];
+
+x ponto0;
+y ponto1;

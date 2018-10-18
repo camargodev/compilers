@@ -1,0 +1,6 @@
+class ponto0[int x : int y];
+class ponto1[int x : int y];
+class ponto2[int x : int y];
+class ponto3[int x : int y];
+class ponto4[int x : int y];
+class ponto5[int x : int y];

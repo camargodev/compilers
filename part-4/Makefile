@@ -1,19 +1,18 @@
-# João Vitor de Camargo (274722) e Marcellus Farias (281984)
+# João Vi4tor de Camargo (274722) e Marcellus Farias (281984)
 
 all: parser.y scanner.l main.c
 	bison -d parser.y --report-file=report
 	flex scanner.l
 	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c
-	gcc -g -o etapa3 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
+	gcc -g -o etapa4 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
 
-test: ./etapa3 test.txt
-	./etapa3 < test.txt > eq1.txt
-	./etapa3 < eq1.txt > eq2.txt
-	diff eq1.txt eq2.txt
+tst: ./test.sh tests/results.txt
+	./test.sh
+	diff tests/results.txt tests/tempresults.txt
 	echo $?
 
 clean:
-	rm -f etapa3
+	rm -f etapa4
 	rm -f parser.tab.c
 	rm -f parser.tab.o
 	rm -f parser.tab.h
