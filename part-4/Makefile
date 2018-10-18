@@ -6,7 +6,7 @@ all: parser.y scanner.l main.c
 	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c
 	gcc -g -o etapa4 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
 
-tst: ./test.sh tests/results.txt
+tst: ./test.sh tests/results.txt ./etapa4
 	./test.sh
 	diff tests/results.txt tests/tempresults.txt
 	echo $?
@@ -28,5 +28,6 @@ clean:
 	rm -f lexeme.o
 	rm -f main.o
 	rm -f .parser.y.swp
+	rm -f tests/tempresults.txt
 	
 

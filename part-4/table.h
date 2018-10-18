@@ -18,19 +18,18 @@ typedef struct globar_var_arguments {
 	int is_static;
 
 	int type;
-	char * name;
+	char* user_type;
+	char* name;
 
 	int user_type_size;
 
 } global_var_args;
 
 typedef struct function_arguments {
-	int is_user_type;
 	int is_const;
-
-	int token_type;
-	char * user_type;
-	char * token_name;
+	int type;
+	char* user_type;
+	char* name;
 	
 } func_args;
 
@@ -62,13 +61,16 @@ typedef struct line {
 	// Thats the reason we create these flags (to make it more readable) and these structs (to save it in a more organizable way)
 
 	int is_function;
+	int is_func_static;
 	int is_user_type;
+	char *user_type;
 	int array_size; 	//actually also works as a flag (0 for false)
 
 	func_args * function_args;
 	user_type_args * user_type_args;
 
 	int num_user_type_args;
+	int num_func_args;
 
 	// The real value from the token
 	Lexeme lexeme; //Really need this?
@@ -107,6 +109,7 @@ void pop(table_stack * table_stack);
 // FUNCTIONS that manage the information of the tables.
 
 int is_declared (table_stack * stack, char* token);
+
 void add_user_type(table_stack * stack, Lexeme * token);
 void add_user_type_properties(table_stack * stack, char * key, user_type_args token);
 table_line inicialize_line(Lexeme * token_name);
@@ -122,3 +125,7 @@ void print_user_type_list(user_type_args * list_user_type_args, int num_types);
 global_var_args initialize_global_var_args();
 void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token);
 int get_user_type_size(table_stack * stack, char * token);
+
+void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
+int is_function_declared(table_stack * stack, char* token);
+void set_func_as_static(table_stack * stack, char* token);

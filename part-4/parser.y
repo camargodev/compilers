@@ -39,6 +39,14 @@
 	void set_global_var_name(char* name);
 	void set_global_var_size(int size);
 
+	/* Vars and functions for functions declaration */
+	int num_func_args = 0;
+	func_args *function_args;
+	int function_type = UNDECLARED_TYPE;
+	char *last_added_func;
+
+	void set_function_type(int type);
+
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
@@ -104,9 +112,11 @@
 %type <node> type
 %type <node> scope
 %type <node> var 
-%type <node> types
+%type <node> func_arg_types
 %type <node> field_type
 %type <node> var_types
+%type <node> func_type
+%type <node> func_arg_type
 %type <node> bool
 %type <node> pipe
 %type <node> new_type 
@@ -307,6 +317,64 @@ var_types : TK_PR_INT
 				$$ = new_node($1); 
 			}
 
+func_type  : TK_PR_INT
+			{ 
+				//printf("\nfunc_type");
+				set_function_type(INT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_FLOAT
+			{ 
+				set_function_type(FLOAT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_BOOL
+			{ 
+				set_function_type(BOOL);
+				$$ = new_node($1);   
+			}
+		| TK_PR_CHAR
+			{ 
+				set_function_type(CHAR);
+				$$ = new_node($1);  
+			}
+		| TK_PR_STRING
+			{ 
+				set_function_type(STRING);
+				$$ = new_node($1); 
+			}
+
+func_arg_type  : TK_PR_INT
+			{ 
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = INT;
+				$$ = new_node($1); 
+			}
+		| TK_PR_FLOAT
+			{ 
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = FLOAT;
+				$$ = new_node($1); 
+			}
+		| TK_PR_BOOL
+			{ 
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = BOOL;
+				$$ = new_node($1);   
+			}
+		| TK_PR_CHAR
+			{ 
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = CHAR;
+				$$ = new_node($1);  
+			}
+		| TK_PR_STRING
+			{ 
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = STRING;
+				$$ = new_node($1); 
+			}
+
 scope   : TK_PR_PRIVATE
 			{ 				
 				if(debug_user_type)
@@ -329,24 +397,41 @@ scope   : TK_PR_PRIVATE
 				$$ = new_node($1); 
 			}
 
-var     : TK_PR_CONST types TK_IDENTIFICADOR
+var     : TK_PR_CONST func_arg_types TK_IDENTIFICADOR
 			{ 	
+				function_args[num_func_args].name = $3->value.v_string;
+				function_args[num_func_args].is_const = TRUE;
+				num_func_args++;
+
 				$$ = new_node($1); 
 				add_node($$, $2);
 				add_node($$, new_node($3));
 			}
-		| types TK_IDENTIFICADOR
+		| func_arg_types TK_IDENTIFICADOR
 			{ 	
+				function_args[num_func_args].name = $2->value.v_string;
+				function_args[num_func_args].is_const = FALSE;
+				num_func_args++;
+
 				$$ = $1; 
 				add_node($$, new_node($2));
 			}
 
-types 	: type
+func_arg_types: func_arg_type
 			{ 
 				$$ = $1; 
 			}
 		| TK_IDENTIFICADOR
 			{ 
+				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+				{							
+					printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
+					exit(ERR_UNDECLARED);
+				}
+				
+				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+				function_args[num_func_args].type = USER_TYPE;
+				function_args[num_func_args].user_type = $1->value.v_string;
 				$$ = new_node($1); 
 			}
 
@@ -560,23 +645,63 @@ index	: TK_LIT_INT
 
 func 	: TK_PR_STATIC func_begin
 			{
+				set_func_as_static(stack, last_added_func);
+				last_added_func = NULL;
+
 				$$ = new_node($1);
 				add_node($$, $2);
 			}
 		| func_begin
 			{
+				//printf("\nfunc");
 				$$ = $1;
 			}
 
-func_begin      : type TK_IDENTIFICADOR '(' func_params
+func_begin      : func_type TK_IDENTIFICADOR '(' func_params
 					{
+						//printf("\nfunc_begin");
+
+						int func_decl_line = is_function_declared(stack, $2->value.v_string);
+						if (func_decl_line != NOT_DECLARED) {
+							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+								yylineno, $2->value.v_string, func_decl_line);
+							exit(ERR_DECLARED);							
+						}
+
+						add_function(stack, function_type, "", num_func_args, function_args, $2);
+						last_added_func = $2->value.v_string;
+
+						function_args = NULL;
+						function_type = UNDECLARED_TYPE;
+						num_func_args = 0;
+
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, new_node($3));
 						add_node($$, $4);
 					}
+
 				| TK_IDENTIFICADOR TK_IDENTIFICADOR '(' func_params
 					{
+						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+							printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
+								yylineno, $1->value.v_string, $2->value.v_string);
+							exit(ERR_UNDECLARED);
+						}
+						int func_decl_line = is_function_declared(stack, $2->value.v_string);
+						if (func_decl_line != NOT_DECLARED) {
+							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+								yylineno, $2->value.v_string, func_decl_line);
+							exit(ERR_DECLARED);							
+						}
+
+						add_function(stack, USER_TYPE, $1->value.v_string, num_func_args, function_args, $2);
+						last_added_func = $2->value.v_string;
+
+						function_args = NULL;
+						function_type = UNDECLARED_TYPE;
+						num_func_args = 0;
+
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, new_node($3));
@@ -585,6 +710,7 @@ func_begin      : type TK_IDENTIFICADOR '(' func_params
 
 func_params     : ')' func_body
 					{
+						//printf("\nfuncparam");
 						$$ = new_node($1);
 						add_node($$, $2);
 					}
@@ -608,12 +734,14 @@ func_params_end : ')' func_body
 
 func_body       : '{' cmd_block 
 					{
+						//printf("\nfunc body");
 						$$ = new_node($1);
 						add_node($$, $2);
 					}
 
 cmd_block	: '}' 
 				{
+					//printf("\ncmd block");
 					$$ = new_node($1);
 				}
 			| cmd cmd_block
@@ -1386,6 +1514,7 @@ void set_global_var_type(int type) {
 
 void set_global_var_user_type(char* type) {
 	globalvar_args.type = USER_TYPE;
+	globalvar_args.user_type = type;
 	globalvar_args.user_type_size = get_user_type_size(stack, type);
 }
 
@@ -1403,4 +1532,8 @@ void set_global_var_name(char* name) {
 
 void set_global_var_size(int size) {
 	globalvar_args.array_size = size;
+}
+
+void set_function_type(int type) {
+	function_type = type;
 }

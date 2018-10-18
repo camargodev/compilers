@@ -200,7 +200,82 @@ int is_declared (table_stack * stack, char* token){
 			num_actual_table--;
 		}		
 
-		return FALSE;
+		return NOT_DECLARED;
+	}
+}
+
+int is_function_declared (table_stack * stack, char* token){
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NOT_DECLARED;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					//printf("Token do arraY : %s, Token parametro : %s, strcmp : %d", 
+					//	stack->array[num_actual_table].lines[line_counter].token_name, token, strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token));
+					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE)
+							return stack->array[num_actual_table].lines[line_counter].declaration_line;
+						else
+							return NOT_DECLARED;
+					}
+					line_counter++;
+				}
+			}
+
+			num_actual_table--;
+		}		
+
+		return NOT_DECLARED;
+	}
+}
+
+void set_func_as_static(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					//printf("Token do arraY : %s, Token parametro : %s, strcmp : %d", 
+					//	stack->array[num_actual_table].lines[line_counter].token_name, token, strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token));
+					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						stack->array[num_actual_table].lines[line_counter].is_func_static = TRUE;
+					}
+					line_counter++;
+				}
+			}
+
+			num_actual_table--;
+		}		
+
+		return;
 	}
 }
 //If it is declared (can know it using the function above) and there is another declaration, we must throw an error.
@@ -398,6 +473,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 				line.token_size = line.token_size + strlen(globalvar_args.name);
 				break;
 			case USER_TYPE:
+				line.user_type = globalvar_args.user_type;
 				line.token_size = globalvar_args.user_type_size;
 				break;
 			default:
@@ -420,6 +496,46 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		//print_line(line);
 		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
 	}
+}
+
+void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token)
+{
+	int table_index = 0;
+
+	if (stack->num_tables != NO_TABLES)
+	{
+		table_line line;
+		
+		line = inicialize_line(token);
+		line.token_name = token->value.v_string;
+		line.declaration_line = token->line_number;
+		line.nature = NATUREZA_IDENTIFICADOR;
+		
+		line.is_function = TRUE;
+		line.is_func_static = FALSE;
+		line.is_user_type = FALSE;
+		line.array_size = FALSE;
+
+		line.num_func_args = num_func_args;
+		line.function_args = function_args;
+
+		line.num_user_type_args = 0;
+		line.token_size = 0;
+		
+		line.array_vals = NULL;
+
+		line.token_type = type;
+		line.user_type = user_type;
+
+		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+				
+		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
+															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+		//print_line(line);
+		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
+	}
+
+	return;
 }
 
 int get_user_type_size(table_stack * stack, char * token)

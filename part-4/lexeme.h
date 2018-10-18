@@ -28,6 +28,8 @@
 	5) a string of characteres
 */
 
+#define UNDECLARED_TYPE -1
+
 #define INT 	105
 #define FLOAT 	106
 #define CHAR 	107

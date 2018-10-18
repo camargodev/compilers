@@ -1,0 +1,2 @@
+class k[int a];
+kx func() {}

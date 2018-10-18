@@ -1,0 +1,2 @@
+bool x() {}
+int x(float k) {}
