@@ -8,6 +8,8 @@
 #define NO_TABLES -1
 #define NO_LINES -1
 
+#define NOT_DECLARED 0
+
 typedef struct globar_var_arguments {
 	
 	int is_array;

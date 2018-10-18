@@ -172,7 +172,7 @@ int is_declared (table_stack * stack, char* token){
 	
 	if (stack->num_tables == NO_TABLES)
 	{
-		return FALSE;
+		return NOT_DECLARED;
 	}
 	else
 	{
@@ -191,7 +191,7 @@ int is_declared (table_stack * stack, char* token){
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						return TRUE;
+						return stack->array[num_actual_table].lines[line_counter].declaration_line;
 					}
 					line_counter++;
 				}

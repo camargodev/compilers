@@ -13,23 +13,37 @@
 	extern int error_code;
 
 	//The bison's structure made us do this gambiarra
-	// USER_TYPE		
+	extern char * current_token;
+	char * current_scope;
+	
+	/* Vars and functions for user type fields */
 	user_type_args * list_user_type_args;
 	int num_user_type_args = 0;
 	int num_types = 0;
 
 	int has_scope = FALSE;
-
 	int debug_user_type = FALSE;
 
+	void set_field_scope(char* scope);
+	void set_field_default_scope();
+	void set_field_type(int type);
+	void set_field_name(char* name);
+
+	/* Vars and functions for global vars */
+	global_var_args globalvar_args;
 
 	int debug_global_var = TRUE;
+
+	void set_global_var_type(int type);
+	void set_global_var_user_type(char* type);
+	void set_global_var_static(int is_static);
+	void set_global_var_as_array(int is_array);
+	void set_global_var_name(char* name);
+	void set_global_var_size(int size);
 
 	int yylex(void);
 	void yyerror(char const *s);
 
-	//GLOBAL_VAR
-	global_var_args globalvar_args;
 %}
 
 %verbose
@@ -92,6 +106,8 @@
 %type <node> scope
 %type <node> var 
 %type <node> types
+%type <node> field_type
+%type <node> var_types
 %type <node> bool
 %type <node> pipe
 %type <node> new_type 
@@ -100,7 +116,7 @@
 %type <node> param_end
 %type <node> global_var
 %type <node> global_var_vec
-%type <node> globar_var_begin
+%type <node> global_var_begin
 %type <node> global_var_type
 %type <node> index
 %type <node> func
@@ -171,7 +187,7 @@ programa :  start
 				$$ = $1;
 				arvore = $$;
 
-				print_stack(stack);
+				//print_stack(stack);
 			}
 
 start : new_type start
@@ -196,140 +212,117 @@ start : new_type start
 
 type    : TK_PR_INT
 			{ 
-				if(has_scope == FALSE)
-					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				
-				has_scope = FALSE;
-
-				list_user_type_args[num_types].token_type = INT;
-				num_types++;
-
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-
-				globalvar_args.type = INT;
-
 				$$ = new_node($1); 
 			}
 		| TK_PR_FLOAT
 			{ 
-				if(has_scope == FALSE)
-					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				
-				has_scope = FALSE;
-
-				list_user_type_args[num_types].token_type = FLOAT;
-				num_types++;
-
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				
-				globalvar_args.type = FLOAT;
-
 				$$ = new_node($1); 
 			}
 		| TK_PR_BOOL
 			{ 
-				if(has_scope == FALSE)
-					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				
-				has_scope = FALSE;
-
-				list_user_type_args[num_types].token_type = BOOL;
-				num_types++;
-
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				
-				globalvar_args.type = BOOL;
-
 				$$ = new_node($1);   
 			}
 		| TK_PR_CHAR
 			{ 
-				if(has_scope == FALSE)
-					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				
-				has_scope = FALSE;
-
-				list_user_type_args[num_types].token_type = CHAR;
-				num_types++;
-
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				
-				globalvar_args.type = CHAR;
-
 				$$ = new_node($1);  
 			}
 		| TK_PR_STRING
 			{ 
-				if(has_scope == FALSE)
-					list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-				
-				has_scope = FALSE;
+				$$ = new_node($1); 
+			}
 
-				list_user_type_args[num_types].token_type = STRING;
-				num_types++;
-
+field_type : TK_PR_INT
+			{ 	
 				if(debug_user_type)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_field_type(INT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_FLOAT
+			{ 
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_field_type(FLOAT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_BOOL
+			{ 
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_field_type(BOOL);
+				$$ = new_node($1);   
+			}
+		| TK_PR_CHAR
+			{ 
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_field_type(CHAR);
+				$$ = new_node($1);  
+			}
+		| TK_PR_STRING
+			{ 
+				if(debug_user_type)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_field_type(STRING);
+				$$ = new_node($1); 
+			}
 
+var_types : TK_PR_INT
+			{ 
 				if(debug_global_var)
 					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				
-				globalvar_args.type = STRING;
-
+				set_global_var_type(INT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_FLOAT
+			{ 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_global_var_type(FLOAT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_BOOL
+			{ 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_global_var_type(BOOL);
+				$$ = new_node($1);   
+			}
+		| TK_PR_CHAR
+			{ 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_global_var_type(CHAR);
+				$$ = new_node($1);  
+			}
+		| TK_PR_STRING
+			{ 
+				if(debug_global_var)
+					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
+				set_global_var_type(STRING);
 				$$ = new_node($1); 
 			}
 
 scope   : TK_PR_PRIVATE
-			{ 
-				has_scope = TRUE;
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-
-				list_user_type_args[num_types].scope = $1->value.v_string;
-
-				$$ = new_node($1); 
-
+			{ 				
 				if(debug_user_type)
 					printf("[SCOPE] Value : %s\n", $1->value.v_string);
+				set_field_scope($1->value.v_string);
+				$$ = new_node($1); 
 			}
 		| TK_PR_PUBLIC
-			{ 
-				has_scope = TRUE;
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-
-				list_user_type_args[num_types].scope = $1->value.v_string;
-
-				$$ = new_node($1); 
-
+			{ 				
 				if(debug_user_type)
 					printf("[SCOPE] Value : %s\n", $1->value.v_string);
+				set_field_scope($1->value.v_string);
+				$$ = new_node($1); 
 			}
 		| TK_PR_PROTECTED
-			{ 
-				has_scope = TRUE;
-				list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-
-				list_user_type_args[num_types].scope = $1->value.v_string;
-
-				$$ = new_node($1); 
-
+			{ 				
 				if(debug_user_type)
 					printf("[SCOPE] Value : %s\n", $1->value.v_string);
+				set_field_scope($1->value.v_string);
+				$$ = new_node($1); 
 			}
 
 var     : TK_PR_CONST types TK_IDENTIFICADOR
@@ -378,17 +371,15 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					add_node($$, new_node($3));
 					add_node($$, $4);
 					add_node($$, new_node($5));
-
-					//printf("num_user_type_args : %d\n", num_user_type_args);
-					//print_user_type_list(list_user_type_args, num_user_type_args);
-					
+				
 					if(debug_user_type)
 						printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
 					
-					if(is_declared(stack, $2->value.v_string))
+					int declaration_line = is_declared(stack, $2->value.v_string);
+					if(declaration_line != NOT_DECLARED)
 					{
-						printf("[NEW_TYPE] Erro: já foi declarado!\n");
-						error_code = ERR_DECLARED;
+						printf("ERROR: line %d - class '%s' was already declared on line %i\n",
+							yylineno, $2->value.v_string, declaration_line);
 						exit(ERR_DECLARED);
 					}
 					else
@@ -396,8 +387,7 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 						add_user_type(stack, $2);
 					}
 
-					int i = 0;
-
+					int i;
 					for(i = 0; i < num_user_type_args; i++)
 					{
 						add_user_type_properties(stack, $2->value.v_string, list_user_type_args[i]);
@@ -415,6 +405,7 @@ param_begin : scope param_body
 					
 					if(debug_user_type)
 						printf("[PARAM_BEGIN] Token Com Scope\n");
+
 					$$ = $1;
 					add_node($$, $2);					
 				}
@@ -423,24 +414,20 @@ param_begin : scope param_body
 					if(debug_user_type)
 						printf("[PARAM_BEGIN] Token Sem Scope\n");
 
-					if(list_user_type_args[num_types - 1].scope == NULL)
-					{
-						if(debug_user_type)
-							printf("[PARAM_BEGIN] Scope is null\n");
-						//printf("num_user_type_args : %d\n", num_user_type_args);
-						list_user_type_args[num_types - 1].scope = "PUBLIC";
-					}
-
+					set_field_default_scope();
 					num_user_type_args++;
 					num_types--;
+
 					$$ = $1; 					
 				}
 
-param_body  : type TK_IDENTIFICADOR param_end
+param_body  : field_type TK_IDENTIFICADOR param_end
 				{	
 					if(debug_user_type)
 						printf("[PARAM_BODY] Token_Name : %s, num_types : %d\n", $2->value.v_string, num_types);
-					list_user_type_args[num_types - 1].token_name = $2->value.v_string;
+					
+					set_field_name($2->value.v_string);
+
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
@@ -450,6 +437,7 @@ param_end   : ':' param_begin
 				{	
 					if(debug_user_type)
 						printf("\n[PARAM_END]\n");
+					
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -465,16 +453,17 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 						if(debug_global_var)
 							printf("[GLOBAL_VAR] Identificador: %s\n\n", $1->value.v_string);
 
-						if(is_declared(stack, $1->value.v_string))
-						{
-							printf("[GLOBAL_VAR] Erro: já foi declarado!\n");
-							error_code = ERR_DECLARED;
+						int declaration_line = is_declared(stack, $1->value.v_string);
+						if (declaration_line != NOT_DECLARED) {
+							printf("ERROR: line %d - global variavel '%s' was already declared on line %i\n",
+								yylineno, $1->value.v_string, declaration_line);
 							exit(ERR_DECLARED);
 						}
 
-						printf("[GLOBAL_VAR] Token_Type %d\n", globalvar_args.type);
+						if(debug_global_var)
+							printf("[GLOBAL_VAR] Token_Type %d\n", globalvar_args.type);
 
-						globalvar_args.name = $1->value.v_string;
+						set_global_var_name($1->value.v_string);
 
 						add_global_var(stack, globalvar_args, $1);
 						globalvar_args = initialize_global_var_args();
@@ -483,34 +472,34 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 						add_node($$, $2);
 					}
 
-global_var_vec  : '[' index ']' globar_var_begin
+global_var_vec  : '[' index ']' global_var_begin
 					{	
 						if(debug_global_var)
 							printf("[GLOBAL_VAR_VEC] Is Array\n");
 
-						globalvar_args.is_array = TRUE;
+						set_global_var_as_array(TRUE);
 
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
 					}
-				| globar_var_begin
+				| global_var_begin
 					{
 						if(debug_global_var)
 							printf("[GLOBAL_VAR_VEC] Not array\n");
 
-						globalvar_args.is_array = FALSE;
-							
+						set_global_var_as_array(FALSE);
+
 						$$ = $1;
 					}
 
-globar_var_begin	: TK_PR_STATIC global_var_type
+global_var_begin	: TK_PR_STATIC global_var_type
 						{
 							if(debug_global_var)
 								printf("[GLOBAL_VAR_BEGIN] Static\n");
 
-							globalvar_args.is_static = FALSE;
+							set_global_var_static(TRUE);
 
 							$$ = new_node($1);
 							add_node($$, $2);
@@ -520,32 +509,28 @@ globar_var_begin	: TK_PR_STATIC global_var_type
 							if(debug_global_var)
 								printf("[GLOBAL_VAR_BEGIN] Not Static\n");
 
-							globalvar_args.is_static = FALSE;
+							set_global_var_static(FALSE);
 
 							$$ = $1;
 						}
 
-global_var_type	: type ';'
+global_var_type	: var_types ';'
 					{
-						if(debug_global_var)
-							printf("[GLOBAL_VAR_TYPE] Passou no type\n");
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
 				| TK_IDENTIFICADOR ';'
 					{
-						if(!is_declared(stack, $1->value.v_string))
-						{
-							printf("[GLOBAL_VAR_TYPE] Erro: tipo não foi declarado!\n");
-							error_code = ERR_UNDECLARED;
+						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+						{							
+							printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
 							exit(ERR_UNDECLARED);
 						}
 
 						if(debug_global_var)
 							printf("[GLOBAL_VAR_TYPE] token_type : %s\n", $1->value.v_string);
 
-						globalvar_args.type = USER_TYPE;
-						globalvar_args.user_type_size = get_user_type_size(stack, $1->value.v_string);
+						set_global_var_user_type($1->value.v_string);
 
 						$$ = new_node($1);
 						add_node($$, new_node($2));
@@ -554,23 +539,17 @@ global_var_type	: type ';'
 index	: TK_LIT_INT 
 			{
 				if(debug_global_var)
-				{
 					printf("[INDEX] Without '+', Index : %d\n", $1->value.v_int);
-				}
-
-				globalvar_args.array_size = $1->value.v_int;
-					
+				
+				set_global_var_size($1->value.v_int);
 				$$ = new_node($1);
 			}
 		| '+' TK_LIT_INT
 			{
 				if(debug_global_var)
-				{
-					printf("[INDEX] With '+'. Index : %d\n", $2->value.v_int);
-				}
-
-				globalvar_args.array_size = $2->value.v_int;	
-
+					printf("[INDEX] Without '+', Index : %d\n", $1->value.v_int);
+				
+				set_global_var_size($2->value.v_int);
 				$$ = new_node($1);
 				add_node($$, new_node($2));
 			}
@@ -1343,4 +1322,57 @@ func_call_params_end 	: expr func_call_params_body
 void yyerror(char const *s)
 {
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
+}
+
+void set_field_scope(char *scope) {
+	has_scope = TRUE;
+	list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+	list_user_type_args[num_types].scope = scope;
+}
+
+void set_field_default_scope() {
+	if(list_user_type_args[num_types - 1].scope == NULL) {
+		if(debug_user_type)
+			printf("[PARAM_BEGIN] Scope is null\n");
+		list_user_type_args[num_types - 1].scope = "PUBLIC";
+	}
+}
+
+void set_field_type(int type) {
+	if(has_scope == FALSE)
+		list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+				
+	has_scope = FALSE;
+
+	list_user_type_args[num_types].token_type = INT;
+	num_types++;
+}
+
+void set_field_name(char* name) {
+	list_user_type_args[num_types - 1].token_name = name;
+}
+
+void set_global_var_type(int type) {
+	globalvar_args.type = type;
+}
+
+void set_global_var_user_type(char* type) {
+	globalvar_args.type = USER_TYPE;
+	globalvar_args.user_type_size = get_user_type_size(stack, type);
+}
+
+void set_global_var_static(int is_static) {
+	globalvar_args.is_static = is_static;
+}
+
+void set_global_var_as_array(int is_array) {
+	globalvar_args.is_array = is_array;
+}
+
+void set_global_var_name(char* name) {
+	globalvar_args.name = name;
+}
+
+void set_global_var_size(int size) {
+	globalvar_args.array_size = size;
 }
