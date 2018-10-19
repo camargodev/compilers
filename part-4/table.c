@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-table create_table(){
+table create_table() {
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
 	table.num_lines = NO_LINES;
@@ -191,6 +191,8 @@ int is_declared (table_stack * stack, char* token){
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
+						if (stack->array[num_actual_table].lines[line_counter].user_type != NULL)
+							printf("%s\n", stack->array[num_actual_table].lines[line_counter].user_type);
 						return stack->array[num_actual_table].lines[line_counter].declaration_line;
 					}
 					line_counter++;
@@ -294,7 +296,7 @@ void add_user_type(table_stack * stack, Lexeme * token)
 		table_line line;
 		
 		line = inicialize_line(token);
-		line.token_name = token->value.v_string;
+		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
@@ -305,13 +307,14 @@ void add_user_type(table_stack * stack, Lexeme * token)
 		line.function_args = NULL;
 		line.num_user_type_args = 0;
 		line.token_size = 0;
-		
-		line.array_vals = NULL;
+
+		//line.user_type = strdup(token->value.v_string);
 
 		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
 				
 		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
 															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+
 		//print_line(line);
 		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
 	}
@@ -378,7 +381,7 @@ void add_user_type_properties(table_stack * stack, char * key, user_type_args to
 
 		line.user_type_args[line.num_user_type_args - 1].scope = token.scope;
 		line.user_type_args[line.num_user_type_args - 1].token_type = token.token_type;
-		line.user_type_args[line.num_user_type_args - 1].token_name = token.token_name;	
+		line.user_type_args[line.num_user_type_args - 1].token_name = strdup(token.token_name);	
 
 		stack->array[table_index].lines[line_index] = line;	
 	}
@@ -403,12 +406,14 @@ table_line inicialize_line(Lexeme * token)
 	line.is_user_type -1;
 	line.array_size = -1;
 
-	line.function_args = (func_args *) malloc(sizeof(func_args));
-	line.user_type_args = (user_type_args *) malloc(sizeof(user_type_args));
-	line.num_user_type_args = -1;
+	line.user_type = NULL;
 
-	line.lexeme = *token;
-	line.array_vals = (Lexeme*) malloc(sizeof(Lexeme));
+	line.function_args = NULL;
+	line.user_type_args = NULL;
+	line.num_user_type_args = -1;
+	line.num_func_args = -1;
+
+	line.lexeme = token;
 
 	return line;
 }
@@ -437,7 +442,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		table_line line;
 		
 		line = inicialize_line(token);
-		line.token_name = globalvar_args.name;
+		line.token_name = strdup(globalvar_args.name);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
@@ -473,7 +478,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 				line.token_size = line.token_size + strlen(globalvar_args.name);
 				break;
 			case USER_TYPE:
-				line.user_type = globalvar_args.user_type;
+				line.user_type = strdup(globalvar_args.user_type);
 				line.token_size = globalvar_args.user_type_size;
 				break;
 			default:
@@ -485,9 +490,8 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		
 		//buscar na tabela
 		//line.token_size = 0;
-		
-		line.array_vals = NULL;
-		line.lexeme = *token;
+
+		line.lexeme = token;
 
 		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
 				
@@ -507,7 +511,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 		table_line line;
 		
 		line = inicialize_line(token);
-		line.token_name = token->value.v_string;
+		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
@@ -521,11 +525,13 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 
 		line.num_user_type_args = 0;
 		line.token_size = 0;
-		
-		line.array_vals = NULL;
 
 		line.token_type = type;
-		line.user_type = user_type;
+
+		if (user_type != NULL)
+			line.user_type = strdup(user_type);
+		else
+			line.user_type = NULL;
 
 		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
 				
@@ -571,5 +577,64 @@ int get_user_type_size(table_stack * stack, char * token)
 		}		
 
 		return FALSE;
+	}
+}
+
+void free_table_stack(table_stack * stack) 
+{
+	if (stack->num_tables == NO_TABLES)
+	{
+		return;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{
+					free(stack->array[num_actual_table].lines[line_counter].token_name);
+					stack->array[num_actual_table].lines[line_counter].token_name = NULL;
+					
+					if (stack->array[num_actual_table].lines[line_counter].user_type != NULL){
+						free(stack->array[num_actual_table].lines[line_counter].user_type);
+						stack->array[num_actual_table].lines[line_counter].user_type = NULL;
+					}
+					
+					if (stack->array[num_actual_table].lines[line_counter].function_args != NULL) {
+						free(stack->array[num_actual_table].lines[line_counter].function_args);
+						stack->array[num_actual_table].lines[line_counter].function_args = NULL;
+					}
+
+					if (stack->array[num_actual_table].lines[line_counter].user_type_args != NULL) {
+						int i;
+						for (i = 0; i < stack->array[num_actual_table].lines[line_counter].num_user_type_args; i++)
+							if (stack->array[num_actual_table].lines[line_counter].user_type_args[i].token_name != NULL)
+								free(stack->array[num_actual_table].lines[line_counter].user_type_args[i].token_name);
+						free(stack->array[num_actual_table].lines[line_counter].user_type_args);
+						stack->array[num_actual_table].lines[line_counter].user_type_args = NULL;
+					}
+
+					line_counter++;
+				}
+
+				free(stack->array[num_actual_table].lines);
+				stack->array[num_actual_table].lines = NULL;
+			}
+
+			free(stack->array);
+
+			num_actual_table--;
+		}		
+
+		free(stack);
+		stack = NULL;
+
+		return;
 	}
 }

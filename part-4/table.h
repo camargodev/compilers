@@ -73,10 +73,7 @@ typedef struct line {
 	int num_func_args;
 
 	// The real value from the token
-	Lexeme lexeme; //Really need this?
-
-	//	Values if it is an array
-	Lexeme * array_vals;
+	Lexeme *lexeme;
 
 } table_line;
 
@@ -129,3 +126,5 @@ int get_user_type_size(table_stack * stack, char * token);
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
 int is_function_declared(table_stack * stack, char* token);
 void set_func_as_static(table_stack * stack, char* token);
+
+void free_table_stack(table_stack * stack);
