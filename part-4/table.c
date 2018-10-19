@@ -586,7 +586,7 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 		line.is_function = TRUE;
 		line.is_static = lv_static;
 		line.is_const = lv_const;
-		line.is_user_type = FALSE;
+		line.is_user_type = (type == USER_TYPE) ? TRUE : FALSE;
 		line.array_size = FALSE;
 
 		line.num_func_args = 0;
@@ -710,16 +710,93 @@ void free_table_stack(table_stack * stack)
 	}
 }
 
+int get_id_type(table_stack * stack, char* token, char** user_type_return) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NOT_DECLARED;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].token_type == USER_TYPE) {
+							*user_type_return = stack->array[num_actual_table].lines[line_counter].user_type;
+						} else {
+							*user_type_return = NULL;
+						}
+						return stack->array[num_actual_table].lines[line_counter].token_type;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return NOT_DECLARED;
+	}
+}
+
+int get_id_field_type(table_stack * stack, char* token, char* field) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NOT_DECLARED;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].is_user_type == TRUE) {
+							int i;
+							for (i = 0; i < stack->array[num_actual_table].lines[line_counter].num_user_type_args; i++) {
+								if (strcmp(stack->array[num_actual_table].lines[line_counter].user_type_args[i].token_name, field) == 0) {
+									return stack->array[num_actual_table].lines[line_counter].user_type_args[i].token_type;
+								}
+							}
+							return INVALID_FIELD;
+						} else {
+							return NOT_USER_TYPE;
+						}
+						return stack->array[num_actual_table].lines[line_counter].token_type;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return NOT_DECLARED;
+	}
+}
+
 expr_args init_expr_args()
 {
 	expr_args args;
 
-	args.has_int = 0;
-	args.has_float = 0;
-	args.has_char = 0;
-	args.has_string = 0;
-	args.has_bool = 0;
-	args.has_id = 0;
+	args.has_int = FALSE;
+	args.has_float = FALSE;
+	args.has_char = FALSE;
+	args.has_string = FALSE;
+	args.has_bool = FALSE;
+	args.has_id = FALSE;
+	args.has_user_type = FALSE;
 
 	return args;
 }

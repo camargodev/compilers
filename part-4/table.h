@@ -9,6 +9,10 @@
 #define NO_LINES -1
 
 #define NOT_DECLARED 0
+#define NOT_USER_TYPE -1
+#define INVALID_FIELD -2
+
+#define INVALID_TYPE -3
 
 typedef struct expr_arguments {
 
@@ -18,6 +22,7 @@ typedef struct expr_arguments {
 	int has_bool;
 	int has_char;
 	int has_string;
+	int has_user_type;
 
 } expr_args;
 
@@ -143,3 +148,6 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 void free_table_stack(table_stack * stack);
 
 expr_args init_expr_args();
+
+int get_id_type(table_stack * stack, char* token, char** user_type_return);
+int get_id_field_type(table_stack * stack, char* token, char* field);

@@ -56,23 +56,37 @@
 	Lexeme* local_var_lexeme = NULL;
 	void set_local_var_type(int type);
 	void set_local_var_lit_type(int type);
-	int can_convert(int type, int attr_type);
-	char* get_type_name(int type);
-	void init_table_stack();
-	int yylex(void);
-	void yyerror(char const *s);
-	void quit_with_error(int error);
-	extern int yylex_destroy(void);
+	int came_from_local_var;
+	int came_from_attr;
 
 	/* Vars and functions for expressions */
 
-	int debug_expr = TRUE;
+	int debug_expr = FALSE;
 	expr_args expr_list;
 	void debug_operands(char expr, char * type_operand);
 	void debug_expr_vals_char(char expr, char * type_operand);
 	void debug_expr_vals_float(float expr, char * type_operand);
 	void debug_expr_vals_int(int expr, char * type_operand);
 	void debug_expr_vals_string(char * expr, char * type_operand);
+	void print_expr_args(); 
+	void add_type_to_expr(int type);
+	char* expr_id_name = NULL;
+	char* id_user_type = NULL;
+	int current_expr_type = 0;
+	int infer_expr_type();
+	int has_numerical();
+	int added_field_type = FALSE;
+
+	/* Functions for general purposes */
+
+	int can_convert(int type, int attr_type);
+	char* get_type_name(int type);
+	
+	void init_table_stack();
+	int yylex(void);
+	void yyerror(char const *s);
+	void quit_with_error(int error);
+	extern int yylex_destroy(void);
 %}
 
 %verbose
@@ -189,6 +203,7 @@
 %type <node> expr
 %type <node> expr_begin
 %type <node> expr_vals
+%type <node> id_for_expr
 %type <node> piped
 %type <node> id_seq
 %type <node> id_seq_field
@@ -804,19 +819,38 @@ cmd_block	: '}' pop_table
 cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					{
 						if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-							printf("ERROR: line %d - type '%s' was not previously declared\n", 
+							printf("ERROR: line %d - '%s' was not previously declared\n", 
 								yylineno, $1->value.v_string);
 							quit_with_error(ERR_UNDECLARED);							
 						}
 
-						int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
-						if(declaration_line != NOT_DECLARED) {
-							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-								yylineno, local_var_lexeme->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);
-						} else {
-							add_local_var(stack, local_var_type, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
+						if (came_from_local_var == TRUE) {
+							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
+							if(declaration_line != NOT_DECLARED) {
+								printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+									yylineno, local_var_lexeme->value.v_string, declaration_line);
+								quit_with_error(ERR_DECLARED);
+							} else {
+								add_local_var(stack, USER_TYPE, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
+							}
+							came_from_local_var = FALSE;
 						}
+
+						if (came_from_attr == TRUE) {
+							char *trash;
+							int id_type = get_id_type(stack, $1->value.v_string, &trash);
+							int expr_type = infer_expr_type();
+							if (can_convert(id_type, expr_type) == FALSE) {
+								printf("ERROR: line %d - incorrect assignation for variable %s\n",
+									yylineno, $1->value.v_string);
+								quit_with_error(ERR_WRONG_TYPE);
+							}
+
+							//printf("\nO TIPO DEVE SER %s", get_type_name(id_type));
+							//printf("\nA EXPR EH %s", get_type_name(infer_expr_type()));
+							came_from_attr = FALSE;
+						}
+
 
 						$$ = new_node($1);
 						add_node($$, $2);
@@ -1185,6 +1219,7 @@ case 		: TK_PR_CASE TK_LIT_INT ':'
 
 cmd_id_fix	: TK_IDENTIFICADOR
 				{
+					came_from_local_var = TRUE;
 					local_var_lexeme = $1;
 					$$ = new_node($1);
 				}
@@ -1302,6 +1337,9 @@ var_lit		: TK_IDENTIFICADOR
 
 attr 		: '=' expr
 				{
+					came_from_attr = TRUE;
+
+					//print_expr_args();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1512,14 +1550,18 @@ expr_vals		: TK_LIT_FLOAT
 						debug_expr_vals_int($1->value.v_int, "EXPR_VALS");
 						$$ = new_node($1);
 					}
-				| TK_IDENTIFICADOR id_seq piped 
+				| id_for_expr id_seq piped 
 					{
 						if(debug_expr)
 							printf("[EXPR_VALS] TK_ID id_seq piped\n");
 
+						if (added_field_type == FALSE) {
+							add_type_to_expr(current_expr_type);
+							added_field_type = TRUE;
+						}
 						expr_list.has_id = TRUE;
 
-						$$ = new_node($1);
+						$$ = $1;
 						add_node($$, $2);
 						add_node($$, $3);
 					}
@@ -1547,6 +1589,15 @@ expr_vals		: TK_LIT_FLOAT
 					{
 						expr_list.has_bool = TRUE;
 						$$ = $1;
+					}
+
+id_for_expr		: TK_IDENTIFICADOR
+					{
+						expr_id_name = $1->value.v_string;
+						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
+						// Otherwise, id_user_type is NULL
+						current_expr_type = get_id_type(stack, $1->value.v_string, &id_user_type);
+						$$ = new_node($1);
 					}
 
 piped 			: %empty
@@ -1583,6 +1634,11 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 					{
 						if(debug_expr)
 							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
+
+						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
+						add_type_to_expr(type);
+						added_field_type = TRUE;
+						
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1618,6 +1674,9 @@ id_seq_simple	: '[' expr ']' id_seq_field
 					{
 						if(debug_expr)
 							printf("[ID_SEQ_SIMPLE] Sem vetor\n");
+
+
+
 						$$ = $1;
 					}
 
@@ -1794,13 +1853,18 @@ void set_local_var_lit_type(int type) {
 }
 
 int can_convert(int type, int attr_type) {
+	/*printf("\nCONVERT");
+	printf("\nTYPE 1 = %s", get_type_name(type));
+	printf("\nTYPE 2 = %s", get_type_name(attr_type));*/
 	if (type == INT || type == FLOAT || type == BOOL) {
-		if (attr_type == INT || attr_type == FLOAT || attr_type == BOOL)
+		if (attr_type == INT || attr_type == FLOAT || attr_type == BOOL) {
 			return TRUE;
-		else
+		} else {
 			return FALSE;
-	} else
+		}
+	} else{
 		return FALSE;
+	}
 }
 
 char* get_type_name(int type) {
@@ -1815,8 +1879,10 @@ char* get_type_name(int type) {
 			return "char";
 		case STRING:
 			return "string";
+		case USER_TYPE:
+			return "user type";
 		default:
-			return "unknown";
+			return "invalid";
 	}
 }
 
@@ -1856,4 +1922,78 @@ void debug_expr_vals_string(char * expr, char * type_operand)
 {
 	if(debug_expr)
 		printf("[%s] VALUE : %s\n", type_operand, expr);
+}
+
+void print_expr_args() {
+	printf("\nhas int = %i", expr_list.has_int);
+	printf("\nhas float = %i", expr_list.has_float);
+	//printf("\nhas id = %i", expr_list.has_id);
+	printf("\nhas bool = %i", expr_list.has_bool);
+	printf("\nhas chat = %i", expr_list.has_char);
+	printf("\nhas str = %i", expr_list.has_string);
+	printf("\nhas user type = %i\n", expr_list.has_user_type);
+}
+
+void add_type_to_expr(int type) {
+	switch (type) {
+		case INT:
+			expr_list.has_int = TRUE;
+			break;
+		case FLOAT:
+			expr_list.has_float = TRUE;
+			break;
+		case BOOL:
+			expr_list.has_bool = TRUE;
+			break;
+		case CHAR:
+			expr_list.has_char = TRUE;
+			break;
+		case STRING:
+			expr_list.has_string = TRUE;
+			break;
+		case USER_TYPE:
+			expr_list.has_user_type = TRUE;
+			break;
+	}
+}
+
+int infer_expr_type() {
+	if (expr_list.has_char) {
+		if (has_numerical()) {
+			printf("ERROR: line %d - expression mixing char with numericals\n", yylineno);
+			quit_with_error(ERR_CHAR_TO_X);
+		} else if (expr_list.has_string || expr_list.has_user_type) {
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (expr_list.has_string) {
+		if (has_numerical()) {
+			printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
+			quit_with_error(ERR_STRING_TO_X);
+		} else if (expr_list.has_char || expr_list.has_user_type) {
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (expr_list.has_user_type) {
+		if (has_numerical()) {
+			printf("ERROR: line %d - expression mixing user type with numericals\n", yylineno);
+			quit_with_error(ERR_USER_TO_X);
+		} else if (expr_list.has_char || expr_list.has_string) {
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (expr_list.has_float) {
+		return FLOAT;
+	} else if (expr_list.has_int) {
+		return INT;
+	} else {
+		return BOOL;
+	}
+}
+
+int has_numerical() {
+	return expr_list.has_int || expr_list.has_float || expr_list.has_bool;
 }

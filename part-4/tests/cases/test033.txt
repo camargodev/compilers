@@ -1,0 +1,4 @@
+bool k() {
+	string s;
+	s = "a" + 1;
+}
