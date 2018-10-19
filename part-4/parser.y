@@ -13,6 +13,8 @@
 
 	char * current_token;
 	char * current_scope;
+
+	int args_allocated;
 	
 	/* Vars and functions for user type fields */
 	user_type_args * list_user_type_args;
@@ -46,10 +48,17 @@
 	char *last_added_func;
 
 	void set_function_type(int type);
+	void set_user_type_arg(char *type);
+	void set_arg_type(int type);
+	void set_func_info(char* name, int is_const);
+	void reset_func_vars();
 
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
+	void quit_with_error(int error);
+
+	extern int yylex_destroy(void);
 
 %}
 
@@ -190,7 +199,7 @@
 		rule itself. Follow the pattern.
 */
 
-programa :  initializer start  
+programa :  initializer start destroyer
 			{ 
 					
 				$$ = $2;
@@ -202,6 +211,11 @@ programa :  initializer start
 initializer : %empty
 			{
 				init_table_stack();
+			}
+
+destroyer : %empty
+			{
+				free_table_stack(stack);
 			}
 
 start : new_type start
@@ -346,32 +360,27 @@ func_type  : TK_PR_INT
 
 func_arg_type  : TK_PR_INT
 			{ 
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = INT;
+				set_arg_type(INT);
 				$$ = new_node($1); 
 			}
 		| TK_PR_FLOAT
 			{ 
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = FLOAT;
+				set_arg_type(FLOAT);
 				$$ = new_node($1); 
 			}
 		| TK_PR_BOOL
 			{ 
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = BOOL;
+				set_arg_type(BOOL);
 				$$ = new_node($1);   
 			}
 		| TK_PR_CHAR
 			{ 
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = CHAR;
+				set_arg_type(CHAR);
 				$$ = new_node($1);  
 			}
 		| TK_PR_STRING
 			{ 
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = STRING;
+				set_arg_type(STRING);
 				$$ = new_node($1); 
 			}
 
@@ -399,9 +408,7 @@ scope   : TK_PR_PRIVATE
 
 var     : TK_PR_CONST func_arg_types TK_IDENTIFICADOR
 			{ 	
-				function_args[num_func_args].name = $3->value.v_string;
-				function_args[num_func_args].is_const = TRUE;
-				num_func_args++;
+				set_func_info($3->value.v_string, TRUE);
 
 				$$ = new_node($1); 
 				add_node($$, $2);
@@ -409,9 +416,7 @@ var     : TK_PR_CONST func_arg_types TK_IDENTIFICADOR
 			}
 		| func_arg_types TK_IDENTIFICADOR
 			{ 	
-				function_args[num_func_args].name = $2->value.v_string;
-				function_args[num_func_args].is_const = FALSE;
-				num_func_args++;
+				set_func_info($2->value.v_string, FALSE);
 
 				$$ = $1; 
 				add_node($$, new_node($2));
@@ -426,12 +431,11 @@ func_arg_types: func_arg_type
 				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
 				{							
 					printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-					exit(ERR_UNDECLARED);
+					quit_with_error(ERR_UNDECLARED);
 				}
 				
-				function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-				function_args[num_func_args].type = USER_TYPE;
-				function_args[num_func_args].user_type = $1->value.v_string;
+				set_user_type_arg($1->value.v_string);
+
 				$$ = new_node($1); 
 			}
 
@@ -469,7 +473,7 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					{
 						printf("ERROR: line %d - class '%s' was already declared on line %i\n",
 							yylineno, $2->value.v_string, declaration_line);
-						exit(ERR_DECLARED);
+						quit_with_error(ERR_DECLARED);
 					}
 					else
 					{
@@ -482,9 +486,10 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 						add_user_type_properties(stack, $2->value.v_string, list_user_type_args[i]);
 					}						
 
-					//free(list_user_type_args);
+					free(list_user_type_args);
 					num_user_type_args = 0;
-					num_types = 0;					
+					num_types = 0;		
+					args_allocated = FALSE;			
 				}
 
 param_begin : scope param_body
@@ -546,7 +551,7 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 						if (declaration_line != NOT_DECLARED) {
 							printf("ERROR: line %d - global variavel '%s' was already declared on line %i\n",
 								yylineno, $1->value.v_string, declaration_line);
-							exit(ERR_DECLARED);
+							quit_with_error(ERR_DECLARED);
 						}
 
 						if(debug_global_var)
@@ -613,7 +618,7 @@ global_var_type	: var_types ';'
 						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
 						{							
 							printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-							exit(ERR_UNDECLARED);
+							quit_with_error(ERR_UNDECLARED);
 						}
 
 						if(debug_global_var)
@@ -665,15 +670,13 @@ func_begin      : func_type TK_IDENTIFICADOR '(' func_params
 						if (func_decl_line != NOT_DECLARED) {
 							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
 								yylineno, $2->value.v_string, func_decl_line);
-							exit(ERR_DECLARED);							
+							quit_with_error(ERR_DECLARED);							
 						}
 
-						add_function(stack, function_type, "", num_func_args, function_args, $2);
+						add_function(stack, function_type, NULL, num_func_args, function_args, $2);
 						last_added_func = $2->value.v_string;
 
-						function_args = NULL;
-						function_type = UNDECLARED_TYPE;
-						num_func_args = 0;
+						reset_func_vars();
 
 						$$ = $1;
 						add_node($$, new_node($2));
@@ -686,21 +689,19 @@ func_begin      : func_type TK_IDENTIFICADOR '(' func_params
 						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
 							printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
 								yylineno, $1->value.v_string, $2->value.v_string);
-							exit(ERR_UNDECLARED);
+							quit_with_error(ERR_UNDECLARED);
 						}
 						int func_decl_line = is_function_declared(stack, $2->value.v_string);
 						if (func_decl_line != NOT_DECLARED) {
 							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
 								yylineno, $2->value.v_string, func_decl_line);
-							exit(ERR_DECLARED);							
+							quit_with_error(ERR_DECLARED);							
 						}
 
 						add_function(stack, USER_TYPE, $1->value.v_string, num_func_args, function_args, $2);
 						last_added_func = $2->value.v_string;
 
-						function_args = NULL;
-						function_type = UNDECLARED_TYPE;
-						num_func_args = 0;
+						reset_func_vars();
 
 						$$ = new_node($1);
 						add_node($$, new_node($2));
@@ -1473,7 +1474,7 @@ void init_table_stack() {
 	//first table will be global scope table
 	table table = create_table();
 	stack->num_tables++;
-	stack->array = malloc(sizeof(table) * stack->num_tables);
+	stack->array = malloc(sizeof(table) * (stack->num_tables+1));
 	stack->array[0] = table;
 
 	//printf("\tSegundo print_stack\n");
@@ -1482,25 +1483,35 @@ void init_table_stack() {
 
 void set_field_scope(char *scope) {
 	has_scope = TRUE;
-	list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+	if (args_allocated == TRUE) {
+		list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+	} else {
+		list_user_type_args = malloc(sizeof(user_type_args));
+		args_allocated = TRUE;
+	}
 	list_user_type_args[num_types].scope = scope;
 }
 
 void set_field_default_scope() {
-	if(list_user_type_args[num_types - 1].scope == NULL) {
+	//if(list_user_type_args[num_types - 1].scope == NULL) {
 		if(debug_user_type)
 			printf("[PARAM_BEGIN] Scope is null\n");
 		list_user_type_args[num_types - 1].scope = "PUBLIC";
-	}
+	//}
 }
 
 void set_field_type(int type) {
-	if(has_scope == FALSE)
-		list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+	if(has_scope == FALSE) {
+		if (args_allocated == TRUE) {
+			list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
+		} else {
+			list_user_type_args = malloc(sizeof(user_type_args));
+			args_allocated = TRUE;
+		}
+	}
 				
 	has_scope = FALSE;
-
-	list_user_type_args[num_types].token_type = INT;
+	list_user_type_args[num_types].token_type = type;
 	num_types++;
 }
 
@@ -1536,4 +1547,35 @@ void set_global_var_size(int size) {
 
 void set_function_type(int type) {
 	function_type = type;
+}
+
+void set_user_type_arg(char *type) {
+	function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+	function_args[num_func_args].type = USER_TYPE;
+	function_args[num_func_args].user_type = type;
+}
+
+void set_arg_type(int type) {
+	function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
+	function_args[num_func_args].type = type;
+}
+
+void set_func_info(char* name, int is_const) {
+	function_args[num_func_args].name = name;
+	function_args[num_func_args].is_const = is_const;
+	num_func_args++;
+}
+
+void reset_func_vars() {
+	function_args = NULL;
+	function_type = UNDECLARED_TYPE;
+	num_func_args = 0;
+}
+
+void quit_with_error(int error) {
+	libera(arvore);
+  	arvore = NULL;
+  	yylex_destroy();
+	free_table_stack(stack);
+	exit(error);
 }
