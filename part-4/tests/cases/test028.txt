@@ -1,0 +1,5 @@
+bool k() {
+	int a <= 1;
+	float b <= 1;
+	bool c <= 1;
+}

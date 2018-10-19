@@ -61,9 +61,9 @@
 
 	void set_local_var_type(int type);
 	void set_local_var_lit_type(int type);
-	void check_local_var_types(int type, int attr_type);
-	int can_convert_to_int(int type);
-	void error_wrong_type();
+	int can_convert(int type, int attr_type);
+
+	char* get_type_name(int type);
 
 	void init_table_stack();
 	int yylex(void);
@@ -814,7 +814,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 								yylineno, local_var_lexeme->value.v_string, declaration_line);
 							quit_with_error(ERR_DECLARED);
 						} else {
-							add_local_var(stack, local_var_type, $1->value.v_string, local_var_lexeme);
+							add_local_var(stack, local_var_type, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
 						}
 
 						$$ = new_node($1);
@@ -842,7 +842,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 								yylineno, $2->value.v_string, declaration_line);
 							quit_with_error(ERR_DECLARED);
 						} else {
-							add_local_var(stack, local_var_type, NULL, $2);
+							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
 						}
 
 						$$ = $1;
@@ -1184,21 +1184,51 @@ static_var	: TK_PR_CONST const_var
 					$$ = $1;
 				}
 			
-const_var	: type TK_IDENTIFICADOR var_end
+const_var	: local_var_type TK_IDENTIFICADOR var_end
 				{
+					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+					if(declaration_line != NOT_DECLARED) {
+						printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+							yylineno, $2->value.v_string, declaration_line);
+						quit_with_error(ERR_DECLARED);
+					} else {
+						add_local_var(stack, local_var_type, NULL, FALSE, TRUE, $2);
+					}
+
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
 				}
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
+					if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+							printf("ERROR: line %d - type '%s' was not previously declared\n", 
+								yylineno, $1->value.v_string);
+							quit_with_error(ERR_UNDECLARED);							
+					}
+
+					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+					if(declaration_line != NOT_DECLARED) {
+							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+							yylineno, $2->value.v_string, declaration_line);
+						quit_with_error(ERR_DECLARED);
+					} else {
+						add_local_var(stack, local_var_type, $1->value.v_string, FALSE, TRUE, $2);
+					}
+
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 				}
 
 var_end 	: TK_OC_LE var_lit
 				{
-					check_local_var_types(local_var_type, local_var_lit_type);
+					if (local_var_type != local_var_lit_type) {
+						if (can_convert(local_var_type, local_var_lit_type) == FALSE) {
+							printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
+								yylineno, get_type_name(local_var_type), get_type_name(local_var_lit_type));
+							quit_with_error(ERR_WRONG_TYPE);
+						}
+					}
 
 					$$ = new_node($1);
 					add_node($$, $2);
@@ -1664,39 +1694,31 @@ void set_local_var_lit_type(int type) {
 	local_var_lit_type = type;
 }
 
-void check_local_var_types(int type, int attr_type) {
-	switch (type) {
-		case INT:
-			if (can_convert_to_int(attr_type) == FALSE)
-				error_wrong_type();
-			break;
-		case FLOAT:
-			if (can_convert_to_int(attr_type) == FALSE)
-				error_wrong_type();
-			break;
-		case BOOL:
-			if (can_convert_to_int(attr_type) == FALSE)
-				error_wrong_type();
-			break;
-		case CHAR:
-			if (attr_type != CHAR)
-				error_wrong_type();
-			break;
-		case STRING:
-			if (attr_type != STRING)
-				error_wrong_type();
-			break;
-	}
-}
-void error_wrong_type() {
-	printf("\nDIFERENTE");
+int can_convert(int type, int attr_type) {
+	if (type == INT || type == FLOAT || type == BOOL) {
+		if (attr_type == INT || attr_type == FLOAT || attr_type == BOOL)
+			return TRUE;
+		else
+			return FALSE;
+	} else
+		return FALSE;
 }
 
-int can_convert_to_int(int type) {
-	if (type == INT || type == FLOAT || type == BOOL)
-		return TRUE;
-	else
-		return FALSE;
+char* get_type_name(int type) {
+	switch (type) {
+		case INT:
+			return "int";
+		case FLOAT:
+			return "float";
+		case BOOL:
+			return "bool";
+		case CHAR:
+			return "char";
+		case STRING:
+			return "string";
+		default:
+			return "unknown";
+	}
 }
 
 void quit_with_error(int error) {

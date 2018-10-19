@@ -61,7 +61,8 @@ typedef struct line {
 	// Thats the reason we create these flags (to make it more readable) and these structs (to save it in a more organizable way)
 
 	int is_function;
-	int is_func_static;
+	int is_static;
+	int is_const;
 	int is_user_type;
 	char *user_type;
 	int array_size; 	//actually also works as a flag (0 for false)
@@ -129,6 +130,6 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 int is_function_declared(table_stack * stack, char* token);
 void set_func_as_static(table_stack * stack, char* token);
 
-void add_local_var(table_stack* stack, int type, char* user_type, Lexeme *token);
+void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
 
 void free_table_stack(table_stack * stack);

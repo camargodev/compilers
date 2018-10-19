@@ -297,7 +297,7 @@ void set_func_as_static(table_stack * stack, char* token) {
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						stack->array[num_actual_table].lines[line_counter].is_func_static = TRUE;
+						stack->array[num_actual_table].lines[line_counter].is_static = TRUE;
 					}
 					line_counter++;
 				}
@@ -442,6 +442,9 @@ table_line inicialize_line(Lexeme * token)
 	line.num_user_type_args = -1;
 	line.num_func_args = -1;
 
+	line.is_static = FALSE;
+	line.is_const = FALSE;
+
 	line.lexeme = token;
 
 	return line;
@@ -545,7 +548,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
 		line.is_function = TRUE;
-		line.is_func_static = FALSE;
+		line.is_static = FALSE;
 		line.is_user_type = FALSE;
 		line.array_size = FALSE;
 
@@ -573,7 +576,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 	return;
 }
 
-void add_local_var(table_stack* stack, int type, char* user_type, Lexeme *token)
+void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token)
 {
 	int table_index = stack->num_tables;
 
@@ -587,7 +590,8 @@ void add_local_var(table_stack* stack, int type, char* user_type, Lexeme *token)
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
 		line.is_function = TRUE;
-		line.is_func_static = FALSE;
+		line.is_static = lv_static;
+		line.is_const = lv_const;
 		line.is_user_type = FALSE;
 		line.array_size = FALSE;
 
