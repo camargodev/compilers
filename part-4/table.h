@@ -106,6 +106,8 @@ void pop(table_stack * table_stack);
 // FUNCTIONS that manage the information of the tables.
 
 int is_declared (table_stack * stack, char* token);
+int is_declared_on_current_table (table_stack * stack, char* token);
+
 
 void add_user_type(table_stack * stack, Lexeme * token);
 void add_user_type_properties(table_stack * stack, char * key, user_type_args token);
@@ -126,5 +128,7 @@ int get_user_type_size(table_stack * stack, char * token);
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
 int is_function_declared(table_stack * stack, char* token);
 void set_func_as_static(table_stack * stack, char* token);
+
+void add_local_var(table_stack* stack, int type, char* user_type, Lexeme *token);
 
 void free_table_stack(table_stack * stack);

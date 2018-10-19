@@ -1,0 +1,4 @@
+x string;
+bool xy() {
+	int x;
+}

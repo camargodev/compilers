@@ -53,6 +53,18 @@
 	void set_func_info(char* name, int is_const);
 	void reset_func_vars();
 
+
+	/* Vars and functions for local var creation */
+	int local_var_type = UNDECLARED_TYPE;
+	int local_var_lit_type = UNDECLARED_TYPE;
+	Lexeme* local_var_lexeme = NULL;
+
+	void set_local_var_type(int type);
+	void set_local_var_lit_type(int type);
+	void check_local_var_types(int type, int attr_type);
+	int can_convert_to_int(int type);
+	void error_wrong_type();
+
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
@@ -125,6 +137,7 @@
 %type <node> field_type
 %type <node> var_types
 %type <node> func_type
+%type <node> local_var_type
 %type <node> func_arg_type
 %type <node> bool
 %type <node> pipe
@@ -215,7 +228,7 @@ initializer : %empty
 
 destroyer : %empty
 			{
-				free_table_stack(stack);
+				//free_table_stack(stack);
 			}
 
 start : new_type start
@@ -256,6 +269,32 @@ type    : TK_PR_INT
 			}
 		| TK_PR_STRING
 			{ 
+				$$ = new_node($1); 
+			}
+
+local_var_type  : TK_PR_INT
+			{ 
+				set_local_var_type(INT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_FLOAT
+			{ 
+				set_local_var_type(FLOAT);
+				$$ = new_node($1); 
+			}
+		| TK_PR_BOOL
+			{ 
+				set_local_var_type(BOOL);
+				$$ = new_node($1);   
+			}
+		| TK_PR_CHAR
+			{ 
+				set_local_var_type(CHAR);
+				$$ = new_node($1);  
+			}
+		| TK_PR_STRING
+			{ 
+				set_local_var_type(STRING);
 				$$ = new_node($1); 
 			}
 
@@ -733,14 +772,24 @@ func_params_end : ')' func_body
 						add_node($$, $3);
 					}
 
-func_body       : '{' cmd_block 
+func_body       : '{' push_table cmd_block 
 					{
 						//printf("\nfunc body");
 						$$ = new_node($1);
-						add_node($$, $2);
+						add_node($$, $3);
 					}
 
-cmd_block	: '}' 
+push_table		: %empty
+					{
+						push(stack, create_table());
+					}
+
+pop_table		: %empty
+					{
+						pop(stack);
+					}
+
+cmd_block	: '}' pop_table
 				{
 					//printf("\ncmd block");
 					$$ = new_node($1);
@@ -753,6 +802,21 @@ cmd_block	: '}'
 
 cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					{
+						if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+							printf("ERROR: line %d - type '%s' was not previously declared\n", 
+								yylineno, $1->value.v_string);
+							quit_with_error(ERR_UNDECLARED);							
+						}
+
+						int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
+						if(declaration_line != NOT_DECLARED) {
+							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+								yylineno, local_var_lexeme->value.v_string, declaration_line);
+							quit_with_error(ERR_DECLARED);
+						} else {
+							add_local_var(stack, local_var_type, $1->value.v_string, local_var_lexeme);
+						}
+
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
@@ -769,8 +833,18 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 						add_node($$, $2);
 						add_node($$, new_node($3));
 					}
-				| type TK_IDENTIFICADOR var_end ';'
+				| local_var_type TK_IDENTIFICADOR var_end ';'
 					{
+
+						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+						if(declaration_line != NOT_DECLARED) {
+							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+								yylineno, $2->value.v_string, declaration_line);
+							quit_with_error(ERR_DECLARED);
+						} else {
+							add_local_var(stack, local_var_type, NULL, $2);
+						}
+
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1085,6 +1159,7 @@ case 		: TK_PR_CASE TK_LIT_INT ':'
 
 cmd_id_fix	: TK_IDENTIFICADOR
 				{
+					local_var_lexeme = $1;
 					$$ = new_node($1);
 				}
 			| id_seq_simple attr
@@ -1123,6 +1198,8 @@ const_var	: type TK_IDENTIFICADOR var_end
 
 var_end 	: TK_OC_LE var_lit
 				{
+					check_local_var_types(local_var_type, local_var_lit_type);
+
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1133,30 +1210,37 @@ var_end 	: TK_OC_LE var_lit
 
 var_lit		: TK_IDENTIFICADOR
 				{
+					set_local_var_lit_type(USER_TYPE);
 					$$ = new_node($1);
 				}
 			| TK_LIT_INT
 				{
+					set_local_var_lit_type(INT);
 					$$ = new_node($1);
 				}
 			| TK_LIT_FLOAT
 				{
+					set_local_var_lit_type(FLOAT);
 					$$ = new_node($1);
 				}
 			| TK_LIT_CHAR
 				{
+					set_local_var_lit_type(CHAR);
 					$$ = new_node($1);
 				}
 			| TK_LIT_STRING
 				{
+					set_local_var_lit_type(STRING);
 					$$ = new_node($1);
 				}
 			| TK_LIT_TRUE
 				{
+					set_local_var_lit_type(BOOL);
 					$$ = new_node($1);
 				}
 			| TK_LIT_FALSE	
 				{
+					set_local_var_lit_type(BOOL);
 					$$ = new_node($1);
 				}
 
@@ -1472,10 +1556,10 @@ void init_table_stack() {
 
 				
 	//first table will be global scope table
-	table table = create_table();
-	stack->num_tables++;
-	stack->array = malloc(sizeof(table) * (stack->num_tables+1));
-	stack->array[0] = table;
+	table created_table = create_table();
+	stack->num_tables = 0;
+	stack->array = malloc(sizeof(table));
+	stack->array[0] = created_table;
 
 	//printf("\tSegundo print_stack\n");
 	//print_stack(stack);	
@@ -1570,6 +1654,49 @@ void reset_func_vars() {
 	function_args = NULL;
 	function_type = UNDECLARED_TYPE;
 	num_func_args = 0;
+}
+
+void set_local_var_type(int type) {
+	local_var_type = type;
+}
+
+void set_local_var_lit_type(int type) {
+	local_var_lit_type = type;
+}
+
+void check_local_var_types(int type, int attr_type) {
+	switch (type) {
+		case INT:
+			if (can_convert_to_int(attr_type) == FALSE)
+				error_wrong_type();
+			break;
+		case FLOAT:
+			if (can_convert_to_int(attr_type) == FALSE)
+				error_wrong_type();
+			break;
+		case BOOL:
+			if (can_convert_to_int(attr_type) == FALSE)
+				error_wrong_type();
+			break;
+		case CHAR:
+			if (attr_type != CHAR)
+				error_wrong_type();
+			break;
+		case STRING:
+			if (attr_type != STRING)
+				error_wrong_type();
+			break;
+	}
+}
+void error_wrong_type() {
+	printf("\nDIFERENTE");
+}
+
+int can_convert_to_int(int type) {
+	if (type == INT || type == FLOAT || type == BOOL)
+		return TRUE;
+	else
+		return FALSE;
 }
 
 void quit_with_error(int error) {

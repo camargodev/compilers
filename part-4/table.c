@@ -22,23 +22,27 @@ table create_table() {
 
 */
 
-void push(table_stack* table_stack, table item){
+void push(table_stack* stack, table item){
 	
 	//if(is_full(table_stack))
 	//	return;
-	table_stack->array[++table_stack->num_tables] = item;
-	printf("Item pushed\n");
+	//printf("DEI PUSH\n");
+	//printf("TABLE TEM %i LINHAS\n", item.num_lines);
+	stack->num_tables++;
+	stack->array = realloc(stack->array, sizeof(table)*(stack->num_tables+1));
+	stack->array[stack->num_tables] = item;
+	//printf("TABLE TEM %i LINHAS\n", item.num_lines);
 }
 
-void pop(table_stack * table_stack){
+void pop(table_stack * stack){
 	
-	if(table_stack->num_tables == NO_TABLES){
+	//printf("DEI POP\n");
+	if(stack->num_tables == NO_TABLES){
 		printf("Pilha já vazia!");
 		return;
 	}
-	else{
-		//free(table_stack->array[table_stack->num_tables]);
-		table_stack->num_tables--;
+	else {
+		stack->num_tables--;
 		return;
 	}	
 }
@@ -168,7 +172,7 @@ void print_user_type_list(user_type_args * list_user_type_args, int num_types)
 
 // Don't how to pass the name of the identifier in parser.
 // Abstracting this, the funcion would be something like this
-int is_declared (table_stack * stack, char* token){
+int is_declared (table_stack * stack, char* token) {
 	
 	if (stack->num_tables == NO_TABLES)
 	{
@@ -177,6 +181,7 @@ int is_declared (table_stack * stack, char* token){
 	else
 	{
 		int num_actual_table = stack->num_tables;
+		//printf("NUM ACTUAL TABLE = %i\n", num_actual_table);
 
 		while(num_actual_table != NO_TABLES)
 		{
@@ -191,8 +196,7 @@ int is_declared (table_stack * stack, char* token){
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].user_type != NULL)
-							printf("%s\n", stack->array[num_actual_table].lines[line_counter].user_type);
+						//printf("NUM ACTUAL TABLE QDO ACHOU = %i\n", num_actual_table);
 						return stack->array[num_actual_table].lines[line_counter].declaration_line;
 					}
 					line_counter++;
@@ -201,6 +205,31 @@ int is_declared (table_stack * stack, char* token){
 
 			num_actual_table--;
 		}		
+
+		return NOT_DECLARED;
+	}
+}
+
+int is_declared_on_current_table (table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NOT_DECLARED;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		int line_counter = 0;
+			
+		if (stack->array[num_actual_table].num_lines != NO_LINES)
+		{
+			while(line_counter <= stack->array[num_actual_table].num_lines) {					
+				if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0)  {
+					return stack->array[num_actual_table].lines[line_counter].declaration_line;
+				}
+				line_counter++;
+			}
+		}
 
 		return NOT_DECLARED;
 	}
@@ -289,7 +318,7 @@ void set_func_as_static(table_stack * stack, char* token) {
 //We first add the informations that are avaliable in the fisrt parser rule.
 void add_user_type(table_stack * stack, Lexeme * token)
 {
-	int table_index = 0;
+	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)
 	{
@@ -325,7 +354,7 @@ void add_user_type(table_stack * stack, Lexeme * token)
 //stack, $2->value.v_string, list_user_type_args[i]
 void add_user_type_properties(table_stack * stack, char * key, user_type_args token)
 {
-	int table_index = 0;
+	int table_index = stack->num_tables;
 
 	if(stack->num_tables != NO_TABLES)
 	{
@@ -435,7 +464,7 @@ global_var_args initialize_global_var_args()
 
 void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token)
 {
-	int table_index = 0;
+	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)
 	{
@@ -504,7 +533,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token)
 {
-	int table_index = 0;
+	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)
 	{
@@ -522,6 +551,48 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 
 		line.num_func_args = num_func_args;
 		line.function_args = function_args;
+
+		line.num_user_type_args = 0;
+		line.token_size = 0;
+
+		line.token_type = type;
+
+		if (user_type != NULL)
+			line.user_type = strdup(user_type);
+		else
+			line.user_type = NULL;
+
+		//printf("[ADD_USER_TYPE] Espaço alocado : %ld\n", sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+				
+		stack->array[table_index].lines = (table_line *)realloc(stack->array[table_index].lines,
+															 sizeof(table_line) * (++stack->array[table_index].num_lines + 1));
+		//print_line(line);
+		stack->array[table_index].lines[stack->array[table_index].num_lines] = line;
+	}
+
+	return;
+}
+
+void add_local_var(table_stack* stack, int type, char* user_type, Lexeme *token)
+{
+	int table_index = stack->num_tables;
+
+	if (stack->num_tables != NO_TABLES)
+	{
+		table_line line;
+		
+		line = inicialize_line(token);
+		line.token_name = strdup(token->value.v_string);
+		line.declaration_line = token->line_number;
+		line.nature = NATUREZA_IDENTIFICADOR;
+		
+		line.is_function = TRUE;
+		line.is_func_static = FALSE;
+		line.is_user_type = FALSE;
+		line.array_size = FALSE;
+
+		line.num_func_args = 0;
+		line.function_args = NULL;
 
 		line.num_user_type_args = 0;
 		line.token_size = 0;
@@ -589,7 +660,6 @@ void free_table_stack(table_stack * stack)
 	else
 	{
 		int num_actual_table = stack->num_tables;
-
 		while(num_actual_table != NO_TABLES)
 		{
 			int line_counter = 0;
@@ -598,7 +668,8 @@ void free_table_stack(table_stack * stack)
 			{
 				while(line_counter <= stack->array[num_actual_table].num_lines)
 				{
-					free(stack->array[num_actual_table].lines[line_counter].token_name);
+					free(stack->array[num_actual_table].lines[line_counter].token_name); 
+
 					stack->array[num_actual_table].lines[line_counter].token_name = NULL;
 					
 					if (stack->array[num_actual_table].lines[line_counter].user_type != NULL){
@@ -623,8 +694,10 @@ void free_table_stack(table_stack * stack)
 					line_counter++;
 				}
 
+
 				free(stack->array[num_actual_table].lines);
 				stack->array[num_actual_table].lines = NULL;
+
 			}
 
 			free(stack->array);
