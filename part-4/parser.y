@@ -10,30 +10,26 @@
 	extern int yylineno;
 	extern void* arvore;
 	table_stack * stack;
-
 	char * current_token;
 	char * current_scope;
-
 	int args_allocated;
 	
 	/* Vars and functions for user type fields */
+
 	user_type_args * list_user_type_args;
 	int num_user_type_args = 0;
 	int num_types = 0;
-
 	int has_scope = FALSE;
 	int debug_user_type = FALSE;
-
 	void set_field_scope(char* scope);
 	void set_field_default_scope();
 	void set_field_type(int type);
 	void set_field_name(char* name);
 
 	/* Vars and functions for global vars */
+
 	global_var_args globalvar_args;
-
 	int debug_global_var = FALSE;
-
 	void set_global_var_type(int type);
 	void set_global_var_user_type(char* type);
 	void set_global_var_static(int is_static);
@@ -42,36 +38,41 @@
 	void set_global_var_size(int size);
 
 	/* Vars and functions for functions declaration */
+
 	int num_func_args = 0;
 	func_args *function_args;
 	int function_type = UNDECLARED_TYPE;
 	char *last_added_func;
-
 	void set_function_type(int type);
 	void set_user_type_arg(char *type);
 	void set_arg_type(int type);
 	void set_func_info(char* name, int is_const);
 	void reset_func_vars();
-
-
+	
 	/* Vars and functions for local var creation */
+
 	int local_var_type = UNDECLARED_TYPE;
 	int local_var_lit_type = UNDECLARED_TYPE;
 	Lexeme* local_var_lexeme = NULL;
-
 	void set_local_var_type(int type);
 	void set_local_var_lit_type(int type);
 	int can_convert(int type, int attr_type);
-
 	char* get_type_name(int type);
-
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
 	void quit_with_error(int error);
-
 	extern int yylex_destroy(void);
 
+	/* Vars and functions for expressions */
+
+	int debug_expr = TRUE;
+	expr_args expr_list;
+	void debug_operands(char expr, char * type_operand);
+	void debug_expr_vals_char(char expr, char * type_operand);
+	void debug_expr_vals_float(float expr, char * type_operand);
+	void debug_expr_vals_int(int expr, char * type_operand);
+	void debug_expr_vals_string(char * expr, char * type_operand);
 %}
 
 %verbose
@@ -917,12 +918,37 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 						
 input 		: TK_PR_INPUT expr
 				{
+					printf("[INPUT] Teste\n\n");
+					
+					if(expr_list.has_int
+					 	|| expr_list.has_float
+					 	|| expr_list.has_char
+					 	|| expr_list.has_string
+					 	|| expr_list.has_bool)
+					 	{
+					 		printf("ERROR: input only accepts id types!\n");
+					 		//error_code = ERR_WRONG_PAR_INPUT;
+					 		exit(ERR_WRONG_PAR_INPUT);
+					 	}
+
+					expr_list = init_expr_args();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 
 output 		: TK_PR_OUTPUT expr output_vals
 				{
+					if(expr_list.has_char
+					 	|| expr_list.has_id)
+					 	{
+					 		//printf("ERROR: output only accepts arithmetic expr or string!\n");
+					 		//error_code = ERR_WRONG_PAR_OUTPUT;
+					 		//exit(ERR_WRONG_PAR_OUTPUT);
+					 	}
+
+					expr_list = init_expr_args();
+
+					printf("[OUTPUT] Teste\n\n");
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
@@ -1313,110 +1339,139 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
 
 bin_op			: '+' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '-' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '*' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '/' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '%'
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '^' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '|' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '&' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '>' 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| '<'
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_AND 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_OR 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_LE
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_NE 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_EQ 
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 				| TK_OC_GE
 					{
+						debug_operands($1->value.v_char, "BIN_OP");
 						$$ = new_node($1);
 					}
 
 un_op 			: not_null_un_op un_op
 					{
+						if(debug_expr)
+							printf("[UN_OP] Com operador\n");
 						$$ = $1;
 						add_node($$, $2);
 					}
 				| %empty
 					{
+						if(debug_expr)
+							printf("[UN_OP] Empty\n");
 						$$ = new_node(NULL);
 					}
 
 not_null_un_op  : '+' 
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					}
 				| '-'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '!'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '&'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '*'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '?'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '#'
 					{
+						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					}
 
 expr 			: un_op expr_vals expr_begin
 					{
+						if(debug_expr)
+							printf("[EXPR] Final\n");
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, $3);
@@ -1424,11 +1479,15 @@ expr 			: un_op expr_vals expr_begin
 
 expr_begin 		: bin_op expr
 					{
+						if(debug_expr)
+							printf("[EXPR_BEGIN] Binop expr\n");
 						$$ = $1;
 						add_node($$, $2);
 					}
 				| '?' expr ':' expr
 					{
+						if(debug_expr)
+							printf("[EXPR_BEGIN] Ternário\n");
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
@@ -1436,48 +1495,70 @@ expr_begin 		: bin_op expr
 					} 
 				| %empty
 					{
+						if(debug_expr)
+							printf("[EXPR_BEGIN] Empty\n");
 						$$ = new_node(NULL);
 					}
 
 expr_vals		: TK_LIT_FLOAT
 					{
+						expr_list.has_float = TRUE;
+						debug_expr_vals_float($1->value.v_float, "EXPR_VALS");
 						$$ = new_node($1);
 					}
 				| TK_LIT_INT
 					{
+						expr_list.has_int = TRUE;
+						debug_expr_vals_int($1->value.v_int, "EXPR_VALS");
 						$$ = new_node($1);
 					}
 				| TK_IDENTIFICADOR id_seq piped 
 					{
+						if(debug_expr)
+							printf("[EXPR_VALS] TK_ID id_seq piped\n");
+
+						expr_list.has_id = TRUE;
+
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, $3);
 					}
 				| TK_LIT_CHAR 
 					{
+						expr_list.has_char = TRUE;
+						debug_expr_vals_char($1->value.v_char, "EXPR_VALS");
 						$$ = new_node($1);
 					}
 				| TK_LIT_STRING 
 					{
+						expr_list.has_string = TRUE;
+						debug_expr_vals_string($1->value.v_string, "EXPR_VALS");
 						$$ = new_node($1);
 					}
 				|'(' expr ')' 
 					{
+						if(debug_expr)
+							("[EXPR_VALUE] ( expr )\n");
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
 					}
 				| bool
 					{
+						expr_list.has_bool = TRUE;
 						$$ = $1;
 					}
 
 piped 			: %empty
 					{
+						if(debug_expr)
+							printf("[PIPED] Empty\n");
 						$$ = new_node(NULL);
 					}
 				| pipe TK_IDENTIFICADOR id_seq piped_expr
 					{
+						if(debug_expr)
+							printf("[PIPED] pipe TK_IDENTIFICADOR id_seq piped_expr\n");
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1486,22 +1567,30 @@ piped 			: %empty
 
 id_seq			:  id_seq_simple
 					{
+						if(debug_expr)
+							printf("[ID_SEQ] id_seq_simple\n");
 						$$ = $1;
 					}
 				| '(' func_call_params
 					{
+						if(debug_expr)
+							printf("[ID_SEQ] func_call_params\n");
 						$$ = new_node($1);
 						add_node($$, $2);
 					} 
 
 id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec 
 					{
+						if(debug_expr)
+							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
 					}
 				| %empty
 					{
+						if(debug_expr)
+							printf("[ID_SEQ_FIELD] empty\n");
 						$$ = new_node(NULL);
 					}
 
@@ -1518,6 +1607,8 @@ id_seq_field_vec: '[' expr ']'
 
 id_seq_simple	: '[' expr ']' id_seq_field
 					{
+						if(debug_expr)
+							printf("[ID_SEQ_SIMPLE] Com vetor\n");
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
@@ -1525,20 +1616,28 @@ id_seq_simple	: '[' expr ']' id_seq_field
 					} 
 				|  id_seq_field
 					{
+						if(debug_expr)
+							printf("[ID_SEQ_SIMPLE] Sem vetor\n");
 						$$ = $1;
 					}
 
 func_call_params	: ')' 
-						{
+						{	
+							if(debug_expr)
+								printf("[FUNC_CALL_PARAMS] ')'\n");
 							$$ = new_node($1);
 						}
 					| expr func_call_params_body
 						{
+							if(debug_expr)
+								printf("[FUNC_CALL_PARAMS] expr func_call_params_body\n");
 							$$ = $1;
 							add_node($$, $2);
 						}
 					| '.' func_call_params_body
 						{
+							if(debug_expr)
+								printf("[FUNC_CALL_PARAMS] '.' func_call_params_body\n");
 							$$ = new_node($1);
 							add_node($$, $2);
 						}
@@ -1727,4 +1826,34 @@ void quit_with_error(int error) {
   	yylex_destroy();
 	free_table_stack(stack);
 	exit(error);
+}
+
+void debug_operands(char expr, char * type_operand)
+{
+	if(debug_expr)
+		printf("[%s] Signal : %c\n", type_operand, expr);
+}
+
+void debug_expr_vals_char(char expr, char * type_operand)
+{
+	if(debug_expr)
+		printf("[%s] VALUE : %c\n", type_operand, expr);
+}
+
+void debug_expr_vals_int(int expr, char * type_operand)
+{
+	if(debug_expr)
+		printf("[%s] VALUE : %d\n", type_operand, expr);
+}
+
+void debug_expr_vals_float(float expr, char * type_operand)
+{
+	if(debug_expr)
+		printf("[%s] VALUE : %f\n", type_operand, expr);
+}
+
+void debug_expr_vals_string(char * expr, char * type_operand)
+{
+	if(debug_expr)
+		printf("[%s] VALUE : %s\n", type_operand, expr);
 }

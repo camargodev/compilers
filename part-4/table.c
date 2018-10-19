@@ -4,22 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-table create_table() {
+table create_table(){
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
 	table.num_lines = NO_LINES;
-	//line.function_arguments = (struct Lexeme*) malloc(sizeof(struct Lexeme));
-
-	//table.lines[0] = line;
-
+	
 	return table;
 }
 
 /*
 	TABLE STACK
-
-
-
 */
 
 void push(table_stack* stack, table item){
@@ -714,4 +708,18 @@ void free_table_stack(table_stack * stack)
 
 		return;
 	}
+}
+
+expr_args init_expr_args()
+{
+	expr_args args;
+
+	args.has_int = 0;
+	args.has_float = 0;
+	args.has_char = 0;
+	args.has_string = 0;
+	args.has_bool = 0;
+	args.has_id = 0;
+
+	return args;
 }

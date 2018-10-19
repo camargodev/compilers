@@ -10,6 +10,17 @@
 
 #define NOT_DECLARED 0
 
+typedef struct expr_arguments {
+
+	int has_int;
+	int has_float;
+	int has_id;
+	int has_bool;
+	int has_char;
+	int has_string;
+
+} expr_args;
+
 typedef struct globar_var_arguments {
 	
 	int is_array;
@@ -88,9 +99,6 @@ table create_table();
 
 /*
 	TABLE STACK
-
-
-
 */
 
 typedef struct table_stack {
@@ -133,3 +141,5 @@ void set_func_as_static(table_stack * stack, char* token);
 void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
 
 void free_table_stack(table_stack * stack);
+
+expr_args init_expr_args();
