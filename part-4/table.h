@@ -142,6 +142,7 @@ int get_user_type_size(table_stack * stack, char * token);
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
 int is_function_declared(table_stack * stack, char* token);
 void set_func_as_static(table_stack * stack, char* token);
+int is_symbol_user_type(table_stack * stack, char* token);
 
 void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
 
@@ -151,3 +152,4 @@ expr_args init_expr_args();
 
 int get_id_type(table_stack * stack, char* token, char** user_type_return);
 int get_id_field_type(table_stack * stack, char* token, char* field);
+int is_user_type(table_stack * stack, char* token);

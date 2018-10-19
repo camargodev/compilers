@@ -43,6 +43,8 @@
 	func_args *function_args;
 	int function_type = UNDECLARED_TYPE;
 	char *last_added_func;
+	Lexeme* func_lexeme = NULL;
+	int func_decl_line;	
 	void set_function_type(int type);
 	void set_user_type_arg(char *type);
 	void set_arg_type(int type);
@@ -76,6 +78,7 @@
 	int infer_expr_type();
 	int has_numerical();
 	int added_field_type = FALSE;
+	int came_from_function_call = FALSE;
 
 	/* Functions for general purposes */
 
@@ -167,6 +170,7 @@
 %type <node> index
 %type <node> func
 %type <node> func_begin
+%type <node> func_name
 %type <node> func_params
 %type <node> func_params_end
 %type <node> func_body
@@ -717,52 +721,49 @@ func 	: TK_PR_STATIC func_begin
 				$$ = $1;
 			}
 
-func_begin      : func_type TK_IDENTIFICADOR '(' func_params
+func_begin      : func_type func_name '(' func_params
 					{
-						//printf("\nfunc_begin");
-
-						int func_decl_line = is_function_declared(stack, $2->value.v_string);
-						if (func_decl_line != NOT_DECLARED) {
-							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
-								yylineno, $2->value.v_string, func_decl_line);
-							quit_with_error(ERR_DECLARED);							
-						}
-
-						add_function(stack, function_type, NULL, num_func_args, function_args, $2);
-						last_added_func = $2->value.v_string;
+						add_function(stack, function_type, NULL, num_func_args, function_args, func_lexeme);
+						last_added_func = func_lexeme->value.v_string;
 
 						reset_func_vars();
 
 						$$ = $1;
-						add_node($$, new_node($2));
+						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
 					}
 
-				| TK_IDENTIFICADOR TK_IDENTIFICADOR '(' func_params
+				| TK_IDENTIFICADOR func_name '(' func_params
 					{
 						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
 							printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
-								yylineno, $1->value.v_string, $2->value.v_string);
+								func_decl_line, $1->value.v_string, func_lexeme->value.v_string);
 							quit_with_error(ERR_UNDECLARED);
 						}
-						int func_decl_line = is_function_declared(stack, $2->value.v_string);
-						if (func_decl_line != NOT_DECLARED) {
-							printf("ERROR: line %d - function '%s' already declared on line %i\n", 
-								yylineno, $2->value.v_string, func_decl_line);
-							quit_with_error(ERR_DECLARED);							
-						}
 
-						add_function(stack, USER_TYPE, $1->value.v_string, num_func_args, function_args, $2);
-						last_added_func = $2->value.v_string;
+						add_function(stack, USER_TYPE, $1->value.v_string, num_func_args, function_args, func_lexeme);
+						last_added_func = func_lexeme->value.v_string;
 
 						reset_func_vars();
 
 						$$ = new_node($1);
-						add_node($$, new_node($2));
+						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
 					}
+
+func_name 	: TK_IDENTIFICADOR
+				{
+					func_decl_line = is_function_declared(stack, $1->value.v_string);
+					if (func_decl_line != NOT_DECLARED) {
+						printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+							yylineno, $1->value.v_string, func_decl_line);
+						quit_with_error(ERR_DECLARED);							
+					}
+					func_lexeme = $1;
+					$$ = new_node($1);
+				}
 
 func_params     : ')' func_body
 					{
@@ -818,7 +819,26 @@ cmd_block	: '}' pop_table
 
 cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					{
-						if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+						int declaration_line = is_declared(stack, $1->value.v_string);
+
+						if (came_from_function_call == TRUE) {
+							if (is_function_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+								if (is_user_type(stack, $1->value.v_string) == TRUE) {
+									printf("ERROR: line %d - type '%s' used as function\n", 
+										yylineno, $1->value.v_string);
+									quit_with_error(ERR_USER);
+								} else if (declaration_line != NOT_DECLARED) {
+									printf("ERROR: line %d - variable '%s' used as function\n", 
+										yylineno, $1->value.v_string);
+									quit_with_error(ERR_VARIABLE);
+								}
+
+								printf("ERROR: line %d - function '%s' was not previously declared\n", 
+									yylineno, $1->value.v_string);
+								quit_with_error(ERR_UNDECLARED);
+							}
+							came_from_function_call = FALSE;
+						} else if (declaration_line == NOT_DECLARED) {
 							printf("ERROR: line %d - '%s' was not previously declared\n", 
 								yylineno, $1->value.v_string);
 							quit_with_error(ERR_UNDECLARED);							
@@ -1230,6 +1250,7 @@ cmd_id_fix	: TK_IDENTIFICADOR
 				}
 			| '(' func_call_params piped_expr
 				{
+					came_from_function_call = TRUE;
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
@@ -1559,6 +1580,38 @@ expr_vals		: TK_LIT_FLOAT
 							add_type_to_expr(current_expr_type);
 							added_field_type = TRUE;
 						}
+
+						int decl_line_as_func = is_function_declared(stack, expr_id_name);
+						if (came_from_function_call == TRUE) {
+							if (decl_line_as_func == NOT_DECLARED) {
+								if (is_user_type(stack, expr_id_name) == TRUE) {
+									printf("ERROR: line %d - type '%s' used as function\n", 
+										yylineno, expr_id_name);
+									quit_with_error(ERR_USER);
+								} 
+								if (is_declared(stack, expr_id_name) != NOT_DECLARED) {
+									printf("ERROR: line %d - variable '%s' used as function\n", 
+										yylineno, expr_id_name);
+									quit_with_error(ERR_VARIABLE);
+								}
+
+								printf("ERffROR: line %d - function '%s' was not previously declared\n", 
+									yylineno, expr_id_name);
+								quit_with_error(ERR_UNDECLARED);
+							}
+							came_from_function_call = FALSE;
+						} else {
+							if (decl_line_as_func != NOT_DECLARED) {
+								printf("ERROR: line %d - function '%s' used as variable\n", 
+									yylineno, expr_id_name);
+								quit_with_error(ERR_FUNCTION);
+							}
+							if (is_user_type(stack, expr_id_name) == TRUE) {
+								printf("ERROR: line %d - type '%s' used as variable\n", 
+									yylineno, expr_id_name);
+								quit_with_error(ERR_USER);
+							}
+						}
 						expr_list.has_id = TRUE;
 
 						$$ = $1;
@@ -1626,6 +1679,7 @@ id_seq			:  id_seq_simple
 					{
 						if(debug_expr)
 							printf("[ID_SEQ] func_call_params\n");
+						came_from_function_call = TRUE;
 						$$ = new_node($1);
 						add_node($$, $2);
 					} 
@@ -1635,6 +1689,10 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 						if(debug_expr)
 							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
 
+						if (id_user_type == NULL) {
+							printf("ERROR: line %d - variable is not a user type\n", yylineno);
+							quit_with_error(ERR_VARIABLE);
+						}
 						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
 						add_type_to_expr(type);
 						added_field_type = TRUE;

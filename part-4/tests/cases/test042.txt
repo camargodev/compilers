@@ -1,0 +1,5 @@
+bool k() {
+	char s;
+	int i;
+	s = i$a;
+}

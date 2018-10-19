@@ -167,6 +167,10 @@ void print_user_type_list(user_type_args * list_user_type_args, int num_types)
 // Don't how to pass the name of the identifier in parser.
 // Abstracting this, the funcion would be something like this
 int is_declared (table_stack * stack, char* token) {
+
+	int debug = FALSE;
+	if (debug == TRUE)
+		printf("\nLOOKING FOR %s", token);
 	
 	if (stack->num_tables == NO_TABLES)
 	{
@@ -184,13 +188,11 @@ int is_declared (table_stack * stack, char* token) {
 			if (stack->array[num_actual_table].num_lines != NO_LINES)
 			{
 				while(line_counter <= stack->array[num_actual_table].num_lines)
-				{					
-					//printf("Token do arraY : %s, Token parametro : %s, strcmp : %d", 
-					//	stack->array[num_actual_table].lines[line_counter].token_name, token, strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token));
-					
+				{		
+					if (debug)
+						printf("\nFOUND %s", stack->array[num_actual_table].lines[line_counter].token_name);			
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						//printf("NUM ACTUAL TABLE QDO ACHOU = %i\n", num_actual_table);
 						return stack->array[num_actual_table].lines[line_counter].declaration_line;
 					}
 					line_counter++;
@@ -252,10 +254,48 @@ int is_function_declared (table_stack * stack, char* token){
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE)
+						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE) {
 							return stack->array[num_actual_table].lines[line_counter].declaration_line;
-						else
+						} else {
 							return NOT_DECLARED;
+						}
+					}
+					line_counter++;
+				}
+			}
+
+			num_actual_table--;
+		}		
+
+		return NOT_DECLARED;
+	}
+}
+
+int is_symbol_user_type(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NOT_DECLARED;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].is_user_type == TRUE) {
+							return TRUE;
+						} else {
+							return NOT_DECLARED;
+						}
 					}
 					line_counter++;
 				}
@@ -583,7 +623,7 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.is_function = TRUE;
+		line.is_function = FALSE;
 		line.is_static = lv_static;
 		line.is_const = lv_const;
 		line.is_user_type = (type == USER_TYPE) ? TRUE : FALSE;
@@ -783,6 +823,37 @@ int get_id_field_type(table_stack * stack, char* token, char* field) {
 			num_actual_table--;
 		}		
 		return NOT_DECLARED;
+	}
+}
+
+int is_user_type(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return FALSE;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].num_user_type_args > 0)
+							return TRUE;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return FALSE;
 	}
 }
 
