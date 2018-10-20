@@ -225,6 +225,7 @@
 %type <node> foreach_list
 %type <node> foreach_count
 %type <node> switch
+%type <node> switch_expr
 %type <node> case
 %type <node> cmd_id_fix
 %type <node> static_var		
@@ -1559,15 +1560,26 @@ foreach_count	: %empty
 						reset_counters();
 					}
 
-switch 		: TK_PR_SWITCH '(' expr ')' '{' cmd_block
+switch 		: TK_PR_SWITCH '(' switch_expr ')' '{' push_table cmd_block
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, $3);
 					add_node($$, new_node($4));
 					add_node($$, new_node($5));
-					add_node($$, $6);
+					add_node($$, $7);
 				}
+
+switch_expr : expr
+			{
+				int cond_type = infer_expr_type();
+				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
+					printf("ERROR: line %d - 'switch' conditional should be of type bool, int, or float\n",
+							yylineno);
+					quit_with_error(ERR_WRONG_TYPE);
+				}
+				$$ = $1;
+			}
 
 case 		: TK_PR_CASE expr ':'
 				{
