@@ -155,7 +155,7 @@
 %type <node> programa 
 
 %type <node> start
-%type <node> type
+//%type <node> type
 %type <node> scope
 %type <node> var 
 %type <node> func_arg_types
@@ -191,7 +191,9 @@
 %type <node> if_then_expr
 %type <node> else
 %type <node> while
+%type <node> while_expr
 %type <node> do_while
+%type <node> do_while_expr
 %type <node> continue
 %type <node> break
 %type <node> return
@@ -279,7 +281,7 @@ start : new_type start
 				$$ = new_node(NULL); 
 			}
 
-type    : TK_PR_INT
+/*type    : TK_PR_INT
 			{ 
 				$$ = new_node($1); 
 			}
@@ -298,7 +300,7 @@ type    : TK_PR_INT
 		| TK_PR_STRING
 			{ 
 				$$ = new_node($1); 
-			}
+			}*/
 
 local_var_type  : TK_PR_INT
 			{ 
@@ -1099,8 +1101,8 @@ else 		: TK_PR_ELSE '{' cmd_block
 					$$ = new_node(NULL);
 				}
 
-while 		: TK_PR_WHILE '(' expr ')'
-				TK_PR_DO '{' cmd_block
+while 		: TK_PR_WHILE '(' while_expr ')'
+				TK_PR_DO '{' push_table cmd_block
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
@@ -1108,20 +1110,47 @@ while 		: TK_PR_WHILE '(' expr ')'
 					add_node($$, new_node($4));
 					add_node($$, new_node($5));
 					add_node($$, new_node($6));
-					add_node($$, $7);
+					add_node($$, $8);
 				}
 
-do_while 	: TK_PR_DO '{' cmd_block
-				TK_PR_WHILE '(' expr ')'
+while_expr	: expr 
+				{
+					int cond_type = infer_expr_type();
+					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
+						printf("ERROR: line %d - 'while' conditional should be of type bool, int, or float\n",
+								yylineno);
+						quit_with_error(ERR_WRONG_TYPE);
+					}
+					added_field_type = FALSE;
+					expr_list = init_expr_args();
+
+					$$ = $1;
+				}
+
+do_while 	: TK_PR_DO '{' push_table cmd_block
+				TK_PR_WHILE '(' do_while_expr ')'
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
-					add_node($$, $3);
-					add_node($$, new_node($4));
+					add_node($$, $4);
 					add_node($$, new_node($5));
-					add_node($$, $6);
-					add_node($$, new_node($7));
+					add_node($$, new_node($6));
+					add_node($$, $7);
+					add_node($$, new_node($8));
+				}
 
+do_while_expr: expr 
+				{
+					int cond_type = infer_expr_type();
+					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
+						printf("ERROR: line %d - 'do while' conditional should be of type bool, int, or float\n",
+								yylineno);
+						quit_with_error(ERR_WRONG_TYPE);
+					}
+					added_field_type = FALSE;
+					expr_list = init_expr_args();
+
+					$$ = $1;
 				}
 
 continue 	: TK_PR_CONTINUE
@@ -1170,7 +1199,7 @@ return 		: TK_PR_RETURN expr
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
 						for_expr ':'
 						cmd_for for_scd_list
-						'{' cmd_block
+						'{' push_table cmd_block
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
@@ -1181,7 +1210,7 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 					add_node($$, $7);
 					add_node($$, $8);
 					add_node($$, new_node($9));
-					add_node($$, $10);
+					add_node($$, $11);
 				}
 
 for_expr 	: expr
