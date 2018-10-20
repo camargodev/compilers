@@ -90,6 +90,7 @@
 	void reset_counters();
 	int can_convert(int type, int attr_type);
 	char* get_type_name(int type);
+	void reset_expr();
 	
 	void init_table_stack();
 	int yylex(void);
@@ -196,6 +197,7 @@
 %type <node> return
 %type <node> for
 %type <node> cmd_for
+%type <node> for_expr
 %type <node> for_fst_list
 %type <node> for_scd_list
 %type <node> foreach
@@ -841,12 +843,12 @@ pop_table		: %empty
 
 cmd_block	: '}' pop_table
 				{
-					printf("\ncmd block");
+					//printf("\ncmd block");
 					$$ = new_node($1);
 				}
 			| cmd cmd_block
 				{
-					printf("\nNEW CMD");
+					//printf("\nNEW CMD");
 					$$ = $1;
 					add_node($$, $2);
 				} 
@@ -899,6 +901,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 									yylineno, $1->value.v_string);
 								quit_with_error(ERR_WRONG_TYPE);
 							}
+
 
 							//printf("\nO TIPO DEVE SER %s", get_type_name(id_type));
 							//printf("\nA EXPR EH %s", get_type_name(infer_expr_type()));
@@ -1075,7 +1078,7 @@ if_then_expr : expr
 			{
 				int cond_type = infer_expr_type();
 				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					printf("ERROR: line %d - if condicional should be of type bool, int, or float\n",
+					printf("ERROR: line %d - 'if' conditional should be of type bool, int, or float\n",
 							yylineno);
 					quit_with_error(ERR_WRONG_TYPE);
 				}
@@ -1165,7 +1168,7 @@ return 		: TK_PR_RETURN expr
 				}
 
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
-						expr ':'
+						for_expr ':'
 						cmd_for for_scd_list
 						'{' cmd_block
 				{
@@ -1181,13 +1184,92 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 					add_node($$, $10);
 				}
 
+for_expr 	: expr
+			{	
+				//print_expr_args();	
+				int cond_type = infer_expr_type();
+				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
+					printf("ERROR: line %d - 'for' conditional should be of type bool, int, or float\n",
+							yylineno);
+					quit_with_error(ERR_WRONG_TYPE);
+				}
+				added_field_type = FALSE;
+				expr_list = init_expr_args();
+
+				$$ = $1;
+			}
+
 cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
 					{
+						int declaration_line = is_declared(stack, $1->value.v_string);
+
+						if (came_from_function_call == TRUE) {
+							if (is_function_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+								if (is_user_type(stack, $1->value.v_string) == TRUE) {
+									printf("ERROR: line %d - type '%s' used as function\n", 
+										yylineno, $1->value.v_string);
+									quit_with_error(ERR_USER);
+								} else if (declaration_line != NOT_DECLARED) {
+									printf("ERROR: line %d - variable '%s' used as function\n", 
+										yylineno, $1->value.v_string);
+									quit_with_error(ERR_VARIABLE);
+								}
+
+								printf("ERROR: line %d - function '%s' was not previously declared\n", 
+									yylineno, $1->value.v_string);
+								quit_with_error(ERR_UNDECLARED);
+							}
+							came_from_function_call = FALSE;
+						} else if (declaration_line == NOT_DECLARED) {
+							printf("ERROR: line %d - '%s' was not previously declared\n", 
+								yylineno, $1->value.v_string);
+							quit_with_error(ERR_UNDECLARED);							
+						}
+
+						if (came_from_local_var == TRUE) {
+							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
+							if(declaration_line != NOT_DECLARED) {
+								printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+									yylineno, local_var_lexeme->value.v_string, declaration_line);
+								quit_with_error(ERR_DECLARED);
+							} else {
+								add_local_var(stack, USER_TYPE, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
+							}
+							came_from_local_var = FALSE;
+						}
+
+						if (came_from_attr == TRUE) {
+							char *trash;
+							int id_type = get_id_type(stack, $1->value.v_string, &trash);
+							int expr_type = infer_expr_type();
+							if (can_convert(id_type, expr_type) == FALSE) {
+								printf("ERROR: line %d - incorrect assignation for variable %s\n",
+									yylineno, $1->value.v_string);
+								quit_with_error(ERR_WRONG_TYPE);
+							}
+
+
+							//printf("\nO TIPO DEVE SER %s", get_type_name(id_type));
+							//printf("\nA EXPR EH %s", get_type_name(infer_expr_type()));
+							came_from_attr = FALSE;
+						}
+
+
 						$$ = new_node($1);
 						add_node($$, $2);
 					}
-				| type TK_IDENTIFICADOR var_end
+				| local_var_type TK_IDENTIFICADOR var_end
 					{
+
+						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+						if(declaration_line != NOT_DECLARED) {
+							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+								yylineno, $2->value.v_string, declaration_line);
+							quit_with_error(ERR_DECLARED);
+						} else {
+							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
+						}
+
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1384,6 +1466,9 @@ const_var	: local_var_type TK_IDENTIFICADOR var_end
 
 var_end 	: TK_OC_LE var_lit
 				{
+					//print_expr_args();
+					//printf("\nLOCAL VAR TYPE = %s", get_type_name(local_var_type));
+					//printf("\nLOCAL VAR LIT TYPE = %s\n", get_type_name(local_var_lit_type));
 					if (local_var_type != local_var_lit_type) {
 						if (can_convert(local_var_type, local_var_lit_type) == FALSE) {
 							printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
@@ -1441,16 +1526,21 @@ attr 		: '=' expr
 					came_from_attr = TRUE;
 
 					//print_expr_args();
+
+					//reset_expr();
+
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| TK_OC_SL expr 
 				{
+					//reset_expr();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| TK_OC_SR expr 
 				{
+					//reset_expr();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -2088,6 +2178,7 @@ void quit_with_error(int error) {
 }
 
 void reset_counters() {
+	reset_expr();
 	num_boolean_operators = 0;
 	num_any_operators = 0;
 }
@@ -2157,6 +2248,7 @@ void add_type_to_expr(int type) {
 
 int infer_expr_type() {
 	//printf("\nENTRE NO INFER");
+	//print_expr_args();
 	if (expr_list.has_char) {
 		//printf("\nTENHO CHAR");
 		if (has_numerical()) {
@@ -2249,6 +2341,11 @@ int infer_expr_type() {
 		reset_counters();
 		return BOOL;
 	}
+}
+
+void reset_expr() {
+	added_field_type = FALSE;
+	expr_list = init_expr_args();
 }
 
 int has_numerical() {

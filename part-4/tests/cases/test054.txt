@@ -1,0 +1,6 @@
+int x() {
+	string a;
+	bool x;
+	int i;
+	for (i = 0 : x + 1 : x = x+1) {};
+}
