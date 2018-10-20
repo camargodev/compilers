@@ -192,10 +192,11 @@ int is_declared (table_stack * stack, char* token) {
 			{
 				while(line_counter <= stack->array[num_actual_table].num_lines)
 				{		
-					if (debug)
-						printf("\nFOUND %s", stack->array[num_actual_table].lines[line_counter].token_name);			
+		
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
+						if (debug)
+							printf("\nFOUND %s\n", stack->array[num_actual_table].lines[line_counter].token_name);	
 						return stack->array[num_actual_table].lines[line_counter].declaration_line;
 					}
 					line_counter++;
@@ -521,7 +522,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		if(globalvar_args.is_array)
 			line.array_size = globalvar_args.array_size;
 		else
-			line.array_size = FALSE;
+			line.array_size = 0;
 
 		line.token_type = globalvar_args.type;
 
@@ -904,6 +905,37 @@ int get_func_num_params(table_stack * stack, char* token) {
 			num_actual_table--;
 		}		
 		return -1;
+	}
+}
+
+int is_array(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return FALSE;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].array_size > 0)
+							return TRUE;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return FALSE;
 	}
 }
 

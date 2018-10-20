@@ -81,6 +81,7 @@
 	int has_numerical();
 	int added_field_type = FALSE;
 	int came_from_function_call = FALSE;
+	int came_from_array = FALSE;
 	int input_helper_flag = FALSE;
 
 	/* Functions for general purposes */
@@ -1255,31 +1256,30 @@ for_expr 	: expr
 				$$ = $1;
 			}
 
-cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
+cmd_for 	: cmd_ident cmd_id_fix
 					{
-						called_function = $1->value.v_string;
-						int declaration_line = is_declared(stack, $1->value.v_string);
+						int declaration_line = is_declared(stack, cmd_id_name);
 
 						if (came_from_function_call == TRUE) {
-							if (is_function_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-								if (is_user_type(stack, $1->value.v_string) == TRUE) {
+							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
+								if (is_user_type(stack, cmd_id_name) == TRUE) {
 									printf("ERROR: line %d - type '%s' used as function\n", 
-										yylineno, $1->value.v_string);
+										yylineno, cmd_id_name);
 									quit_with_error(ERR_USER);
 								} else if (declaration_line != NOT_DECLARED) {
 									printf("ERROR: line %d - variable '%s' used as function\n", 
-										yylineno, $1->value.v_string);
+										yylineno, cmd_id_name);
 									quit_with_error(ERR_VARIABLE);
 								}
 
 								printf("ERROR: line %d - function '%s' was not previously declared\n", 
-									yylineno, $1->value.v_string);
+									yylineno, cmd_id_name);
 								quit_with_error(ERR_UNDECLARED);
 							}
 							came_from_function_call = FALSE;
 						} else if (declaration_line == NOT_DECLARED) {
 							printf("ERROR: line %d - '%s' was not previously declared\n", 
-								yylineno, $1->value.v_string);
+								yylineno, cmd_id_name);
 							quit_with_error(ERR_UNDECLARED);							
 						}
 
@@ -1290,18 +1290,18 @@ cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
 									yylineno, local_var_lexeme->value.v_string, declaration_line);
 								quit_with_error(ERR_DECLARED);
 							} else {
-								add_local_var(stack, USER_TYPE, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
+								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
 							}
 							came_from_local_var = FALSE;
 						}
 
 						if (came_from_attr == TRUE) {
 							char *trash;
-							int id_type = get_id_type(stack, $1->value.v_string, &trash);
+							int id_type = get_id_type(stack, cmd_id_name, &trash);
 							int expr_type = infer_expr_type();
 							if (can_convert(id_type, expr_type) == FALSE) {
 								printf("ERROR: line %d - incorrect assignation for variable %s\n",
-									yylineno, $1->value.v_string);
+									yylineno, cmd_id_name);
 								quit_with_error(ERR_WRONG_TYPE);
 							}
 
@@ -1312,7 +1312,7 @@ cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
 						}
 
 
-						$$ = new_node($1);
+						$$ = $1;
 						add_node($$, $2);
 					}
 				| local_var_type TK_IDENTIFICADOR var_end
@@ -1955,33 +1955,64 @@ expr_vals		: TK_LIT_FLOAT
 							add_type_to_expr(current_expr_type);
 							added_field_type = TRUE;
 						}
-
-						int decl_line_as_func = is_function_declared(stack, expr_id_name);
-						if (came_from_function_call == TRUE) {
-							if (decl_line_as_func == NOT_DECLARED) {
-								if (is_user_type(stack, expr_id_name) == TRUE) {
-									printf("ERROR: line %d - type '%s' used as function\n", 
-										yylineno, expr_id_name);
+						int is_function = is_function_declared(stack, expr_id_name);
+						int is_it_array = is_array(stack, expr_id_name);
+						int is_it_user_type = is_user_type(stack, expr_id_name);
+						// Genérico. Se is_declared = TRUE, mas não e'func, array ou type, é variavel
+						int is_it_declared = is_declared(stack, expr_id_name);
+						
+						// Se não foi usado como array, mas é array, então é ERR_VECTOR 
+						if (came_from_array == FALSE) {
+							if (is_it_array == TRUE) {
+								printf("ERROR: line %d - array '%s' used incorrectly\n",  yylineno, expr_id_name);
+								quit_with_error(ERR_VECTOR);
+							}
+						} else {
+							// SE foi usado como array, mas não é, tem que ver o que é pra dar o erro certo
+							if (is_it_array == FALSE) {
+								if (is_function != NOT_DECLARED) {
+									printf("ERROR: line %d - function '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_FUNCTION);
+								} else if (is_it_user_type == TRUE) {
+									printf("ERROR: line %d - type '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
 									quit_with_error(ERR_USER);
-								} 
-								if (is_declared(stack, expr_id_name) != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' used as function\n", 
+								} else if (is_it_declared != NOT_DECLARED) {
+									printf("ERROR: line %d - variable '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_VARIABLE);
+								} else {
+									printf("ERROR: line %d - array '%s' was not previously declared\n", 
 										yylineno, expr_id_name);
+									quit_with_error(ERR_UNDECLARED);
+								}
+							}	
+							came_from_array = FALSE;						
+						}
+
+						// Se foi usado como função e não é, tem que ver o que é pra dar erro
+						if (came_from_function_call == TRUE) {
+							if (is_function == NOT_DECLARED) {
+								if (is_it_user_type == TRUE) {
+									printf("ERROR: line %d - type '%s' used as function\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_USER);
+								} else if (is_it_array == TRUE) {
+									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_VECTOR);
+								} else if (is_it_declared != NOT_DECLARED) {
+									printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, expr_id_name);
 									quit_with_error(ERR_VARIABLE);
 								}
-
-								printf("ERffROR: line %d - function '%s' was not previously declared\n", 
+								printf("ERROR: line %d - function '%s' was not previously declared\n", 
 									yylineno, expr_id_name);
 								quit_with_error(ERR_UNDECLARED);
 							}
 							came_from_function_call = FALSE;
 						} else {
-							if (decl_line_as_func != NOT_DECLARED) {
+							if (is_function != NOT_DECLARED) {
 								printf("ERROR: line %d - function '%s' used as variable\n", 
 									yylineno, expr_id_name);
 								quit_with_error(ERR_FUNCTION);
 							}
-							if (is_user_type(stack, expr_id_name) == TRUE) {
+							if (is_it_user_type == TRUE) {
 								printf("ERROR: line %d - type '%s' used as variable\n", 
 									yylineno, expr_id_name);
 								quit_with_error(ERR_USER);
@@ -2131,6 +2162,7 @@ id_seq_field_vec: '[' expr ']'
 
 id_seq_simple	: '[' expr ']' id_seq_field
 					{
+						came_from_array = TRUE;
 						if(debug_expr)
 							printf("[ID_SEQ_SIMPLE] Com vetor\n");
 						$$ = new_node($1);

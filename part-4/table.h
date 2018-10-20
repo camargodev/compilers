@@ -156,5 +156,6 @@ int get_id_field_type(table_stack * stack, char* token, char* field);
 int is_user_type(table_stack * stack, char* token);
 int get_func_num_params(table_stack * stack, char* token);
 int* get_func_params_types(table_stack * stack, char* token);
+int is_array(table_stack * stack, char* token);
 
 void current_function_name(table_stack *stack);

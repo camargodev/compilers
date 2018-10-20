@@ -1,0 +1,6 @@
+class c[int j];
+
+int g() {
+	int i;
+	i = c[1];
+}
