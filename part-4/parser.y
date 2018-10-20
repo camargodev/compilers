@@ -1569,10 +1569,16 @@ switch 		: TK_PR_SWITCH '(' expr ')' '{' cmd_block
 					add_node($$, $6);
 				}
 
-case 		: TK_PR_CASE TK_LIT_INT ':'
+case 		: TK_PR_CASE expr ':'
 				{
+					int type = infer_expr_type();
+					if (type != INT) {
+						printf("ERROR: line %d - 'case' only receives integers\n", yylineno);
+						quit_with_error(ERR_WRONG_TYPE);
+					}
+
 					$$ = new_node($1);
-					add_node($$, new_node($2));
+					add_node($$, $2);
 					add_node($$, new_node($3));
 				}
 
