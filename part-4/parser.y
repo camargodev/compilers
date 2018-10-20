@@ -1036,6 +1036,7 @@ output 		: TK_PR_OUTPUT expr output_vals
 					print_expr_args();
 					printf("%d\n", expr_list.has_char);
 					printf("%d\n", expr_list.has_user_type);
+					input_helper_flag = FALSE;
 					if(expr_list.has_char
 					 	|| expr_list.has_user_type)
 					 	{
