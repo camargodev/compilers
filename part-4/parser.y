@@ -64,7 +64,7 @@
 
 	/* Vars and functions for expressions */
 
-	int debug_expr = FALSE;
+	int debug_expr = TRUE;
 	expr_args expr_list;
 	void debug_operands(char expr, char * type_operand);
 	void debug_expr_vals_char(char expr, char * type_operand);
@@ -80,6 +80,7 @@
 	int has_numerical();
 	int added_field_type = FALSE;
 	int came_from_function_call = FALSE;
+	int input_helper_flag = FALSE;
 
 	/* Functions for general purposes */
 
@@ -1003,12 +1004,13 @@ input 		: TK_PR_INPUT expr
 				{
 					printf("[INPUT] Teste\n\n");
 					
-					if(expr_list.has_int
+					if((expr_list.has_int
 					 	|| expr_list.has_float
 					 	|| expr_list.has_char
 					 	|| expr_list.has_string
-					 	|| expr_list.has_bool)
+					 	|| expr_list.has_bool) && !input_helper_flag)
 					 	{
+					 		print_expr_args();
 					 		printf("ERROR: input only accepts id types!\n");
 					 		//error_code = ERR_WRONG_PAR_INPUT;
 					 		exit(ERR_WRONG_PAR_INPUT);
@@ -1021,12 +1023,14 @@ input 		: TK_PR_INPUT expr
 
 output 		: TK_PR_OUTPUT expr output_vals
 				{
+					print_expr_args();
+					printf("%d\n", expr_list.has_char);
+					printf("%d\n", expr_list.has_user_type);
 					if(expr_list.has_char
-					 	|| expr_list.has_id)
+					 	|| expr_list.has_user_type)
 					 	{
-					 		//printf("ERROR: output only accepts arithmetic expr or string!\n");
-					 		//error_code = ERR_WRONG_PAR_OUTPUT;
-					 		//exit(ERR_WRONG_PAR_OUTPUT);
+					 		printf("ERROR: output only accepts arithmetic expr or string!\n");
+					 		exit(ERR_WRONG_PAR_OUTPUT);
 					 	}
 
 					expr_list = init_expr_args();
@@ -1691,14 +1695,21 @@ expr_vals		: TK_LIT_FLOAT
 
 id_for_expr		: TK_IDENTIFICADOR
 					{
+						if(debug_expr)
+							printf("[ID_FOR_EXPR] ID [%s]\n", $1->value.v_string);
 						expr_id_name = $1->value.v_string;
-						if (is_declared(stack, expr_id_name) == FALSE) {
-							printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
-							quit_with_error(ERR_UNDECLARED);
-						}
 						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
 						// Otherwise, id_user_type is NULL
 						current_expr_type = get_id_type(stack, $1->value.v_string, &id_user_type);
+
+						if(current_expr_type == NOT_DECLARED)
+						{
+							printf("Erro! Identificador não declarado!\n");
+							exit(ERR_UNDECLARED);
+						}
+
+						printf("[ID_FOR_EXPR] current_expr_type : %d\n", current_expr_type);
+
 						$$ = new_node($1);
 					}
 
@@ -1736,16 +1747,25 @@ id_seq			:  id_seq_simple
 id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec 
 					{
 						if(debug_expr)
-							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
+							printf("[ID_SEQ_FIELD] $ TK_ID [%s] vec\n", $2->value.v_string);
 
 						if (id_user_type == NULL) {
 							printf("ERROR: line %d - variable is not a user type\n", yylineno);
 							quit_with_error(ERR_VARIABLE);
 						}
 						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
+						
+						if(debug_expr)
+							printf("[ID_SEQ_FIELD] type : %d\n", type);
+						if(type == NOT_DECLARED || type == NOT_USER_TYPE || type == INVALID_FIELD)
+						{
+							printf("[ID_SEQ_FIELD] Erro!\n");
+							exit(ERR_UNDECLARED);
+						}
+
 						add_type_to_expr(type);
 						added_field_type = TRUE;
-						
+						input_helper_flag = TRUE;
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
