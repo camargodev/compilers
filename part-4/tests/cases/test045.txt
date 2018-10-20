@@ -13,5 +13,5 @@ float y() {
 }
 
 string aaa() {
-	return "";
+	return "aa";
 }

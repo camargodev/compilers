@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-table create_table(){
+table create_table() {
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
 	//printf("AA\n");

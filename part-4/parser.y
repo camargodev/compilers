@@ -2,6 +2,7 @@
 	// João Vitor de Camargo (274722) e Marcellus Farias (281984)
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <string.h>
 	#include "tree.h"
 	#include "lexeme.h"
 	#include "table.h"
@@ -64,7 +65,7 @@
 
 	/* Vars and functions for expressions */
 
-	int debug_expr = TRUE;
+	int debug_expr = FALSE;
 	expr_args expr_list;
 	void debug_operands(char expr, char * type_operand);
 	void debug_expr_vals_char(char expr, char * type_operand);
@@ -84,6 +85,9 @@
 
 	/* Functions for general purposes */
 
+	int num_boolean_operators = 0;
+	int num_any_operators = 0;
+	void reset_counters();
 	int can_convert(int type, int attr_type);
 	char* get_type_name(int type);
 	
@@ -182,7 +186,8 @@
 %type <node> input
 %type <node> output
 %type <node> output_vals
-%type <node> if_then
+%type <node> if_then 
+%type <node> if_then_expr
 %type <node> else
 %type <node> while
 %type <node> do_while
@@ -237,7 +242,6 @@
 
 programa :  initializer start destroyer
 			{ 
-					
 				$$ = $2;
 				arvore = $$;
 
@@ -265,8 +269,7 @@ start : new_type start
 				add_node($$, $2); 
 			}
 		| func start 
-			{ 
-				$$ = $1; 
+			{	$$ = $1; 
 				add_node($$, $2); 
 			}
 		| %empty 
@@ -719,7 +722,8 @@ func 	: TK_PR_STATIC func_begin
 				add_node($$, $2);
 			}
 		| func_begin
-			{
+			{ 				
+			
 				//printf("\nfunc");
 				$$ = $1;
 			}
@@ -827,7 +831,7 @@ func_body       : '{' push_table cmd_block
 
 push_table		: %empty
 					{
-						push(stack, create_table(last_added_func));
+						push(stack, create_table());
 					}
 
 pop_table		: %empty
@@ -837,11 +841,12 @@ pop_table		: %empty
 
 cmd_block	: '}' pop_table
 				{
-					//printf("\ncmd block");
+					printf("\ncmd block");
 					$$ = new_node($1);
 				}
 			| cmd cmd_block
 				{
+					printf("\nNEW CMD");
 					$$ = $1;
 					add_node($$, $2);
 				} 
@@ -982,6 +987,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					}
 				| input ';'
 					{
+						printf("AAA");
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
@@ -1015,7 +1021,6 @@ input 		: TK_PR_INPUT expr
 					 		//error_code = ERR_WRONG_PAR_INPUT;
 					 		exit(ERR_WRONG_PAR_INPUT);
 					 	}
-
 					
 					$$ = new_node($1);
 					add_node($$, $2);
@@ -1052,18 +1057,33 @@ output_vals : ';'
 					add_node($$, $3);
 				}
 
-if_then 	: TK_PR_IF '(' expr ')'
-				TK_PR_THEN '{' cmd_block else
+if_then 	: TK_PR_IF '(' if_then_expr ')'
+				TK_PR_THEN '{' push_table cmd_block else
 				{
+
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, $3);
 					add_node($$, new_node($4));
 					add_node($$, new_node($5));
 					add_node($$, new_node($6));
-					add_node($$, $7);
 					add_node($$, $8);
+					add_node($$, $9);
 				}
+
+if_then_expr : expr 
+			{
+				int cond_type = infer_expr_type();
+				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
+					printf("ERROR: line %d - if condicional should be of type bool, int, or float\n",
+							yylineno);
+					quit_with_error(ERR_WRONG_TYPE);
+				}
+				added_field_type = FALSE;
+				expr_list = init_expr_args();
+
+				$$ = $1;
+			}
 
 else 		: TK_PR_ELSE '{' cmd_block
 				{
@@ -1128,7 +1148,18 @@ return 		: TK_PR_RETURN expr
 									yylineno, get_type_name(expected_type));	
 							quit_with_error(ERR_WRONG_TYPE);
 						}
+					} else if (expected_type == USER_TYPE) {
+						// id_user_type has the name of the last user type used on return expr
+						//printf("\nTENHO = %s\n", id_user_type);
+						if (strcmp(id_user_type, user_type_name) != 0) {
+							printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
+								yylineno, user_type_name, id_user_type);
+							quit_with_error(ERR_WRONG_TYPE);
+						}
 					}
+					added_field_type = FALSE;
+					expr_list = init_expr_args();
+
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1448,81 +1479,107 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
 bin_op			: '+' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '-' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '*' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '/' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '%'
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '^' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
 						$$ = new_node($1);
 					}
 				| '|' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| '&' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| '>' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| '<'
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_AND 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_OR 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_LE
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_NE 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_EQ 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 				| TK_OC_GE
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
+						num_any_operators++;
+						num_boolean_operators++;
 						$$ = new_node($1);
 					}
 
@@ -1698,17 +1755,21 @@ id_for_expr		: TK_IDENTIFICADOR
 						if(debug_expr)
 							printf("[ID_FOR_EXPR] ID [%s]\n", $1->value.v_string);
 						expr_id_name = $1->value.v_string;
+						if (is_declared(stack, expr_id_name) == FALSE) {
+							printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
+							quit_with_error(ERR_UNDECLARED);
+						}
 						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
 						// Otherwise, id_user_type is NULL
 						current_expr_type = get_id_type(stack, $1->value.v_string, &id_user_type);
-
-						if(current_expr_type == NOT_DECLARED)
-						{
+						//if(current_expr_type == NOT_DECLARED)
+						/*{
 							printf("Erro! Identificador não declarado!\n");
 							exit(ERR_UNDECLARED);
-						}
-
-						printf("[ID_FOR_EXPR] current_expr_type : %d\n", current_expr_type);
+						}*/
+						
+						if(debug_expr)
+							printf("[ID_FOR_EXPR] current_expr_type : %d\n", current_expr_type);
 
 						$$ = new_node($1);
 					}
@@ -1747,12 +1808,13 @@ id_seq			:  id_seq_simple
 id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec 
 					{
 						if(debug_expr)
-							printf("[ID_SEQ_FIELD] $ TK_ID [%s] vec\n", $2->value.v_string);
+							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
 
 						if (id_user_type == NULL) {
 							printf("ERROR: line %d - variable is not a user type\n", yylineno);
 							quit_with_error(ERR_VARIABLE);
 						}
+
 						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
 						
 						if(debug_expr)
@@ -1762,10 +1824,11 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 							printf("[ID_SEQ_FIELD] Erro!\n");
 							exit(ERR_UNDECLARED);
 						}
-
+						
 						add_type_to_expr(type);
 						added_field_type = TRUE;
 						input_helper_flag = TRUE;
+						
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1871,7 +1934,7 @@ void init_table_stack() {
 
 				
 	//first table will be global scope table
-	table created_table = create_table(NULL);
+	table created_table = create_table();
 	stack->num_tables = 0;
 	stack->array = malloc(sizeof(table));
 	stack->array[0] = created_table;
@@ -2019,8 +2082,14 @@ void quit_with_error(int error) {
 	libera(arvore);
   	arvore = NULL;
   	yylex_destroy();
+  	pop(stack);
 	free_table_stack(stack);
 	exit(error);
+}
+
+void reset_counters() {
+	num_boolean_operators = 0;
+	num_any_operators = 0;
 }
 
 void debug_operands(char expr, char * type_operand)
@@ -2087,38 +2156,97 @@ void add_type_to_expr(int type) {
 }
 
 int infer_expr_type() {
+	//printf("\nENTRE NO INFER");
 	if (expr_list.has_char) {
+		//printf("\nTENHO CHAR");
 		if (has_numerical()) {
 			printf("ERROR: line %d - expression mixing char with numericals\n", yylineno);
 			quit_with_error(ERR_CHAR_TO_X);
 		} else if (expr_list.has_string || expr_list.has_user_type) {
+			reset_counters();
 			return INVALID_TYPE;
 		} else {
+			if (num_any_operators > 1) {
+				reset_counters();
+				return INVALID_TYPE;
+			}
+			if (num_boolean_operators == 1) {
+				reset_counters();
+				return BOOL;
+			}
+			reset_counters();
 			return CHAR;
 		}
 	} else if (expr_list.has_string) {
+		//printf("\nTENHO STR");
 		if (has_numerical()) {
 			printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
 			quit_with_error(ERR_STRING_TO_X);
 		} else if (expr_list.has_char || expr_list.has_user_type) {
+			reset_counters();
 			return INVALID_TYPE;
 		} else {
+			if (num_any_operators > 1) {
+				reset_counters();
+				return INVALID_TYPE;
+			}
+			if (num_boolean_operators == 1) {
+				reset_counters();
+				return BOOL;
+			}
+			reset_counters();
 			return STRING;
 		}
 	} else if (expr_list.has_user_type) {
+		//printf("\nTENHO USER TYPE");
 		if (has_numerical()) {
 			printf("ERROR: line %d - expression mixing user type with numericals\n", yylineno);
 			quit_with_error(ERR_USER_TO_X);
 		} else if (expr_list.has_char || expr_list.has_string) {
+			reset_counters();
+			return INVALID_TYPE;
+		} else if (num_any_operators > 0) {
+			reset_counters();
 			return INVALID_TYPE;
 		} else {
+			reset_counters();
 			return USER_TYPE;
 		}
 	} else if (expr_list.has_float) {
+		//printf("\nTENHO FLOAT");
+		if (num_boolean_operators == 1) {
+			reset_counters();
+			return BOOL;
+		}
+		else if (num_boolean_operators > 1) {
+			reset_counters();
+			return INVALID_TYPE;
+		}
+		reset_counters();
 		return FLOAT;
 	} else if (expr_list.has_int) {
+		//printf("\nTENHO INT");
+		if (num_boolean_operators == 1) {
+			reset_counters();
+			return BOOL;
+		}
+		else if (num_boolean_operators > 1) {
+			reset_counters();
+			return INVALID_TYPE;
+		}
+		reset_counters();
 		return INT;
 	} else {
+		//printf("\nTENHO BOOL");
+		if (num_boolean_operators == 1) {
+			reset_counters();
+			return BOOL;
+		}
+		else if (num_boolean_operators > 1) {
+			reset_counters();
+			return INVALID_TYPE;
+		}
+		reset_counters();
 		return BOOL;
 	}
 }

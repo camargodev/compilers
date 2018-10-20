@@ -1,0 +1,8 @@
+int x() {
+	string a;
+	bool x;
+	if (a + "m") then {};
+	if (1 + 1 + 1) then {};
+	if (false) then {};
+	if (x + 2) then {};
+}
