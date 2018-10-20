@@ -102,6 +102,13 @@
 	int fe_string_counter = 0;
 	int fe_user_counter = 0;
 
+	/* Counters for func calls */
+	int num_func_params = 0;
+	int* func_params_types = NULL;
+	void add_param_type(int type);
+	char* called_function = NULL;
+	char* cmd_id_name = NULL;
+
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
@@ -193,6 +200,7 @@
 %type <node> func_params_end
 %type <node> func_body
 %type <node> cmd_block
+%type <node> cmd_ident
 %type <node> cmd
 %type <node> input
 %type <node> output
@@ -866,30 +874,32 @@ cmd_block	: '}' pop_table
 					add_node($$, $2);
 				} 
 
-cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
+cmd_ident	: TK_IDENTIFICADOR
+				{
+					cmd_id_name = $1->value.v_string;
+					called_function = $1->value.v_string;
+					$$ = new_node($1);
+				}
+
+cmd 		: cmd_ident cmd_id_fix ';'
 					{
-						int declaration_line = is_declared(stack, $1->value.v_string);
+						int declaration_line = is_declared(stack, cmd_id_name);
 
 						if (came_from_function_call == TRUE) {
-							if (is_function_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-								if (is_user_type(stack, $1->value.v_string) == TRUE) {
-									printf("ERROR: line %d - type '%s' used as function\n", 
-										yylineno, $1->value.v_string);
+							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
+								if (is_user_type(stack, cmd_id_name) == TRUE) {
+									printf("ERROR: line %d - type '%s' used as function\n",  yylineno, cmd_id_name);
 									quit_with_error(ERR_USER);
 								} else if (declaration_line != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' used as function\n", 
-										yylineno, $1->value.v_string);
+									printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, cmd_id_name);
 									quit_with_error(ERR_VARIABLE);
 								}
-
-								printf("ERROR: line %d - function '%s' was not previously declared\n", 
-									yylineno, $1->value.v_string);
+								printf("ERROR: line %d - function '%s' was not previously declared\n",  yylineno, cmd_id_name);
 								quit_with_error(ERR_UNDECLARED);
 							}
 							came_from_function_call = FALSE;
 						} else if (declaration_line == NOT_DECLARED) {
-							printf("ERROR: line %d - '%s' was not previously declared\n", 
-								yylineno, $1->value.v_string);
+							printf("ERROR: line %d - '%s' was not previously declared\n",  yylineno, cmd_id_name);
 							quit_with_error(ERR_UNDECLARED);							
 						}
 
@@ -900,18 +910,18 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 									yylineno, local_var_lexeme->value.v_string, declaration_line);
 								quit_with_error(ERR_DECLARED);
 							} else {
-								add_local_var(stack, USER_TYPE, $1->value.v_string, FALSE, FALSE, local_var_lexeme);
+								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
 							}
 							came_from_local_var = FALSE;
 						}
 
 						if (came_from_attr == TRUE) {
 							char *trash;
-							int id_type = get_id_type(stack, $1->value.v_string, &trash);
+							int id_type = get_id_type(stack, cmd_id_name, &trash);
 							int expr_type = infer_expr_type();
 							if (can_convert(id_type, expr_type) == FALSE) {
 								printf("ERROR: line %d - incorrect assignation for variable %s\n",
-									yylineno, $1->value.v_string);
+									yylineno, cmd_id_name);
 								quit_with_error(ERR_WRONG_TYPE);
 							}
 
@@ -922,7 +932,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 						}
 
 
-						$$ = new_node($1);
+						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
 					}
@@ -1247,6 +1257,7 @@ for_expr 	: expr
 
 cmd_for 	: TK_IDENTIFICADOR cmd_id_fix
 					{
+						called_function = $1->value.v_string;
 						int declaration_line = is_declared(stack, $1->value.v_string);
 
 						if (came_from_function_call == TRUE) {
@@ -2010,6 +2021,8 @@ expr_vals		: TK_LIT_FLOAT
 
 id_for_expr		: TK_IDENTIFICADOR
 					{
+						called_function = $1->value.v_string;
+
 						if(debug_expr)
 							printf("[ID_FOR_EXPR] ID [%s]\n", $1->value.v_string);
 						expr_id_name = $1->value.v_string;
@@ -2137,25 +2150,67 @@ id_seq_simple	: '[' expr ']' id_seq_field
 						$$ = $1;
 					}
 
+proccess_expr		: %empty
+						{
+							num_func_params++;
+							int type = infer_expr_type();
+							//printf("\nPROCESSEI UM %s", get_type_name(type));
+							add_param_type(type);
+						}
+
 func_call_params	: ')' 
 						{	
+							//printf("\nTENHO %i PARAMS", num_func_params);
 							if(debug_expr)
 								printf("[FUNC_CALL_PARAMS] ')'\n");
 							$$ = new_node($1);
 						}
-					| expr func_call_params_body
+					| expr proccess_expr func_call_params_body
 						{
+							
+
+							//printf("\nTENHO %i PARAMS", num_func_params);
+							int called_func_num_params = get_func_num_params(stack, called_function);
+							if (called_func_num_params < 0) {
+								printf("ERROR: line %d - '%s' is not a function\n",
+									yylineno, called_function);
+								quit_with_error(ERR_FUNCTION);
+							}
+							if (num_func_params > called_func_num_params) {
+								printf("ERROR: line %d - too many arguments (%i) for function %s (expecting %i)\n",
+									yylineno, num_func_params, called_function, called_func_num_params);
+								quit_with_error(ERR_EXCESS_ARGS);
+							} else if (num_func_params < called_func_num_params) {
+								printf("ERROR: line %d - missing arguments (%i) for function %s (expecting %i)\n", 
+									yylineno, num_func_params, called_function, called_func_num_params);
+								quit_with_error(ERR_MISSING_ARGS);
+							} else {
+								if (called_func_num_params > 0) {
+									int i;
+									int* called_func_params = get_func_params_types(stack, called_function);
+									for (i = 0; i < called_func_num_params; i++) {
+										if (func_params_types[i] != called_func_params[i]) {	
+											printf("ERROR: line %d - parameter %i has the wrong type\n", yylineno, (i+1));
+											quit_with_error(ERR_WRONG_TYPE_ARGS);
+										}
+									}
+								}
+							}
+							num_func_params = 0;
+							func_params_types = NULL;
+
 							if(debug_expr)
 								printf("[FUNC_CALL_PARAMS] expr func_call_params_body\n");
 							$$ = $1;
-							add_node($$, $2);
+							add_node($$, $3);
 						}
-					| '.' func_call_params_body
+					| '.' proccess_expr func_call_params_body
 						{
+							printf("\nTENHO %i PARAMS", num_func_params);
 							if(debug_expr)
 								printf("[FUNC_CALL_PARAMS] '.' func_call_params_body\n");
 							$$ = new_node($1);
-							add_node($$, $2);
+							add_node($$, $3);
 						}
 
 func_call_params_body 	: ')' 
@@ -2168,15 +2223,16 @@ func_call_params_body 	: ')'
 							add_node($$, $2);
 						}
 
-func_call_params_end 	: expr func_call_params_body
+func_call_params_end 	: expr proccess_expr func_call_params_body
 							{
 								$$ = $1;
-								add_node($$, $2);
+								add_node($$, $3);
 							}
-						| '.' func_call_params_body
+						| '.' proccess_expr func_call_params_body
 							{
+								
 								$$ = new_node($1);
-								add_node($$, $2);
+								add_node($$, $3);
 							}
 
 %%
@@ -2518,6 +2574,16 @@ int infer_expr_type() {
 		}
 		reset_counters();
 		return BOOL;
+	}
+}
+
+void add_param_type(int type) {
+	if (func_params_types == NULL || num_func_params == 0) {
+		func_params_types = malloc(sizeof(int));
+		func_params_types[0] = type;
+	} else {
+		func_params_types == realloc(func_params_types, sizeof(int)*num_func_params);
+		func_params_types[num_func_params-1] = type;
 	}
 }
 

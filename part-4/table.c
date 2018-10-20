@@ -874,6 +874,78 @@ int is_user_type(table_stack * stack, char* token) {
 	}
 }
 
+int get_func_num_params(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return -1;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE)
+							return stack->array[num_actual_table].lines[line_counter].num_func_args;
+						else
+							return -1;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return -1;
+	}
+}
+
+int* get_func_params_types(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NULL;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						if (stack->array[num_actual_table].lines[line_counter].num_func_args <= 0)
+							return NULL;
+						int i;
+						int* types = malloc(sizeof(int));
+						for (i = 0; i < stack->array[num_actual_table].lines[line_counter].num_func_args; i++) {
+							types = realloc(types, sizeof(int)*(i+1));
+							types[i] = stack->array[num_actual_table].lines[line_counter].function_args[i].type;
+						}
+						return types;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return NULL;
+	}
+}
+
+
 expr_args init_expr_args()
 {
 	expr_args args;
