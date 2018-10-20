@@ -85,13 +85,23 @@
 
 	/* Functions for general purposes */
 
+	int debug_input_output = FALSE;
+	
 	int num_boolean_operators = 0;
 	int num_any_operators = 0;
 	void reset_counters();
 	int can_convert(int type, int attr_type);
 	char* get_type_name(int type);
 	void reset_expr();
-	
+
+	/* Counters for foreach */
+	int fe_int_counter = 0;
+	int fe_float_counter = 0;
+	int fe_bool_counter = 0;
+	int fe_char_counter = 0;
+	int fe_string_counter = 0;
+	int fe_user_counter = 0;
+
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
@@ -204,6 +214,7 @@
 %type <node> for_scd_list
 %type <node> foreach
 %type <node> foreach_list
+%type <node> foreach_count
 %type <node> switch
 %type <node> case
 %type <node> cmd_id_fix
@@ -992,7 +1003,6 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					}
 				| input ';'
 					{
-						printf("AAA");
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
@@ -1013,7 +1023,8 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 						
 input 		: TK_PR_INPUT expr
 				{
-					printf("[INPUT] Teste\n\n");
+					if (debug_input_output)
+						printf("[INPUT] Teste\n\n");
 					
 					if((expr_list.has_int
 					 	|| expr_list.has_float
@@ -1021,8 +1032,9 @@ input 		: TK_PR_INPUT expr
 					 	|| expr_list.has_string
 					 	|| expr_list.has_bool) && !input_helper_flag)
 					 	{
-					 		print_expr_args();
-					 		printf("ERROR: input only accepts id types!\n");
+					 		if (debug_input_output)
+					 			print_expr_args();
+					 		printf("ERROR: line %d - input only accepts id types!\n", yylineno);
 					 		//error_code = ERR_WRONG_PAR_INPUT;
 					 		exit(ERR_WRONG_PAR_INPUT);
 					 	}
@@ -1033,20 +1045,24 @@ input 		: TK_PR_INPUT expr
 
 output 		: TK_PR_OUTPUT expr output_vals
 				{
-					print_expr_args();
-					printf("%d\n", expr_list.has_char);
-					printf("%d\n", expr_list.has_user_type);
+					if (debug_input_output)
+						print_expr_args();
+					if (debug_input_output) {
+						printf("%d\n", expr_list.has_char);
+						printf("%d\n", expr_list.has_user_type);
+					}
 					input_helper_flag = FALSE;
 					if(expr_list.has_char
 					 	|| expr_list.has_user_type)
 					 	{
-					 		printf("ERROR: output only accepts arithmetic expr or string!\n");
+					 		printf("ERROR: line %d - output only accepts arithmetic expr or string!\n", yylineno);
 					 		exit(ERR_WRONG_PAR_OUTPUT);
 					 	}
 
 					expr_list = init_expr_args();
 
-					printf("[OUTPUT] Teste\n\n");
+					if (debug_input_output)
+						printf("[OUTPUT] Teste\n\n");
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
@@ -1179,7 +1195,7 @@ return 		: TK_PR_RETURN expr
 							else
 								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
 									yylineno, get_type_name(expected_type));	
-							quit_with_error(ERR_WRONG_TYPE);
+							quit_with_error(ERR_WRONG_PAR_RETURN);
 						}
 					} else if (expected_type == USER_TYPE) {
 						// id_user_type has the name of the last user type used on return expr
@@ -1187,7 +1203,7 @@ return 		: TK_PR_RETURN expr
 						if (strcmp(id_user_type, user_type_name) != 0) {
 							printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
 								yylineno, user_type_name, id_user_type);
-							quit_with_error(ERR_WRONG_TYPE);
+							quit_with_error(ERR_WRONG_PAR_RETURN);
 						}
 					}
 					added_field_type = FALSE;
@@ -1389,8 +1405,106 @@ for_scd_list	: ',' cmd_for for_scd_list
 
 foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 							':' expr foreach_list
-							'{' cmd_block
+							'{' push_table cmd_block
 					{
+						//printf("[A] id_user_type : %s\n", id_user_type);
+						//print_expr_args();
+						int temp_type;
+						// this function is called to raise errors in functions (if they exists)
+						infer_expr_type();
+						if (is_declared(stack, $3->value.v_string) == FALSE) {
+							printf("ERROR: line %d - %s was not declared\n", yylineno, $3->value.v_string);
+							quit_with_error(ERR_UNDECLARED);
+						}
+						//printf("\nTYPE OF EXPRS = %s", get_type_name(type));
+						/*printf("\nINT = %i", fe_int_counter);
+						printf("\nFLOAT = %i", fe_float_counter);
+						printf("\nBOOL = %i", fe_bool_counter);
+						printf("\nCHAR = %i", fe_char_counter);
+						printf("\nSTR = %i", fe_string_counter);
+						printf("\nUSER = %i", fe_user_counter);*/
+						//printf("[B] id_user_type : %s\n", id_user_type);
+						//print_expr_args();
+						if (fe_string_counter > 0) {
+							if (fe_int_counter > 0
+								|| fe_float_counter > 0
+								|| fe_bool_counter > 0
+								|| fe_char_counter > 0
+								|| fe_user_counter > 0) {
+								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);
+							} else {
+								temp_type = STRING;
+							}
+						} else if (fe_char_counter > 0) {
+							if (fe_int_counter > 0
+								|| fe_float_counter > 0
+								|| fe_bool_counter > 0
+								|| fe_string_counter > 0
+								|| fe_user_counter > 0) {
+								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);
+							} else {
+								temp_type = CHAR;
+							}
+						} else if (fe_user_counter > 0) {
+							if (fe_int_counter > 0
+								|| fe_float_counter > 0
+								|| fe_bool_counter > 0
+								|| fe_string_counter > 0
+								|| fe_char_counter > 0) {
+								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);
+							} else {
+								temp_type = USER_TYPE;
+							}
+						} else if (fe_float_counter > 0) {
+							temp_type = FLOAT;
+						} else if (fe_int_counter > 0) {
+							temp_type = INT;
+						} else {
+							temp_type = BOOL;
+						}
+						//printf("[C] id_user_type : %s\n", id_user_type);
+						
+						fe_int_counter = 0;
+						fe_float_counter = 0;
+						fe_bool_counter = 0;
+						fe_char_counter = 0;
+						fe_string_counter = 0;
+						fe_user_counter = 0;
+
+						char* user_type_nm;
+						//printf("\nO ID EH %s", $3->value.v_string);
+						int type = get_id_type(stack, $3->value.v_string, &user_type_nm);
+						//printf("[D] id_user_type : %s\n", id_user_type);
+						if (temp_type != type) {
+							if (can_convert(temp_type, type) == FALSE) {
+								if (type == USER_TYPE) {
+									printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
+										yylineno, user_type_nm);
+								} else {
+									printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
+										yylineno, get_type_name(type));
+								}
+								quit_with_error(ERR_WRONG_TYPE);
+							}
+						} else if (type == USER_TYPE) {
+							//printf("[E] id_user_type : %s\n", id_user_type);
+							// id_user_type has the name of the last user type used on return expr
+							//printf("\nTENHO = %s\n", id_user_type);
+							if (id_user_type != NULL) {
+								//printf("\n[F] id_user_type : %s\n", id_user_type);
+								//printf("\n[F] user_type_nm : %s\n", user_type_nm);
+
+								if (strcmp(id_user_type, user_type_nm) != 0) {
+									//printf("\n[G] id_user_type : %s\n", id_user_type);
+									printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
+										yylineno, user_type_nm, id_user_type);
+									quit_with_error(ERR_WRONG_TYPE);
+								}
+							}
+						}
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, new_node($3));
@@ -1398,18 +1512,40 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						add_node($$, $5);
 						add_node($$, $6);
 						add_node($$, new_node($7));
-						add_node($$, $8);
+						add_node($$, $9);
 					}
 
-foreach_list	: ',' expr foreach_list 
+foreach_list	: ',' foreach_count expr foreach_list 
 					{
+						
 						$$ = new_node($1);
-						add_node($$, $2);
 						add_node($$, $3);
+						add_node($$, $4);
 					}
-				| ')' 
+				| ')' foreach_count
 					{
+						
 						$$ = new_node($1);
+					}
+
+foreach_count	: %empty
+					{
+
+						//print_expr_args();
+
+						fe_int_counter += expr_list.has_int;
+						fe_float_counter += expr_list.has_float;
+						fe_bool_counter += expr_list.has_bool;
+						fe_string_counter += expr_list.has_string;
+						fe_char_counter += expr_list.has_char;
+						fe_user_counter += expr_list.has_user_type;
+						int type = infer_expr_type();
+						//printf("\nTYPE INFERED = %s", get_type_name(type));
+						if (type == INVALID_TYPE) {
+							printf("ERROR: line %d - Invalid expression on foreach\n", yylineno);
+							quit_with_error(ERR_WRONG_TYPE);
+						}
+						reset_counters();
 					}
 
 switch 		: TK_PR_SWITCH '(' expr ')' '{' cmd_block
@@ -1755,8 +1891,10 @@ not_null_un_op  : '+'
 
 expr 			: un_op expr_vals expr_begin
 					{
-						if(debug_expr)
+						if(debug_expr) {
+							printf("[EXPR] id_user_type : %s\n", id_user_type);
 							printf("[EXPR] Final\n");
+						}
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, $3);
@@ -1888,8 +2026,10 @@ id_for_expr		: TK_IDENTIFICADOR
 							exit(ERR_UNDECLARED);
 						}*/
 						
-						if(debug_expr)
+						if(debug_expr) {
 							printf("[ID_FOR_EXPR] current_expr_type : %d\n", current_expr_type);
+							printf("[ID FOR EXPR] id_user_type : %s\n", id_user_type);
+						}
 
 						$$ = new_node($1);
 					}
@@ -1912,8 +2052,10 @@ piped 			: %empty
 
 id_seq			:  id_seq_simple
 					{
-						if(debug_expr)
+						if(debug_expr) {
+							printf("[ID_SEQ] id_user_type : %s\n", id_user_type);
 							printf("[ID_SEQ] id_seq_simple\n");
+						}
 						$$ = $1;
 					}
 				| '(' func_call_params
@@ -1937,11 +2079,12 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 
 						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
 						
-						if(debug_expr)
+						if(debug_expr) {
 							printf("[ID_SEQ_FIELD] type : %d\n", type);
+						}
 						if(type == NOT_DECLARED || type == NOT_USER_TYPE || type == INVALID_FIELD)
 						{
-							printf("[ID_SEQ_FIELD] Erro!\n");
+							printf("ERROR: line %d - not declared\n", yylineno);
 							exit(ERR_UNDECLARED);
 						}
 						
@@ -1955,8 +2098,10 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 					}
 				| %empty
 					{
-						if(debug_expr)
+						if(debug_expr) {
+							printf("[ID_SEQ_FIELD] id_user_type : %s\n", id_user_type);
 							printf("[ID_SEQ_FIELD] empty\n");
+						}
 						$$ = new_node(NULL);
 					}
 
@@ -1982,8 +2127,10 @@ id_seq_simple	: '[' expr ']' id_seq_field
 					} 
 				|  id_seq_field
 					{
-						if(debug_expr)
+						if(debug_expr) {
+							printf("[ID_SEQ_SIMPLE] id_user_type : %s\n", id_user_type);
 							printf("[ID_SEQ_SIMPLE] Sem vetor\n");
+						}
 
 
 
@@ -2300,6 +2447,7 @@ int infer_expr_type() {
 			return CHAR;
 		}
 	} else if (expr_list.has_string) {
+
 		//printf("\nTENHO STR");
 		if (has_numerical()) {
 			printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
@@ -2308,13 +2456,13 @@ int infer_expr_type() {
 			reset_counters();
 			return INVALID_TYPE;
 		} else {
-			if (num_any_operators > 1) {
-				reset_counters();
-				return INVALID_TYPE;
-			}
 			if (num_boolean_operators == 1) {
 				reset_counters();
 				return BOOL;
+			}
+			if (num_any_operators - num_boolean_operators > 0) {
+				reset_counters();
+				return INVALID_TYPE;
 			}
 			reset_counters();
 			return STRING;

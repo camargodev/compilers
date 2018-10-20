@@ -1,13 +1,7 @@
-class marcellus[int outro];
-
-int func()
-{
-	int x;
-	
-	marcellus a;
-	//a$outro = 1;
-
-	//x =  a$joao;	
-	//output a$outro, "ronaldo";
-	input "STRING";
+class ponto[int a];
+class ponto2[int a];
+int x() {
+	ponto a;
+	ponto2 b;
+	foreach(a : b) {};
 }
