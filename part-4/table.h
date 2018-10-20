@@ -96,6 +96,7 @@ typedef struct line {
 
 typedef struct table {
 	int num_lines;
+	//char scope_name;
 	table_line *lines;
 
 } table;
@@ -153,3 +154,6 @@ expr_args init_expr_args();
 int get_id_type(table_stack * stack, char* token, char** user_type_return);
 int get_id_field_type(table_stack * stack, char* token, char* field);
 int is_user_type(table_stack * stack, char* token);
+
+
+void current_function_name(table_stack *stack);

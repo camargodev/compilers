@@ -1,0 +1,17 @@
+int xa() {
+	return 1;
+}
+int xb() {
+	return true;
+}
+int xc() {
+	return 1.7;
+}
+
+float y() {
+	return 1 + false + 2.2;
+}
+
+string aaa() {
+	return "";
+}

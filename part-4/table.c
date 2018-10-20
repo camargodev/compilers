@@ -7,6 +7,9 @@
 table create_table(){
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
+	//printf("AA\n");
+	//table.scope_name = 'a';
+	//printf("BB\n");
 	table.num_lines = NO_LINES;
 	
 	return table;
@@ -570,6 +573,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token)
 {
+	//printf("AEAEEA\n");
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)
@@ -689,6 +693,11 @@ int get_user_type_size(table_stack * stack, char * token)
 	}
 }
 
+void current_function_name(table_stack *stack) {
+	int num_lines = stack->array[0].num_lines;
+	printf("FUNC NAME EH %s\n", stack->array[0].lines[num_lines].token_name);
+}
+
 void free_table_stack(table_stack * stack) 
 {
 	if (stack->num_tables == NO_TABLES)
@@ -782,6 +791,14 @@ int get_id_type(table_stack * stack, char* token, char** user_type_return) {
 			num_actual_table--;
 		}		
 		return NOT_DECLARED;
+	}
+}
+
+int get_outter_function_type(table_stack * stack) {
+	if (stack->num_tables == 0) {
+		return NOT_DECLARED;
+	} else {
+
 	}
 }
 

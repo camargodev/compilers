@@ -44,6 +44,7 @@
 	int function_type = UNDECLARED_TYPE;
 	char *last_added_func;
 	Lexeme* func_lexeme = NULL;
+	char *func_user_type_name = NULL;
 	int func_decl_line;	
 	void set_function_type(int type);
 	void set_user_type_arg(char *type);
@@ -170,6 +171,7 @@
 %type <node> index
 %type <node> func
 %type <node> func_begin
+%type <node> func_name_user_type
 %type <node> func_name
 %type <node> func_params
 %type <node> func_params_end
@@ -723,10 +725,9 @@ func 	: TK_PR_STATIC func_begin
 
 func_begin      : func_type func_name '(' func_params
 					{
-						add_function(stack, function_type, NULL, num_func_args, function_args, func_lexeme);
+						/*add_function(stack, function_type, NULL, num_func_args, function_args, func_lexeme);
 						last_added_func = func_lexeme->value.v_string;
-
-						reset_func_vars();
+						reset_func_vars();*/
 
 						$$ = $1;
 						add_node($$, $2);
@@ -734,24 +735,44 @@ func_begin      : func_type func_name '(' func_params
 						add_node($$, $4);
 					}
 
-				| TK_IDENTIFICADOR func_name '(' func_params
+				| func_name_user_type '(' func_params
 					{
-						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-							printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
-								func_decl_line, $1->value.v_string, func_lexeme->value.v_string);
-							quit_with_error(ERR_UNDECLARED);
-						}
 
-						add_function(stack, USER_TYPE, $1->value.v_string, num_func_args, function_args, func_lexeme);
+
+						/*add_function(stack, function_type, func_user_type_name, num_func_args, function_args, func_lexeme);
 						last_added_func = func_lexeme->value.v_string;
+						reset_func_vars();*/
 
-						reset_func_vars();
-
-						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
-						add_node($$, $4);
+						$$ = $1;
+						add_node($$, new_node($2));
+						add_node($$, $3);
 					}
+
+func_name_user_type	: TK_IDENTIFICADOR TK_IDENTIFICADOR
+				{
+
+					func_decl_line = is_function_declared(stack, $2->value.v_string);
+					if (func_decl_line != NOT_DECLARED) {
+						printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+							yylineno, $2->value.v_string, func_decl_line);
+						quit_with_error(ERR_DECLARED);							
+					}
+					func_lexeme = $2;
+					func_user_type_name = $1->value.v_string;
+
+					if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
+						printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
+							func_decl_line, $1->value.v_string, func_lexeme->value.v_string);
+						quit_with_error(ERR_UNDECLARED);
+					}
+
+					function_type = USER_TYPE;
+
+					$$ = new_node($1);
+					$$ = new_node($1);
+					add_node($$, new_node($2));
+				}
+
 
 func_name 	: TK_IDENTIFICADOR
 				{
@@ -765,11 +786,11 @@ func_name 	: TK_IDENTIFICADOR
 					$$ = new_node($1);
 				}
 
-func_params     : ')' func_body
+func_params     : ')' add_func func_body
 					{
 						//printf("\nfuncparam");
 						$$ = new_node($1);
-						add_node($$, $2);
+						add_node($$, $3);
 					}
 				| var func_params_end
 					{
@@ -777,16 +798,23 @@ func_params     : ')' func_body
 						add_node($$, $2);
 					}
 
-func_params_end : ')' func_body
+func_params_end : ')' add_func func_body
 					{
 						$$ = new_node($1);
-						add_node($$, $2);
+						add_node($$, $3);
 					}
 				| ',' var func_params_end
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, $3);
+					}
+
+add_func 		: %empty
+					{
+						add_function(stack, function_type, func_user_type_name, num_func_args, function_args, func_lexeme);
+						last_added_func = func_lexeme->value.v_string;
+						reset_func_vars();
 					}
 
 func_body       : '{' push_table cmd_block 
@@ -798,7 +826,7 @@ func_body       : '{' push_table cmd_block
 
 push_table		: %empty
 					{
-						push(stack, create_table());
+						push(stack, create_table(last_added_func));
 					}
 
 pop_table		: %empty
@@ -932,6 +960,7 @@ cmd 		: TK_IDENTIFICADOR cmd_id_fix ';'
 					}
 				| return ';'
 					{
+						//printf("\nA FUNC ATUAL EH %s", last_added_func);
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
@@ -985,7 +1014,7 @@ input 		: TK_PR_INPUT expr
 					 		exit(ERR_WRONG_PAR_INPUT);
 					 	}
 
-					expr_list = init_expr_args();
+					
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1080,6 +1109,22 @@ break 		: TK_PR_BREAK
 
 return 		: TK_PR_RETURN expr
 				{
+					int type = infer_expr_type();
+					char* user_type_name;
+					int expected_type = get_id_type(stack, last_added_func, &user_type_name);
+					//printf("\nTYPE EXPR = %s", get_type_name(type));
+					//printf("\nEXPECTED TYPE = %s", get_type_name(expected_type));
+					if (type != expected_type) {
+						if (can_convert(expected_type, type) == FALSE) {
+							if (expected_type == USER_TYPE)
+								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
+									yylineno, user_type_name);
+							else
+								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
+									yylineno, get_type_name(expected_type));	
+							quit_with_error(ERR_WRONG_TYPE);
+						}
+					}
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1647,6 +1692,10 @@ expr_vals		: TK_LIT_FLOAT
 id_for_expr		: TK_IDENTIFICADOR
 					{
 						expr_id_name = $1->value.v_string;
+						if (is_declared(stack, expr_id_name) == FALSE) {
+							printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
+							quit_with_error(ERR_UNDECLARED);
+						}
 						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
 						// Otherwise, id_user_type is NULL
 						current_expr_type = get_id_type(stack, $1->value.v_string, &id_user_type);
@@ -1802,7 +1851,7 @@ void init_table_stack() {
 
 				
 	//first table will be global scope table
-	table created_table = create_table();
+	table created_table = create_table(NULL);
 	stack->num_tables = 0;
 	stack->array = malloc(sizeof(table));
 	stack->array[0] = created_table;
@@ -1900,6 +1949,8 @@ void reset_func_vars() {
 	function_args = NULL;
 	function_type = UNDECLARED_TYPE;
 	num_func_args = 0;
+	func_user_type_name = NULL;
+	expr_list = init_expr_args();
 }
 
 void set_local_var_type(int type) {
