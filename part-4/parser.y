@@ -869,12 +869,16 @@ cmd_block	: '}' pop_table
 					//printf("\ncmd block");
 					$$ = new_node($1);
 				}
-			| cmd cmd_block
+			| cmd input_helper_flag cmd_block
 				{
 					//printf("\nNEW CMD");
 					$$ = $1;
-					add_node($$, $2);
+					add_node($$, $3);
 				} 
+input_helper_flag : %empty
+				{
+					input_helper_flag = FALSE;
+				}
 
 cmd_ident	: TK_IDENTIFICADOR
 				{
