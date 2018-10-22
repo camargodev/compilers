@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "lexeme.h"
 #include "tree.h"
+#include "conversions.h"
 
 #define NO_CHILDREN		0
 
@@ -20,6 +21,22 @@ Node* new_node(struct Lexeme* token) {
 	Node* node = malloc(sizeof(Node));
 	
 	node->token = token;
+	node->children_num = NO_CHILDREN;
+	node->node_type = UNDECLARED_TYPE;
+	node->conversion = NO_CONVERSION;
+	node->children = (Node**) malloc(sizeof(Node**));
+
+	return node;
+}
+
+
+Node* new_full_node(struct Lexeme* token, int node_type, int conversion) {
+	
+	Node* node = malloc(sizeof(Node));
+	
+	node->token = token;
+	node->node_type = node_type;
+	node->conversion = conversion;
 	node->children_num = NO_CHILDREN;
 	node->children = (Node**) malloc(sizeof(Node**));
 

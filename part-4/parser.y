@@ -7,6 +7,7 @@
 	#include "lexeme.h"
 	#include "table.h"
 	#include "errors.h"
+	#include "conversions.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -91,7 +92,7 @@
 	int num_boolean_operators = 0;
 	int num_any_operators = 0;
 	void reset_counters();
-	int can_convert(int type, int attr_type);
+	int convert(int type, int attr_type);
 	char* get_type_name(int type);
 	void reset_expr();
 
@@ -893,9 +894,13 @@ cmd 		: cmd_ident cmd_id_fix ';'
 
 						if (came_from_function_call == TRUE) {
 							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
+								int is_it_array = is_array(stack, cmd_id_name);
 								if (is_user_type(stack, cmd_id_name) == TRUE) {
 									printf("ERROR: line %d - type '%s' used as function\n",  yylineno, cmd_id_name);
 									quit_with_error(ERR_USER);
+								} else if (is_it_array == TRUE) {
+									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_VECTOR);
 								} else if (declaration_line != NOT_DECLARED) {
 									printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, cmd_id_name);
 									quit_with_error(ERR_VARIABLE);
@@ -925,7 +930,7 @@ cmd 		: cmd_ident cmd_id_fix ';'
 							char *trash;
 							int id_type = get_id_type(stack, cmd_id_name, &trash);
 							int expr_type = infer_expr_type();
-							if (can_convert(id_type, expr_type) == FALSE) {
+							if (convert(id_type, expr_type) == CONVERSION_ERROR) {
 								printf("ERROR: line %d - incorrect assignation for variable %s\n",
 									yylineno, cmd_id_name);
 								quit_with_error(ERR_WRONG_TYPE);
@@ -1204,7 +1209,7 @@ return 		: TK_PR_RETURN expr
 					//printf("\nTYPE EXPR = %s", get_type_name(type));
 					//printf("\nEXPECTED TYPE = %s", get_type_name(expected_type));
 					if (type != expected_type) {
-						if (can_convert(expected_type, type) == FALSE) {
+						if (convert(expected_type, type) == CONVERSION_ERROR) {
 							if (expected_type == USER_TYPE)
 								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
 									yylineno, user_type_name);
@@ -1267,10 +1272,14 @@ cmd_for 	: cmd_ident cmd_id_fix
 
 						if (came_from_function_call == TRUE) {
 							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
+								int is_it_array = is_array(stack, cmd_id_name);
 								if (is_user_type(stack, cmd_id_name) == TRUE) {
 									printf("ERROR: line %d - type '%s' used as function\n", 
 										yylineno, cmd_id_name);
 									quit_with_error(ERR_USER);
+								} else if (is_it_array == TRUE) {
+									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_VECTOR);
 								} else if (declaration_line != NOT_DECLARED) {
 									printf("ERROR: line %d - variable '%s' used as function\n", 
 										yylineno, cmd_id_name);
@@ -1304,7 +1313,8 @@ cmd_for 	: cmd_ident cmd_id_fix
 							char *trash;
 							int id_type = get_id_type(stack, cmd_id_name, &trash);
 							int expr_type = infer_expr_type();
-							if (can_convert(id_type, expr_type) == FALSE) {
+							int conversion = convert(id_type, expr_type); 
+							if (conversion == CONVERSION_ERROR) {
 								printf("ERROR: line %d - incorrect assignation for variable %s\n",
 									yylineno, cmd_id_name);
 								quit_with_error(ERR_WRONG_TYPE);
@@ -1495,7 +1505,7 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						int type = get_id_type(stack, $3->value.v_string, &user_type_nm);
 						//printf("[D] id_user_type : %s\n", id_user_type);
 						if (temp_type != type) {
-							if (can_convert(temp_type, type) == FALSE) {
+							if (convert(temp_type, type) == CONVERSION_ERROR) {
 								if (type == USER_TYPE) {
 									printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
 										yylineno, user_type_nm);
@@ -1669,7 +1679,7 @@ var_end 	: TK_OC_LE var_lit
 					//printf("\nLOCAL VAR TYPE = %s", get_type_name(local_var_type));
 					//printf("\nLOCAL VAR LIT TYPE = %s\n", get_type_name(local_var_lit_type));
 					if (local_var_type != local_var_lit_type) {
-						if (can_convert(local_var_type, local_var_lit_type) == FALSE) {
+						if (convert(local_var_type, local_var_lit_type) == CONVERSION_ERROR) {
 							printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
 								yylineno, get_type_name(local_var_type), get_type_name(local_var_lit_type));
 							quit_with_error(ERR_WRONG_TYPE);
@@ -2421,18 +2431,34 @@ void set_local_var_lit_type(int type) {
 	local_var_lit_type = type;
 }
 
-int can_convert(int type, int attr_type) {
-	/*printf("\nCONVERT");
-	printf("\nTYPE 1 = %s", get_type_name(type));
-	printf("\nTYPE 2 = %s", get_type_name(attr_type));*/
-	if (type == INT || type == FLOAT || type == BOOL) {
-		if (attr_type == INT || attr_type == FLOAT || attr_type == BOOL) {
-			return TRUE;
-		} else {
-			return FALSE;
+int convert(int expected_type, int attr_type) {
+	if (expected_type == INT) {
+		switch(attr_type) {
+			case FLOAT: return FLOAT_TO_INT;
+			case BOOL: return BOOL_TO_INT;
+			case INT: return NO_CONVERSION;
+			default: return CONVERSION_ERROR;
 		}
-	} else{
-		return FALSE;
+	} else if (expected_type == FLOAT) {
+		switch(attr_type) {
+			case INT: return INT_TO_FLOAT;
+			case BOOL: return BOOL_TO_FLOAT;
+			case FLOAT: return NO_CONVERSION;
+			default: return CONVERSION_ERROR;
+		}
+	} else if (expected_type == BOOL) {
+		switch(attr_type) {
+			case INT: return INT_TO_BOOL;
+			case FLOAT: return FLOAT_TO_BOOL;
+			case BOOL: return NO_CONVERSION;
+			default: return CONVERSION_ERROR;
+		}
+	} else {
+		if (expected_type == attr_type) {
+			return NO_CONVERSION;
+		} else {
+			return CONVERSION_ERROR;
+		}
 	}
 }
 

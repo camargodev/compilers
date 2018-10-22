@@ -7,9 +7,6 @@
 table create_table() {
 	table table;
 	table.lines = (table_line*) malloc(sizeof(table_line));
-	//printf("AA\n");
-	//table.scope_name = 'a';
-	//printf("BB\n");
 	table.num_lines = NO_LINES;
 	
 	return table;
