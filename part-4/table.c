@@ -36,6 +36,7 @@ void pop(table_stack * stack){
 		return;
 	}
 	else {
+		free_table(stack->array[stack->num_tables]);
 		stack->num_tables--;
 		return;
 	}	
@@ -694,6 +695,44 @@ int get_user_type_size(table_stack * stack, char * token)
 void current_function_name(table_stack *stack) {
 	int num_lines = stack->array[0].num_lines;
 	printf("FUNC NAME EH %s\n", stack->array[0].lines[num_lines].token_name);
+}
+
+void free_line(table_line line) {
+	free(line.token_name); 
+	line.token_name = NULL;
+	
+	if (line.user_type != NULL){
+		free(line.user_type);
+		line.user_type = NULL;
+	}
+	
+	if (line.function_args != NULL) {
+		free(line.function_args);
+		line.function_args = NULL;
+	}
+
+	if (line.user_type_args != NULL) {
+		int i;
+		for (i = 0; i < line.num_user_type_args; i++)
+			if (line.user_type_args[i].token_name != NULL) {
+				free(line.user_type_args[i].token_name);
+				line.user_type_args[i].token_name = NULL;
+			}
+		free(line.user_type_args);
+		line.user_type_args = NULL;
+	}
+}
+
+void free_table(table table) {
+	int line_counter = 0;
+	while(line_counter <= table.num_lines)
+	{ 
+		free_line(table.lines[line_counter]);
+		line_counter++;
+	}
+
+	free(table.lines);
+	table.lines = NULL;
 }
 
 void free_table_stack(table_stack * stack) 

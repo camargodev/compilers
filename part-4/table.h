@@ -147,6 +147,8 @@ int is_symbol_user_type(table_stack * stack, char* token);
 
 void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
 
+void free_line(table_line line);
+void free_table(table table);
 void free_table_stack(table_stack * stack);
 
 expr_args init_expr_args();

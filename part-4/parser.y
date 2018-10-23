@@ -111,11 +111,21 @@
 	char* called_function = NULL;
 	char* cmd_id_name = NULL;
 
+	void reset_param_types();
 	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
 	void quit_with_error(int error);
 	extern int yylex_destroy(void);
+
+	int has_error = FALSE;
+	int error_code = 0;
+	char* error_message;
+	int line = -1;
+	char* param_str_1 = NULL;
+	char* param_str_2 = NULL;
+
+	void set_error(int error_code, char* error_message, int param_int, char* param_str_1, char* param_str_2);
 %}
 
 %verbose
@@ -173,6 +183,7 @@
 
 %type <node> programa 
 
+%type <node> set_tree
 %type <node> start
 //%type <node> type
 %type <node> scope
@@ -266,12 +277,14 @@
 		rule itself. Follow the pattern.
 */
 
-programa :  initializer start destroyer
+programa :  initializer set_tree destroyer
 			{ 
-				$$ = $2;
-				arvore = $$;
+			}
 
-				//print_stack(stack);
+set_tree	: start 
+			{
+				$$ = $1;
+				arvore = $1;
 			}
 
 initializer : %empty
@@ -281,7 +294,13 @@ initializer : %empty
 
 destroyer : %empty
 			{
-				//free_table_stack(stack);
+				if (has_error == TRUE) {
+					//printf("\nTEM ERRO");
+					//printf("%s", error_message);
+					quit_with_error(error_code);
+				} else {
+					free_table_stack(stack);
+				}
 			}
 
 start : new_type start
@@ -520,9 +539,12 @@ func_arg_types: func_arg_type
 		| TK_IDENTIFICADOR
 			{ 
 				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
-				{							
+				{				
+					set_error(ERR_UNDECLARED,
+							"", yylineno, NULL, NULL);
+					/*set_error(int p_error_code, char* p_error_message, int p_line, char* p_param_str_1, char* p_param_str_2)
 					printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-					quit_with_error(ERR_UNDECLARED);
+					quit_with_error(ERR_UNDECLARED);*/
 				}
 				
 				set_user_type_arg($1->value.v_string);
@@ -561,10 +583,12 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					
 					int declaration_line = is_declared(stack, $2->value.v_string);
 					if(declaration_line != NOT_DECLARED)
-					{
-						printf("ERROR: line %d - class '%s' was already declared on line %i\n",
+					{				
+						set_error(ERR_DECLARED,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - class '%s' was already declared on line %i\n",
 							yylineno, $2->value.v_string, declaration_line);
-						quit_with_error(ERR_DECLARED);
+						quit_with_error(ERR_DECLARED);*/
 					}
 					else
 					{
@@ -640,9 +664,11 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 
 						int declaration_line = is_declared(stack, $1->value.v_string);
 						if (declaration_line != NOT_DECLARED) {
-							printf("ERROR: line %d - global variavel '%s' was already declared on line %i\n",
+							set_error(ERR_DECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - global variavel '%s' was already declared on line %i\n",
 								yylineno, $1->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);
+							quit_with_error(ERR_DECLARED);*/
 						}
 
 						if(debug_global_var)
@@ -707,9 +733,11 @@ global_var_type	: var_types ';'
 				| TK_IDENTIFICADOR ';'
 					{
 						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
-						{							
-							printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-							quit_with_error(ERR_UNDECLARED);
+						{						
+							set_error(ERR_UNDECLARED,
+								"", yylineno, NULL, NULL);	
+							/*printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
+							quit_with_error(ERR_UNDECLARED);*/
 						}
 
 						if(debug_global_var)
@@ -784,17 +812,21 @@ func_name_user_type	: TK_IDENTIFICADOR TK_IDENTIFICADOR
 
 					func_decl_line = is_function_declared(stack, $2->value.v_string);
 					if (func_decl_line != NOT_DECLARED) {
-						printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+						set_error(ERR_DECLARED,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - function '%s' already declared on line %i\n", 
 							yylineno, $2->value.v_string, func_decl_line);
-						quit_with_error(ERR_DECLARED);							
+						quit_with_error(ERR_DECLARED);	*/						
 					}
 					func_lexeme = $2;
 					func_user_type_name = $1->value.v_string;
 
 					if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-						printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
+						set_error(ERR_UNDECLARED,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
 							func_decl_line, $1->value.v_string, func_lexeme->value.v_string);
-						quit_with_error(ERR_UNDECLARED);
+						quit_with_error(ERR_UNDECLARED);*/
 					}
 
 					function_type = USER_TYPE;
@@ -809,9 +841,11 @@ func_name 	: TK_IDENTIFICADOR
 				{
 					func_decl_line = is_function_declared(stack, $1->value.v_string);
 					if (func_decl_line != NOT_DECLARED) {
-						printf("ERROR: line %d - function '%s' already declared on line %i\n", 
+						set_error(ERR_DECLARED,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - function '%s' already declared on line %i\n", 
 							yylineno, $1->value.v_string, func_decl_line);
-						quit_with_error(ERR_DECLARED);							
+						quit_with_error(ERR_DECLARED);		*/					
 					}
 					func_lexeme = $1;
 					$$ = new_node($1);
@@ -896,30 +930,42 @@ cmd 		: cmd_ident cmd_id_fix ';'
 							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
 								int is_it_array = is_array(stack, cmd_id_name);
 								if (is_user_type(stack, cmd_id_name) == TRUE) {
-									printf("ERROR: line %d - type '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_USER);
+									set_error(ERR_USER,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - type '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_USER);*/
 								} else if (is_it_array == TRUE) {
-									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VECTOR);
+									set_error(ERR_VECTOR,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_VECTOR);*/
 								} else if (declaration_line != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VARIABLE);
+									set_error(ERR_VARIABLE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_VARIABLE);*/
 								}
-								printf("ERROR: line %d - function '%s' was not previously declared\n",  yylineno, cmd_id_name);
-								quit_with_error(ERR_UNDECLARED);
+								set_error(ERR_UNDECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - function '%s' was not previously declared\n",  yylineno, cmd_id_name);
+								quit_with_error(ERR_UNDECLARED);*/
 							}
 							came_from_function_call = FALSE;
 						} else if (declaration_line == NOT_DECLARED) {
-							printf("ERROR: line %d - '%s' was not previously declared\n",  yylineno, cmd_id_name);
-							quit_with_error(ERR_UNDECLARED);							
+								set_error(ERR_UNDECLARED,
+									"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - '%s' was not previously declared\n",  yylineno, cmd_id_name);
+							quit_with_error(ERR_UNDECLARED);	*/						
 						}
 
 						if (came_from_local_var == TRUE) {
 							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
 							if(declaration_line != NOT_DECLARED) {
-								printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+								set_error(ERR_DECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
 									yylineno, local_var_lexeme->value.v_string, declaration_line);
-								quit_with_error(ERR_DECLARED);
+								quit_with_error(ERR_DECLARED);*/
 							} else {
 								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
 							}
@@ -931,9 +977,11 @@ cmd 		: cmd_ident cmd_id_fix ';'
 							int id_type = get_id_type(stack, cmd_id_name, &trash);
 							int expr_type = infer_expr_type();
 							if (convert(id_type, expr_type) == CONVERSION_ERROR) {
-								printf("ERROR: line %d - incorrect assignation for variable %s\n",
+								set_error(ERR_WRONG_TYPE,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - incorrect assignation for variable %s\n",
 									yylineno, cmd_id_name);
-								quit_with_error(ERR_WRONG_TYPE);
+								quit_with_error(ERR_WRONG_TYPE);*/
 							}
 
 
@@ -964,9 +1012,12 @@ cmd 		: cmd_ident cmd_id_fix ';'
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						if(declaration_line != NOT_DECLARED) {
-							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+							set_error(ERR_DECLARED,
+								"", yylineno, NULL, NULL);
+
+							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
 								yylineno, $2->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);
+							quit_with_error(ERR_DECLARED);*/
 						} else {
 							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
 						}
@@ -1055,9 +1106,12 @@ input 		: TK_PR_INPUT expr
 					 	{
 					 		if (debug_input_output)
 					 			print_expr_args();
-					 		printf("ERROR: line %d - input only accepts id types!\n", yylineno);
+
+							set_error(ERR_WRONG_PAR_INPUT,
+								"", yylineno, NULL, NULL);
+					 		/*printf("ERROR: line %d - input only accepts id types!\n", yylineno);
 					 		//error_code = ERR_WRONG_PAR_INPUT;
-					 		exit(ERR_WRONG_PAR_INPUT);
+					 		exit(ERR_WRONG_PAR_INPUT);*/
 					 	}
 					
 					$$ = new_node($1);
@@ -1076,8 +1130,10 @@ output 		: TK_PR_OUTPUT expr output_vals
 					if(expr_list.has_char
 					 	|| expr_list.has_user_type)
 					 	{
-					 		printf("ERROR: line %d - output only accepts arithmetic expr or string!\n", yylineno);
-					 		exit(ERR_WRONG_PAR_OUTPUT);
+							set_error(ERR_WRONG_PAR_OUTPUT,
+								"", yylineno, NULL, NULL);
+					 		/*printf("ERROR: line %d - output only accepts arithmetic expr or string!\n", yylineno);
+					 		exit(ERR_WRONG_PAR_OUTPUT);*/
 					 	}
 
 					expr_list = init_expr_args();
@@ -1118,9 +1174,12 @@ if_then_expr : expr
 			{
 				int cond_type = infer_expr_type();
 				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					printf("ERROR: line %d - 'if' conditional should be of type bool, int, or float\n",
+					
+					set_error(ERR_WRONG_TYPE,
+						"", yylineno, NULL, NULL);
+					/*printf("ERROR: line %d - 'if' conditional should be of type bool, int, or float\n",
 							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);
+					quit_with_error(ERR_WRONG_TYPE);*/
 				}
 				added_field_type = FALSE;
 				expr_list = init_expr_args();
@@ -1155,9 +1214,11 @@ while_expr	: expr
 				{
 					int cond_type = infer_expr_type();
 					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-						printf("ERROR: line %d - 'while' conditional should be of type bool, int, or float\n",
+						set_error(ERR_WRONG_TYPE,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - 'while' conditional should be of type bool, int, or float\n",
 								yylineno);
-						quit_with_error(ERR_WRONG_TYPE);
+						quit_with_error(ERR_WRONG_TYPE);*/
 					}
 					added_field_type = FALSE;
 					expr_list = init_expr_args();
@@ -1181,9 +1242,11 @@ do_while_expr: expr
 				{
 					int cond_type = infer_expr_type();
 					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-						printf("ERROR: line %d - 'do while' conditional should be of type bool, int, or float\n",
+						set_error(ERR_WRONG_TYPE,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - 'do while' conditional should be of type bool, int, or float\n",
 								yylineno);
-						quit_with_error(ERR_WRONG_TYPE);
+						quit_with_error(ERR_WRONG_TYPE);*/
 					}
 					added_field_type = FALSE;
 					expr_list = init_expr_args();
@@ -1211,20 +1274,26 @@ return 		: TK_PR_RETURN expr
 					if (type != expected_type) {
 						if (convert(expected_type, type) == CONVERSION_ERROR) {
 							if (expected_type == USER_TYPE)
-								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
-									yylineno, user_type_name);
+								set_error(ERR_WRONG_PAR_RETURN,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
+									yylineno, user_type_name);*/
 							else
-								printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
-									yylineno, get_type_name(expected_type));	
-							quit_with_error(ERR_WRONG_PAR_RETURN);
+								set_error(ERR_WRONG_PAR_RETURN,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
+									yylineno, get_type_name(expected_type));	*/
+							//quit_with_error(ERR_WRONG_PAR_RETURN);
 						}
 					} else if (expected_type == USER_TYPE) {
 						// id_user_type has the name of the last user type used on return expr
 						//printf("\nTENHO = %s\n", id_user_type);
 						if (strcmp(id_user_type, user_type_name) != 0) {
-							printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
+							set_error(ERR_WRONG_PAR_RETURN,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
 								yylineno, user_type_name, id_user_type);
-							quit_with_error(ERR_WRONG_PAR_RETURN);
+							quit_with_error(ERR_WRONG_PAR_RETURN);*/
 						}
 					}
 					added_field_type = FALSE;
@@ -1256,9 +1325,11 @@ for_expr 	: expr
 				//print_expr_args();	
 				int cond_type = infer_expr_type();
 				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					printf("ERROR: line %d - 'for' conditional should be of type bool, int, or float\n",
+					set_error(ERR_WRONG_TYPE,
+						"", yylineno, NULL, NULL);
+					/*printf("ERROR: line %d - 'for' conditional should be of type bool, int, or float\n",
 							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);
+					quit_with_error(ERR_WRONG_TYPE);*/
 				}
 				added_field_type = FALSE;
 				expr_list = init_expr_args();
@@ -1274,35 +1345,47 @@ cmd_for 	: cmd_ident cmd_id_fix
 							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
 								int is_it_array = is_array(stack, cmd_id_name);
 								if (is_user_type(stack, cmd_id_name) == TRUE) {
-									printf("ERROR: line %d - type '%s' used as function\n", 
+									set_error(ERR_USER,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - type '%s' used as function\n", 
 										yylineno, cmd_id_name);
-									quit_with_error(ERR_USER);
+									quit_with_error(ERR_USER);*/
 								} else if (is_it_array == TRUE) {
-									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VECTOR);
+									set_error(ERR_VECTOR,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
+									quit_with_error(ERR_VECTOR);*/
 								} else if (declaration_line != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' used as function\n", 
+									set_error(ERR_VARIABLE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - variable '%s' used as function\n", 
 										yylineno, cmd_id_name);
-									quit_with_error(ERR_VARIABLE);
+									quit_with_error(ERR_VARIABLE);*/
 								}
 
-								printf("ERROR: line %d - function '%s' was not previously declared\n", 
+								set_error(ERR_UNDECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - function '%s' was not previously declared\n", 
 									yylineno, cmd_id_name);
-								quit_with_error(ERR_UNDECLARED);
+								quit_with_error(ERR_UNDECLARED);*/
 							}
 							came_from_function_call = FALSE;
 						} else if (declaration_line == NOT_DECLARED) {
-							printf("ERROR: line %d - '%s' was not previously declared\n", 
+							set_error(ERR_UNDECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - '%s' was not previously declared\n", 
 								yylineno, cmd_id_name);
-							quit_with_error(ERR_UNDECLARED);							
+							quit_with_error(ERR_UNDECLARED);*/							
 						}
 
 						if (came_from_local_var == TRUE) {
 							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
 							if(declaration_line != NOT_DECLARED) {
-								printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+								set_error(ERR_DECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
 									yylineno, local_var_lexeme->value.v_string, declaration_line);
-								quit_with_error(ERR_DECLARED);
+								quit_with_error(ERR_DECLARED);*/
 							} else {
 								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
 							}
@@ -1315,9 +1398,11 @@ cmd_for 	: cmd_ident cmd_id_fix
 							int expr_type = infer_expr_type();
 							int conversion = convert(id_type, expr_type); 
 							if (conversion == CONVERSION_ERROR) {
-								printf("ERROR: line %d - incorrect assignation for variable %s\n",
+								set_error(ERR_WRONG_TYPE,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - incorrect assignation for variable %s\n",
 									yylineno, cmd_id_name);
-								quit_with_error(ERR_WRONG_TYPE);
+								quit_with_error(ERR_WRONG_TYPE);*/
 							}
 
 
@@ -1335,9 +1420,11 @@ cmd_for 	: cmd_ident cmd_id_fix
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						if(declaration_line != NOT_DECLARED) {
-							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+							set_error(ERR_DECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
 								yylineno, $2->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);
+							quit_with_error(ERR_DECLARED);*/
 						} else {
 							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
 						}
@@ -1439,8 +1526,10 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						// this function is called to raise errors in functions (if they exists)
 						infer_expr_type();
 						if (is_declared(stack, $3->value.v_string) == FALSE) {
-							printf("ERROR: line %d - %s was not declared\n", yylineno, $3->value.v_string);
-							quit_with_error(ERR_UNDECLARED);
+							set_error(ERR_UNDECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - %s was not declared\n", yylineno, $3->value.v_string);
+							quit_with_error(ERR_UNDECLARED);*/
 						}
 						//printf("\nTYPE OF EXPRS = %s", get_type_name(type));
 						/*printf("\nINT = %i", fe_int_counter);
@@ -1457,8 +1546,10 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 								|| fe_bool_counter > 0
 								|| fe_char_counter > 0
 								|| fe_user_counter > 0) {
-								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);
+								set_error(ERR_WRONG_TYPE,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);*/
 							} else {
 								temp_type = STRING;
 							}
@@ -1468,8 +1559,10 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 								|| fe_bool_counter > 0
 								|| fe_string_counter > 0
 								|| fe_user_counter > 0) {
-								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);
+								set_error(ERR_WRONG_TYPE,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);*/
 							} else {
 								temp_type = CHAR;
 							}
@@ -1479,8 +1572,10 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 								|| fe_bool_counter > 0
 								|| fe_string_counter > 0
 								|| fe_char_counter > 0) {
-								printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);
+								set_error(ERR_WRONG_TYPE,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
+								quit_with_error(ERR_WRONG_TYPE);*/
 							} else {
 								temp_type = USER_TYPE;
 							}
@@ -1507,13 +1602,17 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						if (temp_type != type) {
 							if (convert(temp_type, type) == CONVERSION_ERROR) {
 								if (type == USER_TYPE) {
-									printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
-										yylineno, user_type_nm);
+									set_error(ERR_WRONG_TYPE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
+										yylineno, user_type_nm);*/
 								} else {
-									printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
-										yylineno, get_type_name(type));
+									set_error(ERR_WRONG_TYPE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
+										yylineno, get_type_name(type));*/
 								}
-								quit_with_error(ERR_WRONG_TYPE);
+								//quit_with_error(ERR_WRONG_TYPE);
 							}
 						} else if (type == USER_TYPE) {
 							//printf("[E] id_user_type : %s\n", id_user_type);
@@ -1525,8 +1624,10 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 
 								if (strcmp(id_user_type, user_type_nm) != 0) {
 									//printf("\n[G] id_user_type : %s\n", id_user_type);
-									printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
-										yylineno, user_type_nm, id_user_type);
+									set_error(ERR_WRONG_TYPE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
+										yylineno, user_type_nm, id_user_type);*/
 									quit_with_error(ERR_WRONG_TYPE);
 								}
 							}
@@ -1568,8 +1669,10 @@ foreach_count	: %empty
 						int type = infer_expr_type();
 						//printf("\nTYPE INFERED = %s", get_type_name(type));
 						if (type == INVALID_TYPE) {
-							printf("ERROR: line %d - Invalid expression on foreach\n", yylineno);
-							quit_with_error(ERR_WRONG_TYPE);
+							set_error(ERR_WRONG_TYPE,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - Invalid expression on foreach\n", yylineno);
+							quit_with_error(ERR_WRONG_TYPE);*/
 						}
 						reset_counters();
 					}
@@ -1588,9 +1691,11 @@ switch_expr : expr
 			{
 				int cond_type = infer_expr_type();
 				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					printf("ERROR: line %d - 'switch' conditional should be of type bool, int, or float\n",
+					set_error(ERR_WRONG_TYPE,
+						"", yylineno, NULL, NULL);
+					/*printf("ERROR: line %d - 'switch' conditional should be of type bool, int, or float\n",
 							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);
+					quit_with_error(ERR_WRONG_TYPE);*/
 				}
 				$$ = $1;
 			}
@@ -1599,8 +1704,10 @@ case 		: TK_PR_CASE expr ':'
 				{
 					int type = infer_expr_type();
 					if (type != INT) {
-						printf("ERROR: line %d - 'case' only receives integers\n", yylineno);
-						quit_with_error(ERR_WRONG_TYPE);
+						set_error(ERR_WRONG_TYPE,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - 'case' only receives integers\n", yylineno);
+						quit_with_error(ERR_WRONG_TYPE);*/
 					}
 
 					$$ = new_node($1);
@@ -1641,9 +1748,11 @@ const_var	: local_var_type TK_IDENTIFICADOR var_end
 				{
 					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 					if(declaration_line != NOT_DECLARED) {
-						printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+						set_error(ERR_DECLARED,
+							"", yylineno, NULL, NULL);
+						/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
 							yylineno, $2->value.v_string, declaration_line);
-						quit_with_error(ERR_DECLARED);
+						quit_with_error(ERR_DECLARED);*/
 					} else {
 						add_local_var(stack, local_var_type, NULL, FALSE, TRUE, $2);
 					}
@@ -1655,15 +1764,19 @@ const_var	: local_var_type TK_IDENTIFICADOR var_end
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
 					if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-							printf("ERROR: line %d - type '%s' was not previously declared\n", 
+							set_error(ERR_UNDECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - type '%s' was not previously declared\n", 
 								yylineno, $1->value.v_string);
-							quit_with_error(ERR_UNDECLARED);							
+							quit_with_error(ERR_UNDECLARED);*/					
 					}
 
 					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 					if(declaration_line != NOT_DECLARED) {
-							printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-							yylineno, $2->value.v_string, declaration_line);
+							set_error(ERR_DECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
+							yylineno, $2->value.v_string, declaration_line);*/
 						quit_with_error(ERR_DECLARED);
 					} else {
 						add_local_var(stack, local_var_type, $1->value.v_string, FALSE, TRUE, $2);
@@ -1680,9 +1793,11 @@ var_end 	: TK_OC_LE var_lit
 					//printf("\nLOCAL VAR LIT TYPE = %s\n", get_type_name(local_var_lit_type));
 					if (local_var_type != local_var_lit_type) {
 						if (convert(local_var_type, local_var_lit_type) == CONVERSION_ERROR) {
-							printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
+							set_error(ERR_WRONG_TYPE,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
 								yylineno, get_type_name(local_var_type), get_type_name(local_var_lit_type));
-							quit_with_error(ERR_WRONG_TYPE);
+							quit_with_error(ERR_WRONG_TYPE);*/
 						}
 					}
 
@@ -1996,25 +2111,35 @@ expr_vals		: TK_LIT_FLOAT
 						// Se não foi usado como array, mas é array, então é ERR_VECTOR 
 						if (came_from_array == FALSE) {
 							if (is_it_array == TRUE) {
-								printf("ERROR: line %d - array '%s' used incorrectly\n",  yylineno, expr_id_name);
-								quit_with_error(ERR_VECTOR);
+								set_error(ERR_VECTOR,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - array '%s' used incorrectly\n",  yylineno, expr_id_name);
+								quit_with_error(ERR_VECTOR);*/
 							}
 						} else {
 							// SE foi usado como array, mas não é, tem que ver o que é pra dar o erro certo
 							if (is_it_array == FALSE) {
 								if (is_function != NOT_DECLARED) {
-									printf("ERROR: line %d - function '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_FUNCTION);
+									set_error(ERR_FUNCTION,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - function '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_FUNCTION);*/
 								} else if (is_it_user_type == TRUE) {
-									printf("ERROR: line %d - type '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_USER);
+									set_error(ERR_USER,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - type '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_USER);*/
 								} else if (is_it_declared != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VARIABLE);
+									set_error(ERR_VARIABLE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - variable '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_VARIABLE);*/
 								} else {
-									printf("ERROR: line %d - array '%s' was not previously declared\n", 
+									set_error(ERR_UNDECLARED,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - array '%s' was not previously declared\n", 
 										yylineno, expr_id_name);
-									quit_with_error(ERR_UNDECLARED);
+									quit_with_error(ERR_UNDECLARED);*/
 								}
 							}	
 							came_from_array = FALSE;						
@@ -2024,30 +2149,42 @@ expr_vals		: TK_LIT_FLOAT
 						if (came_from_function_call == TRUE) {
 							if (is_function == NOT_DECLARED) {
 								if (is_it_user_type == TRUE) {
-									printf("ERROR: line %d - type '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_USER);
+									set_error(ERR_USER,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - type '%s' used as function\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_USER);*/
 								} else if (is_it_array == TRUE) {
-									printf("ERROR: line %d - array '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VECTOR);
+									set_error(ERR_VECTOR,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_VECTOR);*/
 								} else if (is_it_declared != NOT_DECLARED) {
-									printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VARIABLE);
+									set_error(ERR_VARIABLE,
+										"", yylineno, NULL, NULL);
+									/*printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, expr_id_name);
+									quit_with_error(ERR_VARIABLE);*/
 								}
-								printf("ERROR: line %d - function '%s' was not previously declared\n", 
+								set_error(ERR_UNDECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - function '%s' was not previously declared\n", 
 									yylineno, expr_id_name);
-								quit_with_error(ERR_UNDECLARED);
+								quit_with_error(ERR_UNDECLARED);*/
 							}
 							came_from_function_call = FALSE;
 						} else {
 							if (is_function != NOT_DECLARED) {
-								printf("ERROR: line %d - function '%s' used as variable\n", 
+								set_error(ERR_FUNCTION,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - function '%s' used as variable\n", 
 									yylineno, expr_id_name);
-								quit_with_error(ERR_FUNCTION);
+								quit_with_error(ERR_FUNCTION);*/
 							}
 							if (is_it_user_type == TRUE) {
-								printf("ERROR: line %d - type '%s' used as variable\n", 
+								set_error(ERR_USER,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - type '%s' used as variable\n", 
 									yylineno, expr_id_name);
-								quit_with_error(ERR_USER);
+								quit_with_error(ERR_USER);*/
 							}
 						}
 						expr_list.has_id = TRUE;
@@ -2090,8 +2227,10 @@ id_for_expr		: TK_IDENTIFICADOR
 							printf("[ID_FOR_EXPR] ID [%s]\n", $1->value.v_string);
 						expr_id_name = $1->value.v_string;
 						if (is_declared(stack, expr_id_name) == FALSE) {
-							printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
-							quit_with_error(ERR_UNDECLARED);
+							set_error(ERR_UNDECLARED,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
+							quit_with_error(ERR_UNDECLARED);*/
 						}
 						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
 						// Otherwise, id_user_type is NULL
@@ -2149,24 +2288,30 @@ id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec
 							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
 
 						if (id_user_type == NULL) {
-							printf("ERROR: line %d - variable is not a user type\n", yylineno);
-							quit_with_error(ERR_VARIABLE);
-						}
+							set_error(ERR_VARIABLE,
+								"", yylineno, NULL, NULL);
+							/*printf("ERROR: line %d - variable is not a user type\n", yylineno);
+							quit_with_error(ERR_VARIABLE);*/
+						} else {
 
-						int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
-						
-						if(debug_expr) {
-							printf("[ID_SEQ_FIELD] type : %d\n", type);
+							
+							int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
+							
+							if(debug_expr) {
+								printf("[ID_SEQ_FIELD] type : %d\n", type);
+							}
+							if(type == NOT_DECLARED || type == NOT_USER_TYPE || type == INVALID_FIELD)
+							{
+								set_error(ERR_UNDECLARED,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - not declared\n", yylineno);
+								exit(ERR_UNDECLARED);*/
+							}
+							
+							add_type_to_expr(type);
+							added_field_type = TRUE;
+							input_helper_flag = TRUE;
 						}
-						if(type == NOT_DECLARED || type == NOT_USER_TYPE || type == INVALID_FIELD)
-						{
-							printf("ERROR: line %d - not declared\n", yylineno);
-							exit(ERR_UNDECLARED);
-						}
-						
-						add_type_to_expr(type);
-						added_field_type = TRUE;
-						input_helper_flag = TRUE;
 						
 						$$ = new_node($1);
 						add_node($$, new_node($2));
@@ -2209,8 +2354,6 @@ id_seq_simple	: '[' expr ']' id_seq_field
 							printf("[ID_SEQ_SIMPLE] Sem vetor\n");
 						}
 
-
-
 						$$ = $1;
 					}
 
@@ -2236,32 +2379,41 @@ func_call_params	: ')'
 							//printf("\nTENHO %i PARAMS", num_func_params);
 							int called_func_num_params = get_func_num_params(stack, called_function);
 							if (called_func_num_params < 0) {
-								printf("ERROR: line %d - '%s' is not a function\n",
+								set_error(ERR_FUNCTION,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - '%s' is not a function\n",
 									yylineno, called_function);
-								quit_with_error(ERR_FUNCTION);
+								quit_with_error(ERR_FUNCTION);*/
 							}
 							if (num_func_params > called_func_num_params) {
-								printf("ERROR: line %d - too many arguments (%i) for function %s (expecting %i)\n",
+								set_error(ERR_EXCESS_ARGS,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - too many arguments (%i) for function %s (expecting %i)\n",
 									yylineno, num_func_params, called_function, called_func_num_params);
-								quit_with_error(ERR_EXCESS_ARGS);
+								quit_with_error(ERR_EXCESS_ARGS);*/
 							} else if (num_func_params < called_func_num_params) {
-								printf("ERROR: line %d - missing arguments (%i) for function %s (expecting %i)\n", 
+								set_error(ERR_MISSING_ARGS,
+									"", yylineno, NULL, NULL);
+								/*printf("ERROR: line %d - missing arguments (%i) for function %s (expecting %i)\n", 
 									yylineno, num_func_params, called_function, called_func_num_params);
-								quit_with_error(ERR_MISSING_ARGS);
+								quit_with_error(ERR_MISSING_ARGS);*/
 							} else {
 								if (called_func_num_params > 0) {
 									int i;
 									int* called_func_params = get_func_params_types(stack, called_function);
 									for (i = 0; i < called_func_num_params; i++) {
 										if (func_params_types[i] != called_func_params[i]) {	
-											printf("ERROR: line %d - parameter %i has the wrong type\n", yylineno, (i+1));
-											quit_with_error(ERR_WRONG_TYPE_ARGS);
+											set_error(ERR_WRONG_TYPE_ARGS,
+												"", yylineno, NULL, NULL);
+											/*printf("ERROR: line %d - parameter %i has the wrong type\n", yylineno, (i+1));
+											quit_with_error(ERR_WRONG_TYPE_ARGS);*/
 										}
 									}
+									free(called_func_params);
+									called_func_params = NULL;
 								}
 							}
-							num_func_params = 0;
-							func_params_types = NULL;
+							reset_param_types();
 
 							if(debug_expr)
 								printf("[FUNC_CALL_PARAMS] expr func_call_params_body\n");
@@ -2485,7 +2637,7 @@ void quit_with_error(int error) {
 	libera(arvore);
   	arvore = NULL;
   	yylex_destroy();
-  	pop(stack);
+  	//pop(stack);
 	free_table_stack(stack);
 	exit(error);
 }
@@ -2565,8 +2717,10 @@ int infer_expr_type() {
 	if (expr_list.has_char) {
 		//printf("\nTENHO CHAR");
 		if (has_numerical()) {
-			printf("ERROR: line %d - expression mixing char with numericals\n", yylineno);
-			quit_with_error(ERR_CHAR_TO_X);
+			set_error(ERR_CHAR_TO_X,
+				"", yylineno, NULL, NULL);
+			/*printf("ERROR: line %d - expression mixing char with numericals\n", yylineno);
+			quit_with_error(ERR_CHAR_TO_X);*/
 		} else if (expr_list.has_string || expr_list.has_user_type) {
 			reset_counters();
 			return INVALID_TYPE;
@@ -2586,8 +2740,10 @@ int infer_expr_type() {
 
 		//printf("\nTENHO STR");
 		if (has_numerical()) {
-			printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
-			quit_with_error(ERR_STRING_TO_X);
+			set_error(ERR_STRING_TO_X,
+				"", yylineno, NULL, NULL);
+			/*printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
+			quit_with_error(ERR_STRING_TO_X);*/
 		} else if (expr_list.has_char || expr_list.has_user_type) {
 			reset_counters();
 			return INVALID_TYPE;
@@ -2606,8 +2762,10 @@ int infer_expr_type() {
 	} else if (expr_list.has_user_type) {
 		//printf("\nTENHO USER TYPE");
 		if (has_numerical()) {
-			printf("ERROR: line %d - expression mixing user type with numericals\n", yylineno);
-			quit_with_error(ERR_USER_TO_X);
+			set_error(ERR_USER_TO_X,
+				"", yylineno, NULL, NULL);
+			/*printf("ERROR: line %d - expression mixing user type with numericals\n", yylineno);
+			quit_with_error(ERR_USER_TO_X);*/
 		} else if (expr_list.has_char || expr_list.has_string) {
 			reset_counters();
 			return INVALID_TYPE;
@@ -2667,6 +2825,18 @@ void add_param_type(int type) {
 	}
 }
 
+void reset_param_types() {
+	//int i;
+	//for (i = 0; i < num_func_params; i++) {
+	//	free(func_params_types[i]);
+	//}
+	if (func_params_types != NULL ){
+		free(func_params_types);
+		func_params_types = NULL;
+	}
+	num_func_params = 0;
+}
+
 void reset_expr() {
 	added_field_type = FALSE;
 	expr_list = init_expr_args();
@@ -2674,4 +2844,16 @@ void reset_expr() {
 
 int has_numerical() {
 	return expr_list.has_int || expr_list.has_float || expr_list.has_bool;
+}
+
+void set_error(int p_error_code, char* p_error_message, int p_line, char* p_param_str_1, char* p_param_str_2) {
+	//printf("ENTREI NA SET");
+	if (has_error == FALSE) {
+		error_code = p_error_code;
+		error_message = p_error_message;
+		line = p_line;
+		param_str_1 = p_param_str_1;
+		param_str_2 = p_param_str_2;
+		has_error = TRUE;
+	}
 }
