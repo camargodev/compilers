@@ -5,7 +5,7 @@ Este arquivo não pode ser modificado.
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "parser.tab.h" //arquivo gerado com bison -d parser.y
+#include "new_parser.tab.h" //arquivo gerado com bison -d parser.y
 #include "table.h"
 
 extern int yylex_destroy(void);
@@ -20,7 +20,7 @@ int main (int argc, char **argv)
 
 
   int ret = yyparse(); 
-  //descompila (arvore);
+  descompila (arvore);
   libera(arvore);
   arvore = NULL;
   yylex_destroy();

@@ -15,7 +15,6 @@
 #define INVALID_TYPE -3
 
 typedef struct expr_arguments {
-
 	int has_int;
 	int has_float;
 	int has_id;
@@ -23,22 +22,16 @@ typedef struct expr_arguments {
 	int has_char;
 	int has_string;
 	int has_user_type;
-
 } expr_args;
 
 typedef struct globar_var_arguments {
-	
 	int is_array;
 	int array_size;
-
 	int is_static;
-
 	int type;
 	char* user_type;
 	char* name;
-
 	int user_type_size;
-
 } global_var_args;
 
 typedef struct function_arguments {
@@ -46,7 +39,6 @@ typedef struct function_arguments {
 	int type;
 	char* user_type;
 	char* name;
-	
 } func_args;
 
 // The user_type does not have arguments that are also user_types. We must define the access_modification arguments.
@@ -56,40 +48,35 @@ typedef struct function_arguments {
 #define PROTECTED 2
 
 typedef struct user_type_arguments {
-
 	char * scope;
 	int token_type;
-
 	char * token_name;
-
 } user_type_args;
+
+typedef struct func {
+	int type;
+	char *type_name;
+	int args_counter;
+	func_args* function_args;
+	Lexeme * lexeme;
+} function_data;
 
 typedef struct line {
 	
 	char * token_name; // KEY
-
 	int declaration_line;	// Necessary information
 	int nature;
 	int token_type;
 	int token_size;
-
-	// When the program sees a funcion call/declaration OR an user type declaration, it must save the arguments in both cases
-	// Thats the reason we create these flags (to make it more readable) and these structs (to save it in a more organizable way)
-
-	int is_function;
+	int category;
+	char *user_type;
 	int is_static;
 	int is_const;
-	int is_user_type;
-	char *user_type;
-	int array_size; 	//actually also works as a flag (0 for false)
-
+	int array_size;
 	func_args * function_args;
 	user_type_args * user_type_args;
-
 	int num_user_type_args;
 	int num_func_args;
-
-	// The real value from the token
 	Lexeme *lexeme;
 
 } table_line;
@@ -102,10 +89,6 @@ typedef struct table {
 } table;
 
 table create_table();
-
-/*
-	TABLE STACK
-*/
 
 typedef struct table_stack {
 	int num_tables;

@@ -9,6 +9,7 @@
 
 #define NO_CHILDREN		0
 
+char* get_name(int type);
 void print_string(char* str);
 void print_special_char(char c);
 void print_char(char c);
@@ -22,25 +23,19 @@ Node* new_node(struct Lexeme* token) {
 	
 	node->token = token;
 	node->children_num = NO_CHILDREN;
-	node->node_type = UNDECLARED_TYPE;
+	node->type = UNDECLARED_TYPE;
 	node->conversion = NO_CONVERSION;
 	node->children = (Node**) malloc(sizeof(Node**));
 
 	return node;
 }
 
+void set_node_type(Node* token, int type) {
+	token->type = type;
+}
 
-Node* new_full_node(struct Lexeme* token, int node_type, int conversion) {
-	
-	Node* node = malloc(sizeof(Node));
-	
-	node->token = token;
-	node->node_type = node_type;
-	node->conversion = conversion;
-	node->children_num = NO_CHILDREN;
-	node->children = (Node**) malloc(sizeof(Node**));
-
-	return node;
+void set_node_conversion(Node* token, int conversion) {
+	token->conversion = conversion;
 }
 
 void add_node(Node *root, Node *child) {
@@ -53,7 +48,7 @@ void add_node(Node *root, Node *child) {
 }
 
 void print_token(struct Lexeme* lex_val) {
-	
+	printf("\n"); 
 	if (lex_val->token_type == KEYWORD || lex_val->token_type == OPERATOR || lex_val->token_type == IDENTIFIER) {
 		print_string(lex_val->value.v_string);
 	} else if (lex_val->token_type == SPECIAL_CHAR) {
@@ -91,6 +86,8 @@ void descompila(void *node) {
 		
 		if (tree_node->token != NULL) {
 			print_token(tree_node->token);
+			if (tree_node->type != -1)
+				printf(" : %s", get_name(tree_node->type));
 		}
 		
 		while(children_counter > NO_CHILDREN) {
@@ -133,6 +130,25 @@ void libera(void *node) {
 		free(tree_node);
 	} 
 
+}
+
+char* get_name(int type) {
+	switch (type) {
+		case INT:
+			return "int";
+		case FLOAT:
+			return "float";
+		case BOOL:
+			return "bool";
+		case CHAR:
+			return "char";
+		case STRING:
+			return "string";
+		case USER_TYPE:
+			return "user type";
+		default:
+			return "invalid";
+	}
 }
 
 void print_string(char* str) {

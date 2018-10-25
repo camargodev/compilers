@@ -1,5 +1,6 @@
 #include "table.h"
 #include "nature.h"
+#include "category.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,13 +54,9 @@ void print_line(table_line line)
 	printf("%d\t", line.nature);
 	printf("%d\t", line.token_type);
 	printf("%d\t", line.token_size);
-	printf("%d\t", line.is_function);
-	printf("%d\t", line.is_user_type);
 	printf("%d\t", line.array_size);
 	printf("%d\t", line.num_user_type_args);
 	
-	if(line.is_user_type)
-		print_user_type_list(line.user_type_args, line.num_user_type_args);
 	/*print_cabecalho_table_part2();
 	printf("\tFunction_Args");
 	printf("\t\t\t\tUser_Type_Args");
@@ -208,6 +205,28 @@ int is_declared (table_stack * stack, char* token) {
 	}
 }
 
+table_line* get_line(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES) {
+		return NULL;
+	} else {
+		int num_actual_table = stack->num_tables;
+		while(num_actual_table != NO_TABLES) {
+			int line_counter = 0; 
+			if (stack->array[num_actual_table].num_lines != NO_LINES) {
+				while(line_counter <= stack->array[num_actual_table].num_lines) {		
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) {
+						return &stack->array[num_actual_table].lines[line_counter];
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return NULL;
+	}
+}
+
 int is_declared_on_current_table (table_stack * stack, char* token) {
 	
 	if (stack->num_tables == NO_TABLES)
@@ -256,7 +275,7 @@ int is_function_declared (table_stack * stack, char* token){
 					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE) {
+						if (stack->array[num_actual_table].lines[line_counter].category == FUNCTION) {
 							return stack->array[num_actual_table].lines[line_counter].declaration_line;
 						} else {
 							return NOT_DECLARED;
@@ -293,7 +312,7 @@ int is_symbol_user_type(table_stack * stack, char* token) {
 				{					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].is_user_type == TRUE) {
+						if (stack->array[num_actual_table].lines[line_counter].category == USER_TYPE) {
 							return TRUE;
 						} else {
 							return NOT_DECLARED;
@@ -365,9 +384,8 @@ void add_user_type(table_stack * stack, Lexeme * token)
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.is_function = FALSE;
-		line.is_user_type = TRUE;
-		line.array_size = FALSE;
+		line.category = USER_TYPE;
+		line.array_size = 0;
 
 		line.function_args = NULL;
 		line.num_user_type_args = 0;
@@ -467,8 +485,7 @@ table_line inicialize_line(Lexeme * token)
 	line.token_type = -1;
 	line.token_size = 0;
 
-	line.is_function = -1;
-	line.is_user_type -1;
+	line.category = NONE;
 	line.array_size = -1;
 
 	line.user_type = NULL;
@@ -514,8 +531,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.is_function = FALSE;
-		line.is_user_type = FALSE;
+		line.category = VARIABLE;
 		
 		if(globalvar_args.is_array)
 			line.array_size = globalvar_args.array_size;
@@ -584,10 +600,9 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.is_function = TRUE;
+		line.category = FUNCTION;
 		line.is_static = FALSE;
-		line.is_user_type = FALSE;
-		line.array_size = FALSE;
+		line.array_size = 0;
 
 		line.num_func_args = num_func_args;
 		line.function_args = function_args;
@@ -626,11 +641,10 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.is_function = FALSE;
+		line.category = VARIABLE;
 		line.is_static = lv_static;
 		line.is_const = lv_const;
-		line.is_user_type = (type == USER_TYPE) ? TRUE : FALSE;
-		line.array_size = FALSE;
+		line.array_size = 0;
 
 		line.num_func_args = 0;
 		line.function_args = NULL;
@@ -858,7 +872,7 @@ int get_id_field_type(table_stack * stack, char* token, char* field) {
 				{					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].is_user_type == TRUE) {
+						if (stack->array[num_actual_table].lines[line_counter].category == USER_TYPE) {
 							int i;
 							for (i = 0; i < stack->array[num_actual_table].lines[line_counter].num_user_type_args; i++) {
 								if (strcmp(stack->array[num_actual_table].lines[line_counter].user_type_args[i].token_name, field) == 0) {
@@ -930,7 +944,7 @@ int get_func_num_params(table_stack * stack, char* token) {
 				{					
 					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
 					{
-						if (stack->array[num_actual_table].lines[line_counter].is_function == TRUE)
+						if (stack->array[num_actual_table].lines[line_counter].category == FUNCTION)
 							return stack->array[num_actual_table].lines[line_counter].num_func_args;
 						else
 							return -1;

@@ -85,6 +85,7 @@
 	int came_from_array = FALSE;
 	int input_helper_flag = FALSE;
 
+	int infer(int type_a, int type_b);
 	/* Functions for general purposes */
 
 	int debug_input_output = FALSE;
@@ -246,11 +247,11 @@
 %type <node> var_lit
 %type <node> attr
 %type <node> piped_expr
-%type <node> bin_op
+//%type <node> bin_op
 %type <node> un_op
 %type <node> not_null_un_op
 %type <node> expr
-%type <node> expr_begin
+//%type <node> expr_begin
 %type <node> expr_vals
 %type <node> id_for_expr
 %type <node> piped
@@ -261,6 +262,11 @@
 %type <node> func_call_params
 %type <node> func_call_params_body
 %type <node> func_call_params_end
+
+%left '*'
+%left '+'
+%left '-'
+%left '/'
 
 %start programa
 
@@ -1725,6 +1731,7 @@ cmd_id_fix	: TK_IDENTIFICADOR
 				{
 					$$ = $1;
 					add_node($$, $2);
+					set_node_type($$, $2->type);
 				}
 			| '(' func_call_params piped_expr
 				{
@@ -1847,6 +1854,7 @@ var_lit		: TK_IDENTIFICADOR
 
 attr 		: '=' expr
 				{
+					printf("\nEXPR ON ATTR = %s", get_type_name($2->type));
 					came_from_attr = TRUE;
 
 					//print_expr_args();
@@ -1855,6 +1863,7 @@ attr 		: '=' expr
 
 					$$ = new_node($1);
 					add_node($$, $2);
+					set_node_type($$, $2->type);
 				}
 			| TK_OC_SL expr 
 				{
@@ -1890,7 +1899,7 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
 					$$ = new_node(NULL);
 				}
 
-bin_op			: '+' 
+/*bin_op			: '+' 
 					{
 						debug_operands($1->value.v_char, "BIN_OP");
 						num_any_operators++;
@@ -1995,7 +2004,7 @@ bin_op			: '+'
 						num_any_operators++;
 						num_boolean_operators++;
 						$$ = new_node($1);
-					}
+					}*/
 
 un_op 			: not_null_un_op un_op
 					{
@@ -2047,23 +2056,45 @@ not_null_un_op  : '+'
 						$$ = new_node($1);
 					}
 
-expr 			: un_op expr_vals expr_begin
+expr 			:  expr '+' expr
 					{
-						if(debug_expr) {
-							printf("[EXPR] id_user_type : %s\n", id_user_type);
-							printf("[EXPR] Final\n");
-						}
-						$$ = $1;
-						add_node($$, $2);
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						int expected_type = infer($1->type, $3->type);
+						set_node_type($$, expected_type);
+
+						int expr_conversion = convert(expected_type, $1->type);
+						if (expr_conversion != NO_CONVERSION)  
+							set_node_conversion($1, expr_conversion);
+						
+						expr_conversion = convert(expected_type, $3->type);
+						if (expr_conversion != NO_CONVERSION) 
+							set_node_conversion($3, expr_conversion);
+
+						//printf("\nEXPR_VALS TYPE = %s", get_type_name($1->type));
+						//printf("\nEXPR_BEGIN TYPE = %s", get_type_name($3->type));
+					}
+				| un_op expr_vals
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, $2);
+						set_node_type($$, $2->type);
 					}
 
-expr_begin 		: bin_op expr
+/*expr_begin 		: bin_op expr
 					{
 						if(debug_expr)
 							printf("[EXPR_BEGIN] Binop expr\n");
-						$$ = $1;
+						$$ = new_node(NULL);
+						add_node($$, $1);
 						add_node($$, $2);
+						set_node_type($$, $2->type);
+						printf("\nEXPR TYPE = %s", get_type_name($2->type));
+
 					}
 				| '?' expr ':' expr
 					{
@@ -2079,19 +2110,19 @@ expr_begin 		: bin_op expr
 						if(debug_expr)
 							printf("[EXPR_BEGIN] Empty\n");
 						$$ = new_node(NULL);
-					}
+					}*/
 
 expr_vals		: TK_LIT_FLOAT
 					{
 						expr_list.has_float = TRUE;
-						debug_expr_vals_float($1->value.v_float, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, FLOAT);
 					}
 				| TK_LIT_INT
 					{
 						expr_list.has_int = TRUE;
-						debug_expr_vals_int($1->value.v_int, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, INT);
 					}
 				| id_for_expr id_seq piped 
 					{
@@ -2196,19 +2227,17 @@ expr_vals		: TK_LIT_FLOAT
 				| TK_LIT_CHAR 
 					{
 						expr_list.has_char = TRUE;
-						debug_expr_vals_char($1->value.v_char, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, CHAR);
 					}
 				| TK_LIT_STRING 
 					{
 						expr_list.has_string = TRUE;
-						debug_expr_vals_string($1->value.v_string, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, STRING);
 					}
 				|'(' expr ')' 
 					{
-						if(debug_expr)
-							("[EXPR_VALUE] ( expr )\n");
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
@@ -2217,6 +2246,7 @@ expr_vals		: TK_LIT_FLOAT
 					{
 						expr_list.has_bool = TRUE;
 						$$ = $1;
+						set_node_type($$, BOOL);
 					}
 
 id_for_expr		: TK_IDENTIFICADOR
@@ -2584,6 +2614,8 @@ void set_local_var_lit_type(int type) {
 }
 
 int convert(int expected_type, int attr_type) {
+	printf("\nCONVERT XPECTED = %s", get_type_name(expected_type));
+	printf("\nATTR XPECTED = %s", get_type_name(attr_type));
 	if (expected_type == INT) {
 		switch(attr_type) {
 			case FLOAT: return FLOAT_TO_INT;
@@ -2710,6 +2742,44 @@ void add_type_to_expr(int type) {
 			break;
 	}
 }
+
+int infer(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_CHAR_TO_X, "", yylineno, NULL, NULL);
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_STRING_TO_X, "", yylineno, NULL, NULL);
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_USER_TO_X, "", yylineno, NULL, NULL);
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (type_a == FLOAT || type_b == FLOAT) {
+		return FLOAT;
+	} else if (type_a == INT || type_b == INT) {
+		return INT;
+	} else {
+		return BOOL;
+	}
+}
+
 
 int infer_expr_type() {
 	//printf("\nENTRE NO INFER");
