@@ -6,3 +6,6 @@
 #define FLOAT_TO_INT		4
 #define BOOL_TO_INT			5
 #define BOOL_TO_FLOAT		6
+
+int can_convert(int a, int b);
+int get_conversion(int expected_type, int attr_type);

@@ -7,125 +7,36 @@
 	#include "lexeme.h"
 	#include "table.h"
 	#include "errors.h"
+	#include "error_helper.h"
 	#include "conversions.h"
+	#include "category.h"
 	
 	extern int yylineno;
 	extern void* arvore;
 	table_stack * stack;
-	char * current_token;
-	char * current_scope;
-	int args_allocated;
-	
-	/* Vars and functions for user type fields */
 
-	user_type_args * list_user_type_args;
-	int num_user_type_args = 0;
-	int num_types = 0;
-	int has_scope = FALSE;
-	int debug_user_type = FALSE;
-	void set_field_scope(char* scope);
-	void set_field_default_scope();
-	void set_field_type(int type);
-	void set_field_name(char* name);
+	Error* error = NULL;
 
-	/* Vars and functions for global vars */
+	int type_args_counter = 0;
+	user_type_args *type_arguments;
+	char* scope = "public";
 
-	global_var_args globalvar_args;
-	int debug_global_var = FALSE;
-	void set_global_var_type(int type);
-	void set_global_var_user_type(char* type);
-	void set_global_var_static(int is_static);
-	void set_global_var_as_array(int is_array);
-	void set_global_var_name(char* name);
-	void set_global_var_size(int size);
+	int func_call_param_counter = 0;
+	func_call_arg* function_arguments;
 
-	/* Vars and functions for functions declaration */
+	global_var_args global_var;
 
-	int num_func_args = 0;
-	func_args *function_args;
-	int function_type = UNDECLARED_TYPE;
-	char *last_added_func;
-	Lexeme* func_lexeme = NULL;
-	char *func_user_type_name = NULL;
-	int func_decl_line;	
-	void set_function_type(int type);
-	void set_user_type_arg(char *type);
-	void set_arg_type(int type);
-	void set_func_info(char* name, int is_const);
-	void reset_func_vars();
-	
-	/* Vars and functions for local var creation */
+	function_data function;
 
-	int local_var_type = UNDECLARED_TYPE;
-	int local_var_lit_type = UNDECLARED_TYPE;
-	Lexeme* local_var_lexeme = NULL;
-	void set_local_var_type(int type);
-	void set_local_var_lit_type(int type);
-	int came_from_local_var;
-	int came_from_attr;
+	int id_category = VARIABLE;
 
-	/* Vars and functions for expressions */
-
-	int debug_expr = FALSE;
-	expr_args expr_list;
-	void debug_operands(char expr, char * type_operand);
-	void debug_expr_vals_char(char expr, char * type_operand);
-	void debug_expr_vals_float(float expr, char * type_operand);
-	void debug_expr_vals_int(int expr, char * type_operand);
-	void debug_expr_vals_string(char * expr, char * type_operand);
-	void print_expr_args(); 
-	void add_type_to_expr(int type);
-	char* expr_id_name = NULL;
-	char* id_user_type = NULL;
-	int current_expr_type = 0;
-	int infer_expr_type();
-	int has_numerical();
-	int added_field_type = FALSE;
-	int came_from_function_call = FALSE;
-	int came_from_array = FALSE;
-	int input_helper_flag = FALSE;
-
-	/* Functions for general purposes */
-
-	int debug_input_output = FALSE;
-	
-	int num_boolean_operators = 0;
-	int num_any_operators = 0;
-	void reset_counters();
-	int convert(int type, int attr_type);
-	char* get_type_name(int type);
-	void reset_expr();
-
-	/* Counters for foreach */
-	int fe_int_counter = 0;
-	int fe_float_counter = 0;
-	int fe_bool_counter = 0;
-	int fe_char_counter = 0;
-	int fe_string_counter = 0;
-	int fe_user_counter = 0;
-
-	/* Counters for func calls */
-	int num_func_params = 0;
-	int* func_params_types = NULL;
-	void add_param_type(int type);
-	char* called_function = NULL;
-	char* cmd_id_name = NULL;
-
-	void reset_param_types();
-	void init_table_stack();
 	int yylex(void);
 	void yyerror(char const *s);
-	void quit_with_error(int error);
-	extern int yylex_destroy(void);
 
-	int has_error = FALSE;
-	int error_code = 0;
-	char* error_message;
-	int line = -1;
-	char* param_str_1 = NULL;
-	char* param_str_2 = NULL;
+	void init_table_stack();
+	int infer(int type_a, int type_b);
+	int infer_not_expr(int type_a, int type_b);
 
-	void set_error(int error_code, char* error_message, int param_int, char* param_str_1, char* param_str_2);
 %}
 
 %verbose
@@ -185,15 +96,11 @@
 
 %type <node> set_tree
 %type <node> start
-//%type <node> type
 %type <node> scope
 %type <node> var 
-%type <node> func_arg_types
-%type <node> field_type
-%type <node> var_types
 %type <node> func_type
-%type <node> local_var_type
-%type <node> func_arg_type
+%type <node> func_arg_types
+%type <node> type
 %type <node> bool
 %type <node> pipe
 %type <node> new_type 
@@ -219,48 +126,61 @@
 %type <node> output
 %type <node> output_vals
 %type <node> if_then 
-%type <node> if_then_expr
+%type <node> bool_expr
 %type <node> else
 %type <node> while
-%type <node> while_expr
 %type <node> do_while
-%type <node> do_while_expr
 %type <node> continue
 %type <node> break
 %type <node> return
 %type <node> for
 %type <node> cmd_for
-%type <node> for_expr
 %type <node> for_fst_list
 %type <node> for_scd_list
 %type <node> foreach
 %type <node> foreach_list
 %type <node> foreach_count
 %type <node> switch
-%type <node> switch_expr
 %type <node> case
-%type <node> cmd_id_fix
+%type <node> cmd_fix_local_var
+%type <node> cmd_fix_attr
+%type <node> cmd_fix_call
 %type <node> static_var		
 %type <node> const_var
 %type <node> var_end
 %type <node> var_lit
 %type <node> attr
 %type <node> piped_expr
-%type <node> bin_op
 %type <node> un_op
 %type <node> not_null_un_op
 %type <node> expr
-%type <node> expr_begin
 %type <node> expr_vals
 %type <node> id_for_expr
 %type <node> piped
 %type <node> id_seq
 %type <node> id_seq_field
-%type <node> id_seq_field_vec
 %type <node> id_seq_simple
 %type <node> func_call_params
 %type <node> func_call_params_body
 %type <node> func_call_params_end
+
+%left '*'
+%left '+'
+%left '-'
+%left '/'
+%left '%'
+%left '^'
+%left '|'
+%left '&'
+%left '>'
+%left '<'
+%left TK_OC_AND
+%left TK_OC_OR
+%left TK_OC_LE
+%left TK_OC_NE
+%left TK_OC_EQ
+%left TK_OC_GE
+
 
 %start programa
 
@@ -278,8 +198,7 @@
 */
 
 programa :  initializer set_tree destroyer
-			{ 
-			}
+			{}
 
 set_tree	: start 
 			{
@@ -294,12 +213,9 @@ initializer : %empty
 
 destroyer : %empty
 			{
-				if (has_error == TRUE) {
-					//printf("\nTEM ERRO");
-					//printf("%s", error_message);
-					quit_with_error(error_code);
-				} else {
-					free_table_stack(stack);
+				if (error != NULL) {
+					printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
+					exit(error->error_code);
 				}
 			}
 
@@ -322,234 +238,141 @@ start : new_type start
 				$$ = new_node(NULL); 
 			}
 
-/*type    : TK_PR_INT
-			{ 
-				$$ = new_node($1); 
-			}
-		| TK_PR_FLOAT
-			{ 
-				$$ = new_node($1); 
-			}
-		| TK_PR_BOOL
-			{ 
-				$$ = new_node($1);   
-			}
-		| TK_PR_CHAR
-			{ 
-				$$ = new_node($1);  
-			}
-		| TK_PR_STRING
-			{ 
-				$$ = new_node($1); 
-			}*/
-
-local_var_type  : TK_PR_INT
-			{ 
-				set_local_var_type(INT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_FLOAT
-			{ 
-				set_local_var_type(FLOAT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_BOOL
-			{ 
-				set_local_var_type(BOOL);
-				$$ = new_node($1);   
-			}
-		| TK_PR_CHAR
-			{ 
-				set_local_var_type(CHAR);
-				$$ = new_node($1);  
-			}
-		| TK_PR_STRING
-			{ 
-				set_local_var_type(STRING);
-				$$ = new_node($1); 
-			}
-
-field_type : TK_PR_INT
+type : TK_PR_INT
 			{ 	
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_field_type(INT);
 				$$ = new_node($1); 
+				set_node_type($$, INT);
 			}
 		| TK_PR_FLOAT
 			{ 
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_field_type(FLOAT);
 				$$ = new_node($1); 
+				set_node_type($$, FLOAT);
 			}
 		| TK_PR_BOOL
 			{ 
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_field_type(BOOL);
 				$$ = new_node($1);   
+				set_node_type($$, BOOL);
 			}
 		| TK_PR_CHAR
 			{ 
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_field_type(CHAR);
 				$$ = new_node($1);  
+				set_node_type($$, CHAR);
 			}
 		| TK_PR_STRING
 			{ 
-				if(debug_user_type)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_field_type(STRING);
 				$$ = new_node($1); 
+				set_node_type($$, STRING);
 			}
 
-var_types : TK_PR_INT
-			{ 
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_global_var_type(INT);
+func_type  :  TK_PR_INT
+			{ 	
 				$$ = new_node($1); 
+				set_node_type($$, INT);
+				function.type = INT;
 			}
 		| TK_PR_FLOAT
 			{ 
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_global_var_type(FLOAT);
 				$$ = new_node($1); 
+				set_node_type($$, FLOAT);
+				function.type = FLOAT;
 			}
 		| TK_PR_BOOL
 			{ 
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_global_var_type(BOOL);
 				$$ = new_node($1);   
+				set_node_type($$, BOOL);
+				function.type = BOOL;
 			}
 		| TK_PR_CHAR
 			{ 
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_global_var_type(CHAR);
 				$$ = new_node($1);  
+				set_node_type($$, CHAR);
+				function.type = CHAR;
 			}
 		| TK_PR_STRING
 			{ 
-				if(debug_global_var)
-					printf("[TYPE] Token_Type : %s\n", $1->value.v_string);
-				set_global_var_type(STRING);
 				$$ = new_node($1); 
-			}
-
-func_type  : TK_PR_INT
-			{ 
-				//printf("\nfunc_type");
-				set_function_type(INT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_FLOAT
-			{ 
-				set_function_type(FLOAT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_BOOL
-			{ 
-				set_function_type(BOOL);
-				$$ = new_node($1);   
-			}
-		| TK_PR_CHAR
-			{ 
-				set_function_type(CHAR);
-				$$ = new_node($1);  
-			}
-		| TK_PR_STRING
-			{ 
-				set_function_type(STRING);
-				$$ = new_node($1); 
-			}
-
-func_arg_type  : TK_PR_INT
-			{ 
-				set_arg_type(INT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_FLOAT
-			{ 
-				set_arg_type(FLOAT);
-				$$ = new_node($1); 
-			}
-		| TK_PR_BOOL
-			{ 
-				set_arg_type(BOOL);
-				$$ = new_node($1);   
-			}
-		| TK_PR_CHAR
-			{ 
-				set_arg_type(CHAR);
-				$$ = new_node($1);  
-			}
-		| TK_PR_STRING
-			{ 
-				set_arg_type(STRING);
-				$$ = new_node($1); 
+				set_node_type($$, STRING);
+				function.type = STRING;
 			}
 
 scope   : TK_PR_PRIVATE
 			{ 				
-				if(debug_user_type)
-					printf("[SCOPE] Value : %s\n", $1->value.v_string);
-				set_field_scope($1->value.v_string);
-				$$ = new_node($1); 
+				$$ = new_node($1);
+				scope = $1->value.v_string;
 			}
 		| TK_PR_PUBLIC
 			{ 				
-				if(debug_user_type)
-					printf("[SCOPE] Value : %s\n", $1->value.v_string);
-				set_field_scope($1->value.v_string);
 				$$ = new_node($1); 
+				scope = $1->value.v_string;
 			}
 		| TK_PR_PROTECTED
 			{ 				
-				if(debug_user_type)
-					printf("[SCOPE] Value : %s\n", $1->value.v_string);
-				set_field_scope($1->value.v_string);
 				$$ = new_node($1); 
+				scope = $1->value.v_string;
 			}
 
-var     : TK_PR_CONST func_arg_types TK_IDENTIFICADOR
+var     : TK_PR_CONST type TK_IDENTIFICADOR
 			{ 	
-				set_func_info($3->value.v_string, TRUE);
-
 				$$ = new_node($1); 
 				add_node($$, $2);
 				add_node($$, new_node($3));
+
+				if (function.args_counter == 0)
+					function.function_args = malloc(sizeof(func_args));
+				else 
+					function.function_args = realloc(function.function_args, (function.args_counter+1)*sizeof(func_args));
+
+				function.function_args[function.args_counter].name = $3->value.v_string;
+				function.function_args[function.args_counter].is_const = TRUE;
+				function.function_args[function.args_counter].type = $2->type;
+				function.function_args[function.args_counter].user_type = $2->user_type;
+
+				function.args_counter++;
+
+				int index;
+				for (index = 0; index < function.args_counter-1; index++)
+					if (strcmp(function.function_args[index].name, $3->value.v_string) == 0)
+						set_error(ERR_DECLARED);
+
 			}
 		| func_arg_types TK_IDENTIFICADOR
 			{ 	
-				set_func_info($2->value.v_string, FALSE);
-
 				$$ = $1; 
 				add_node($$, new_node($2));
+
+				if (function.args_counter == 0)
+					function.function_args = malloc(sizeof(func_args));
+				else 
+					function.function_args = realloc(function.function_args, (function.args_counter+1)*sizeof(func_args));
+
+				function.function_args[function.args_counter].name = $2->value.v_string;
+				function.function_args[function.args_counter].is_const = FALSE;
+				function.function_args[function.args_counter].type = $1->type;
+				function.function_args[function.args_counter].user_type = $1->user_type;
+
+				function.args_counter++;
+
+				int index;
+				for (index = 0; index < function.args_counter-1; index++)
+					if (strcmp(function.function_args[index].name, $2->value.v_string) == 0)
+						set_error(ERR_DECLARED);
 			}
 
-func_arg_types: func_arg_type
+func_arg_types: type
 			{ 
 				$$ = $1; 
+
+				$$->user_type = NULL;
 			}
 		| TK_IDENTIFICADOR
 			{ 
-				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
-				{				
-					set_error(ERR_UNDECLARED,
-							"", yylineno, NULL, NULL);
-					/*set_error(int p_error_code, char* p_error_message, int p_line, char* p_param_str_1, char* p_param_str_2)
-					printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-					quit_with_error(ERR_UNDECLARED);*/
-				}
-				
-				set_user_type_arg($1->value.v_string);
-
 				$$ = new_node($1); 
+
+				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+					set_error(ERR_UNDECLARED);
+
+				$$->type = USER_TYPE;
+				$$->user_type = $1->value.v_string;
 			}
 
 bool    : TK_LIT_TRUE
@@ -576,231 +399,170 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					add_node($$, new_node($2));
 					add_node($$, new_node($3));
 					add_node($$, $4);
-					add_node($$, new_node($5));
-				
-					if(debug_user_type)
-						printf("[NEW_TYPE] token : %s\n", $2->value.v_string);
-					
+					add_node($$, new_node($5));	
+
 					int declaration_line = is_declared(stack, $2->value.v_string);
-					if(declaration_line != NOT_DECLARED)
-					{				
-						set_error(ERR_DECLARED,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - class '%s' was already declared on line %i\n",
-							yylineno, $2->value.v_string, declaration_line);
-						quit_with_error(ERR_DECLARED);*/
-					}
-					else
-					{
+					if(declaration_line != NOT_DECLARED) {				
+						set_error(ERR_DECLARED);
+					} else {
 						add_user_type(stack, $2);
 					}
 
-					int i;
-					for(i = 0; i < num_user_type_args; i++)
-					{
-						add_user_type_properties(stack, $2->value.v_string, list_user_type_args[i]);
-					}						
+					int index;
+					for (index = 0; index < type_args_counter; index++)
+						add_user_type_properties(stack, $2->value.v_string, type_arguments[index]);
 
-					free(list_user_type_args);
-					num_user_type_args = 0;
-					num_types = 0;		
-					args_allocated = FALSE;			
+					free(type_arguments);
+					type_args_counter = 0;
 				}
 
 param_begin : scope param_body
 				{ 	
-					num_user_type_args++;
-					num_types--;
-					
-					if(debug_user_type)
-						printf("[PARAM_BEGIN] Token Com Scope\n");
-
 					$$ = $1;
-					add_node($$, $2);					
+					add_node($$, $2);
 				}
 			| param_body
 				{	
-					if(debug_user_type)
-						printf("[PARAM_BEGIN] Token Sem Scope\n");
-
-					set_field_default_scope();
-					num_user_type_args++;
-					num_types--;
-
 					$$ = $1; 					
 				}
 
-param_body  : field_type TK_IDENTIFICADOR param_end
+param_body  : type TK_IDENTIFICADOR param_end
 				{	
-					if(debug_user_type)
-						printf("[PARAM_BODY] Token_Name : %s, num_types : %d\n", $2->value.v_string, num_types);
-					
-					set_field_name($2->value.v_string);
-
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
+
+					if (type_args_counter == 0) 
+						type_arguments = malloc(sizeof(user_type_args));
+					else
+						type_arguments = realloc(type_arguments, (type_args_counter+1)*sizeof(user_type_args));
+				
+					type_arguments[type_args_counter].token_type = $1->type;
+					type_arguments[type_args_counter].scope = scope;
+					type_arguments[type_args_counter].token_name = $2->value.v_string;
+
+					type_args_counter++;
+
+					int index;
+					for (index = 0; index < type_args_counter-1; index++)
+						if (strcmp(type_arguments[index].token_name, $2->value.v_string) == 0)
+							set_error(ERR_DECLARED);
+					
+					scope = "public";
 				}
 
 param_end   : ':' param_begin
 				{	
-					if(debug_user_type)
-						printf("\n[PARAM_END]\n");
-					
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| ']'
 				{	
-					if(debug_user_type)
-						printf("\n[PARAM_END]\n");
 					$$ = new_node($1);
 				} 
 
 global_var       : TK_IDENTIFICADOR global_var_vec 
 					{	
-						if(debug_global_var)
-							printf("[GLOBAL_VAR] Identificador: %s\n\n", $1->value.v_string);
+						$$ = new_node($1);
+						add_node($$, $2);
 
 						int declaration_line = is_declared(stack, $1->value.v_string);
 						if (declaration_line != NOT_DECLARED) {
-							set_error(ERR_DECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - global variavel '%s' was already declared on line %i\n",
-								yylineno, $1->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);*/
-						}
+							set_error(ERR_DECLARED);
+						} 
+						
+						global_var.name = $1->value.v_string;
+						add_global_var(stack, global_var, $1);
 
-						if(debug_global_var)
-							printf("[GLOBAL_VAR] Token_Type %d\n", globalvar_args.type);
-
-						set_global_var_name($1->value.v_string);
-
-						add_global_var(stack, globalvar_args, $1);
-						globalvar_args = initialize_global_var_args();
-
-						$$ = new_node($1);
-						add_node($$, $2);
+						global_var = initialize_global_var_args();
+						
 					}
 
 global_var_vec  : '[' index ']' global_var_begin
 					{	
-						if(debug_global_var)
-							printf("[GLOBAL_VAR_VEC] Is Array\n");
-
-						set_global_var_as_array(TRUE);
-
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
+
+						global_var.is_array = TRUE;
 					}
 				| global_var_begin
 					{
-						if(debug_global_var)
-							printf("[GLOBAL_VAR_VEC] Not array\n");
-
-						set_global_var_as_array(FALSE);
-
 						$$ = $1;
+
+						global_var.is_array = FALSE;
 					}
 
 global_var_begin	: TK_PR_STATIC global_var_type
 						{
-							if(debug_global_var)
-								printf("[GLOBAL_VAR_BEGIN] Static\n");
-
-							set_global_var_static(TRUE);
-
 							$$ = new_node($1);
 							add_node($$, $2);
+
+							global_var.is_static = TRUE;
 						}
 					| global_var_type
 						{
-							if(debug_global_var)
-								printf("[GLOBAL_VAR_BEGIN] Not Static\n");
-
-							set_global_var_static(FALSE);
-
 							$$ = $1;
+
+							global_var.is_static = FALSE;
 						}
 
-global_var_type	: var_types ';'
+global_var_type	: type ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
+
+						global_var.type = $1->type;
 					}
 				| TK_IDENTIFICADOR ';'
 					{
-						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
-						{						
-							set_error(ERR_UNDECLARED,
-								"", yylineno, NULL, NULL);	
-							/*printf("ERROR: line %d - user type '%s' was not previously declared\n", yylineno, $1->value.v_string);
-							quit_with_error(ERR_UNDECLARED);*/
-						}
-
-						if(debug_global_var)
-							printf("[GLOBAL_VAR_TYPE] token_type : %s\n", $1->value.v_string);
-
-						set_global_var_user_type($1->value.v_string);
-
 						$$ = new_node($1);
 						add_node($$, new_node($2));
+
+						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)						
+							set_error(ERR_UNDECLARED);
+
+						global_var.type = USER_TYPE;
+						global_var.user_type = $1->value.v_string;
+						global_var.user_type_size = get_user_type_size(stack, $1->value.v_string);
 					}
 
 index	: TK_LIT_INT 
 			{
-				if(debug_global_var)
-					printf("[INDEX] Without '+', Index : %d\n", $1->value.v_int);
-				
-				set_global_var_size($1->value.v_int);
 				$$ = new_node($1);
+
+				global_var.array_size = $1->value.v_int;
 			}
 		| '+' TK_LIT_INT
 			{
-				if(debug_global_var)
-					printf("[INDEX] Without '+', Index : %d\n", $1->value.v_int);
-				
-				set_global_var_size($2->value.v_int);
 				$$ = new_node($1);
 				add_node($$, new_node($2));
+
+				global_var.array_size = $2->value.v_int;
 			}
 
 func 	: TK_PR_STATIC func_begin
 			{
-				set_func_as_static(stack, last_added_func);
-				last_added_func = NULL;
-
 				$$ = new_node($1);
 				add_node($$, $2);
 			}
 		| func_begin
 			{ 				
-			
-				//printf("\nfunc");
 				$$ = $1;
 			}
 
 func_begin      : func_type func_name '(' func_params
 					{
-						/*add_function(stack, function_type, NULL, num_func_args, function_args, func_lexeme);
-						last_added_func = func_lexeme->value.v_string;
-						reset_func_vars();*/
-
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
+						
 					}
 
 				| func_name_user_type '(' func_params
 					{
-
-
-						/*add_function(stack, function_type, func_user_type_name, num_func_args, function_args, func_lexeme);
-						last_added_func = func_lexeme->value.v_string;
-						reset_func_vars();*/
 
 						$$ = $1;
 						add_node($$, new_node($2));
@@ -809,51 +571,41 @@ func_begin      : func_type func_name '(' func_params
 
 func_name_user_type	: TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
-
-					func_decl_line = is_function_declared(stack, $2->value.v_string);
-					if (func_decl_line != NOT_DECLARED) {
-						set_error(ERR_DECLARED,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - function '%s' already declared on line %i\n", 
-							yylineno, $2->value.v_string, func_decl_line);
-						quit_with_error(ERR_DECLARED);	*/						
-					}
-					func_lexeme = $2;
-					func_user_type_name = $1->value.v_string;
-
-					if(is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-						set_error(ERR_UNDECLARED,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - user type '%s' used on function %s was not previously declared\n", 
-							func_decl_line, $1->value.v_string, func_lexeme->value.v_string);
-						quit_with_error(ERR_UNDECLARED);*/
-					}
-
-					function_type = USER_TYPE;
-
-					$$ = new_node($1);
-					$$ = new_node($1);
+					$$ = new_node(NULL);
+					add_node($$, new_node($1));
 					add_node($$, new_node($2));
+
+					int declaration_line = is_declared(stack, $2->value.v_string);
+					if (declaration_line != NOT_DECLARED)
+						set_error(ERR_DECLARED);
+
+					if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+						set_error(ERR_UNDECLARED);
+
+					$$->type = USER_TYPE;
+					$$->user_type = $1->value.v_string;
+
+					function.lexeme = $2;
+
+					function.type = USER_TYPE;
+					function.type_name = $1->value.v_string;
+
 				}
 
 
 func_name 	: TK_IDENTIFICADOR
 				{
-					func_decl_line = is_function_declared(stack, $1->value.v_string);
-					if (func_decl_line != NOT_DECLARED) {
-						set_error(ERR_DECLARED,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - function '%s' already declared on line %i\n", 
-							yylineno, $1->value.v_string, func_decl_line);
-						quit_with_error(ERR_DECLARED);		*/					
-					}
-					func_lexeme = $1;
 					$$ = new_node($1);
+
+					int declaration_line = is_function_declared(stack, $1->value.v_string);
+					if (declaration_line != NOT_DECLARED)
+						set_error(ERR_DECLARED);
+
+					function.lexeme = $1;
 				}
 
 func_params     : ')' add_func func_body
 					{
-						//printf("\nfuncparam");
 						$$ = new_node($1);
 						add_node($$, $3);
 					}
@@ -877,14 +629,11 @@ func_params_end : ')' add_func func_body
 
 add_func 		: %empty
 					{
-						add_function(stack, function_type, func_user_type_name, num_func_args, function_args, func_lexeme);
-						last_added_func = func_lexeme->value.v_string;
-						reset_func_vars();
+						add_function(stack, function.type, function.type_name, function.args_counter, function.function_args, function.lexeme);	
 					}
 
 func_body       : '{' push_table cmd_block 
 					{
-						//printf("\nfunc body");
 						$$ = new_node($1);
 						add_node($$, $3);
 					}
@@ -895,105 +644,105 @@ push_table		: %empty
 					}
 
 pop_table		: %empty
-					{
+					{						
 						pop(stack);
+						function.function_args = NULL;
+						function.type = 0;
+						function.args_counter = 0;
+						function.type_name = NULL;
 					}
 
 cmd_block	: '}' pop_table
 				{
-					//printf("\ncmd block");
 					$$ = new_node($1);
 				}
-			| cmd input_helper_flag cmd_block
+			| cmd cmd_block
 				{
-					//printf("\nNEW CMD");
 					$$ = $1;
-					add_node($$, $3);
+					add_node($$, $2);
 				} 
-input_helper_flag : %empty
-				{
-					input_helper_flag = FALSE;
-				}
 
 cmd_ident	: TK_IDENTIFICADOR
 				{
-					cmd_id_name = $1->value.v_string;
-					called_function = $1->value.v_string;
 					$$ = new_node($1);
+					$$->type = USER_TYPE;
+					$$->user_type = $1->value.v_string;
+
+					int declaration_line = is_declared(stack, $1->value.v_string);
+					if(declaration_line == NOT_DECLARED) 
+						set_error(ERR_UNDECLARED);
 				}
 
-cmd 		: cmd_ident cmd_id_fix ';'
+cmd 		: cmd_ident cmd_fix_local_var ';'
 					{
-						int declaration_line = is_declared(stack, cmd_id_name);
-
-						if (came_from_function_call == TRUE) {
-							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
-								int is_it_array = is_array(stack, cmd_id_name);
-								if (is_user_type(stack, cmd_id_name) == TRUE) {
-									set_error(ERR_USER,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - type '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_USER);*/
-								} else if (is_it_array == TRUE) {
-									set_error(ERR_VECTOR,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VECTOR);*/
-								} else if (declaration_line != NOT_DECLARED) {
-									set_error(ERR_VARIABLE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VARIABLE);*/
-								}
-								set_error(ERR_UNDECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - function '%s' was not previously declared\n",  yylineno, cmd_id_name);
-								quit_with_error(ERR_UNDECLARED);*/
-							}
-							came_from_function_call = FALSE;
-						} else if (declaration_line == NOT_DECLARED) {
-								set_error(ERR_UNDECLARED,
-									"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - '%s' was not previously declared\n",  yylineno, cmd_id_name);
-							quit_with_error(ERR_UNDECLARED);	*/						
-						}
-
-						if (came_from_local_var == TRUE) {
-							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
-							if(declaration_line != NOT_DECLARED) {
-								set_error(ERR_DECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-									yylineno, local_var_lexeme->value.v_string, declaration_line);
-								quit_with_error(ERR_DECLARED);*/
-							} else {
-								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
-							}
-							came_from_local_var = FALSE;
-						}
-
-						if (came_from_attr == TRUE) {
-							char *trash;
-							int id_type = get_id_type(stack, cmd_id_name, &trash);
-							int expr_type = infer_expr_type();
-							if (convert(id_type, expr_type) == CONVERSION_ERROR) {
-								set_error(ERR_WRONG_TYPE,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - incorrect assignation for variable %s\n",
-									yylineno, cmd_id_name);
-								quit_with_error(ERR_WRONG_TYPE);*/
-							}
-
-
-							//printf("\nO TIPO DEVE SER %s", get_type_name(id_type));
-							//printf("\nA EXPR EH %s", get_type_name(infer_expr_type()));
-							came_from_attr = FALSE;
-						}
-
-
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
+	
+						int declaration_line = is_declared_on_current_table(stack, $2->token->value.v_string);
+						if(declaration_line != NOT_DECLARED) 
+							set_error(ERR_DECLARED);
+						else 
+							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
+					}
+				| cmd_ident cmd_fix_attr ';'
+					{
+						$$ = $1;
+						add_node($$, $2);
+						add_node($$, new_node($3));
+
+						char* type_name;
+						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+						if (type != $2->type) {
+							if (can_convert(type, $2->type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							} else {
+								$2->conversion = get_conversion(type, $2->type);
+							}
+						} else if (type == USER_TYPE) {
+							if (strcmp(type_name, $1->user_type) != 0) {
+								set_error(ERR_WRONG_TYPE);
+							}
+						}
+					}
+				| cmd_ident cmd_fix_call ';'
+					{
+						$$ = $1;
+						add_node($$, $2);
+						add_node($$, new_node($3));
+
+						int num_args = get_func_num_params(stack, $1->token->value.v_string);
+						int category = get_category(stack, $1->token->value.v_string);
+						int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+
+						if (category == FUNCTION) {
+							if (num_args == func_call_param_counter) {
+								int index;
+								for (index = 0; index < num_args; index++) {
+									if (expected_types[index] != function_arguments[index].type) {
+										if (can_convert(expected_types[index], function_arguments[index].type) == FALSE) {
+											set_error(ERR_WRONG_TYPE_ARGS);	
+										} 
+									}
+								}
+							} else if (num_args > func_call_param_counter) {
+								set_error(ERR_MISSING_ARGS);
+							} else {
+								set_error(ERR_EXCESS_ARGS);
+							}
+						} else if (category == USER_TYPE) {
+							set_error(ERR_USER);
+						} else if (category == ARRAY) {
+							set_error(ERR_VECTOR);
+						} else {
+							set_error(ERR_VARIABLE);
+						}
+
+						free(expected_types);
+						free(function_arguments);
+						function_arguments = NULL;
+						func_call_param_counter = 0;
+
 					}
 				| TK_PR_STATIC static_var ';'
 					{
@@ -1007,25 +756,31 @@ cmd 		: cmd_ident cmd_id_fix ';'
 						add_node($$, $2);
 						add_node($$, new_node($3));
 					}
-				| local_var_type TK_IDENTIFICADOR var_end ';'
+				| type TK_IDENTIFICADOR var_end ';'
 					{
-
-						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-						if(declaration_line != NOT_DECLARED) {
-							set_error(ERR_DECLARED,
-								"", yylineno, NULL, NULL);
-
-							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-								yylineno, $2->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);*/
-						} else {
-							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
-						}
-
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
 						add_node($$, new_node($4));
+
+						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+						if(declaration_line != NOT_DECLARED)
+							set_error(ERR_DECLARED);
+						else
+							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+
+						if ($3->type != NOT_DECLARED) 
+							if ($1->type == $3->type) {
+								if ($1->type == USER_TYPE)
+									if (strcmp($1->user_type, $3->user_type) != 0)
+										set_error(ERR_WRONG_TYPE);		
+							} else 
+								if (can_convert($1->type, $3->type) == FALSE) {
+									set_error(ERR_WRONG_TYPE);
+								} else {
+									$3->conversion = get_conversion($1->type, $3->type);
+								}
+													
 					}
 				| if_then ';'
 					{
@@ -1054,7 +809,6 @@ cmd 		: cmd_ident cmd_id_fix ';'
 					}
 				| return ';'
 					{
-						//printf("\nA FUNC ATUAL EH %s", last_added_func);
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
@@ -1095,54 +849,30 @@ cmd 		: cmd_ident cmd_id_fix ';'
 						
 input 		: TK_PR_INPUT expr
 				{
-					if (debug_input_output)
-						printf("[INPUT] Teste\n\n");
-					
-					if((expr_list.has_int
-					 	|| expr_list.has_float
-					 	|| expr_list.has_char
-					 	|| expr_list.has_string
-					 	|| expr_list.has_bool) && !input_helper_flag)
-					 	{
-					 		if (debug_input_output)
-					 			print_expr_args();
-
-							set_error(ERR_WRONG_PAR_INPUT,
-								"", yylineno, NULL, NULL);
-					 		/*printf("ERROR: line %d - input only accepts id types!\n", yylineno);
-					 		//error_code = ERR_WRONG_PAR_INPUT;
-					 		exit(ERR_WRONG_PAR_INPUT);*/
-					 	}
-					
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					if ($2->is_literal == TRUE) {
+						set_error(ERR_WRONG_PAR_INPUT);
+					}
 				}
 
 output 		: TK_PR_OUTPUT expr output_vals
 				{
-					if (debug_input_output)
-						print_expr_args();
-					if (debug_input_output) {
-						printf("%d\n", expr_list.has_char);
-						printf("%d\n", expr_list.has_user_type);
-					}
-					input_helper_flag = FALSE;
-					if(expr_list.has_char
-					 	|| expr_list.has_user_type)
-					 	{
-							set_error(ERR_WRONG_PAR_OUTPUT,
-								"", yylineno, NULL, NULL);
-					 		/*printf("ERROR: line %d - output only accepts arithmetic expr or string!\n", yylineno);
-					 		exit(ERR_WRONG_PAR_OUTPUT);*/
-					 	}
-
-					expr_list = init_expr_args();
-
-					if (debug_input_output)
-						printf("[OUTPUT] Teste\n\n");
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
+
+					if ($2->type != BOOL && $2->type != INT && $2->type != FLOAT) { 
+						if ($2->type != STRING) {
+							set_error(ERR_WRONG_PAR_OUTPUT);
+						} else {
+							if ($2->is_literal == FALSE) {
+								set_error(ERR_WRONG_PAR_OUTPUT);
+							}
+						}
+					}
+					
 				}
 
 output_vals : ';'
@@ -1154,9 +884,19 @@ output_vals : ';'
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
+
+					if ($2->type != BOOL && $2->type != INT && $2->type != FLOAT) { 
+						if ($2->type != STRING) {
+							set_error(ERR_WRONG_PAR_OUTPUT);
+						} else {
+							if ($2->is_literal == FALSE) {
+								set_error(ERR_WRONG_PAR_OUTPUT);
+							}
+						}
+					}
 				}
 
-if_then 	: TK_PR_IF '(' if_then_expr ')'
+if_then 	: TK_PR_IF '(' bool_expr ')'
 				TK_PR_THEN '{' push_table cmd_block else
 				{
 
@@ -1170,35 +910,31 @@ if_then 	: TK_PR_IF '(' if_then_expr ')'
 					add_node($$, $9);
 				}
 
-if_then_expr : expr 
+bool_expr : expr 
 			{
-				int cond_type = infer_expr_type();
-				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					
-					set_error(ERR_WRONG_TYPE,
-						"", yylineno, NULL, NULL);
-					/*printf("ERROR: line %d - 'if' conditional should be of type bool, int, or float\n",
-							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);*/
-				}
-				added_field_type = FALSE;
-				expr_list = init_expr_args();
-
 				$$ = $1;
+
+				if ($$->type != BOOL) {
+					if (can_convert(BOOL, $$->type) == FALSE) {
+						set_error(ERR_WRONG_TYPE);
+					} else {
+						$$->conversion = get_conversion(BOOL, $$->type);
+					}					
+				}
 			}
 
-else 		: TK_PR_ELSE '{' cmd_block
+else 		: TK_PR_ELSE '{' push_table cmd_block
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
-					add_node($$, $3);
+					add_node($$, $4);
 				}
 			|  %empty
 				{
 					$$ = new_node(NULL);
 				}
 
-while 		: TK_PR_WHILE '(' while_expr ')'
+while 		: TK_PR_WHILE '(' bool_expr ')'
 				TK_PR_DO '{' push_table cmd_block
 				{
 					$$ = new_node($1);
@@ -1210,24 +946,8 @@ while 		: TK_PR_WHILE '(' while_expr ')'
 					add_node($$, $8);
 				}
 
-while_expr	: expr 
-				{
-					int cond_type = infer_expr_type();
-					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-						set_error(ERR_WRONG_TYPE,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - 'while' conditional should be of type bool, int, or float\n",
-								yylineno);
-						quit_with_error(ERR_WRONG_TYPE);*/
-					}
-					added_field_type = FALSE;
-					expr_list = init_expr_args();
-
-					$$ = $1;
-				}
-
 do_while 	: TK_PR_DO '{' push_table cmd_block
-				TK_PR_WHILE '(' do_while_expr ')'
+				TK_PR_WHILE '(' bool_expr ')'
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
@@ -1236,22 +956,6 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 					add_node($$, new_node($6));
 					add_node($$, $7);
 					add_node($$, new_node($8));
-				}
-
-do_while_expr: expr 
-				{
-					int cond_type = infer_expr_type();
-					if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-						set_error(ERR_WRONG_TYPE,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - 'do while' conditional should be of type bool, int, or float\n",
-								yylineno);
-						quit_with_error(ERR_WRONG_TYPE);*/
-					}
-					added_field_type = FALSE;
-					expr_list = init_expr_args();
-
-					$$ = $1;
 				}
 
 continue 	: TK_PR_CONTINUE
@@ -1266,45 +970,26 @@ break 		: TK_PR_BREAK
 
 return 		: TK_PR_RETURN expr
 				{
-					int type = infer_expr_type();
-					char* user_type_name;
-					int expected_type = get_id_type(stack, last_added_func, &user_type_name);
-					//printf("\nTYPE EXPR = %s", get_type_name(type));
-					//printf("\nEXPECTED TYPE = %s", get_type_name(expected_type));
-					if (type != expected_type) {
-						if (convert(expected_type, type) == CONVERSION_ERROR) {
-							if (expected_type == USER_TYPE)
-								set_error(ERR_WRONG_PAR_RETURN,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
-									yylineno, user_type_name);*/
-							else
-								set_error(ERR_WRONG_PAR_RETURN,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - wrong type on return. Expecting %s.\n", 
-									yylineno, get_type_name(expected_type));	*/
-							//quit_with_error(ERR_WRONG_PAR_RETURN);
-						}
-					} else if (expected_type == USER_TYPE) {
-						// id_user_type has the name of the last user type used on return expr
-						//printf("\nTENHO = %s\n", id_user_type);
-						if (strcmp(id_user_type, user_type_name) != 0) {
-							set_error(ERR_WRONG_PAR_RETURN,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
-								yylineno, user_type_name, id_user_type);
-							quit_with_error(ERR_WRONG_PAR_RETURN);*/
-						}
-					}
-					added_field_type = FALSE;
-					expr_list = init_expr_args();
-
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					if (function.type != $2->type) {
+						if (can_convert(function.type, $2->type) == FALSE) {
+							set_error(ERR_WRONG_PAR_RETURN);
+						} else {
+							$2->conversion = get_conversion(function.type, $2->type);
+						}
+					} else {
+						if (function.type == USER_TYPE) {
+							if (strcmp(function.type_name, $2->user_type) != 0) {
+								set_error(ERR_WRONG_PAR_RETURN);
+							}
+						}
+					}
 				}
 
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
-						for_expr ':'
+						bool_expr ':'
 						cmd_for for_scd_list
 						'{' push_table cmd_block
 				{
@@ -1320,115 +1005,23 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 					add_node($$, $11);
 				}
 
-for_expr 	: expr
-			{	
-				//print_expr_args();	
-				int cond_type = infer_expr_type();
-				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					set_error(ERR_WRONG_TYPE,
-						"", yylineno, NULL, NULL);
-					/*printf("ERROR: line %d - 'for' conditional should be of type bool, int, or float\n",
-							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);*/
-				}
-				added_field_type = FALSE;
-				expr_list = init_expr_args();
-
-				$$ = $1;
-			}
-
-cmd_for 	: cmd_ident cmd_id_fix
+cmd_for 	: cmd_ident cmd_fix_local_var 
 					{
-						int declaration_line = is_declared(stack, cmd_id_name);
-
-						if (came_from_function_call == TRUE) {
-							if (is_function_declared(stack, cmd_id_name) == NOT_DECLARED) {
-								int is_it_array = is_array(stack, cmd_id_name);
-								if (is_user_type(stack, cmd_id_name) == TRUE) {
-									set_error(ERR_USER,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - type '%s' used as function\n", 
-										yylineno, cmd_id_name);
-									quit_with_error(ERR_USER);*/
-								} else if (is_it_array == TRUE) {
-									set_error(ERR_VECTOR,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, cmd_id_name);
-									quit_with_error(ERR_VECTOR);*/
-								} else if (declaration_line != NOT_DECLARED) {
-									set_error(ERR_VARIABLE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - variable '%s' used as function\n", 
-										yylineno, cmd_id_name);
-									quit_with_error(ERR_VARIABLE);*/
-								}
-
-								set_error(ERR_UNDECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - function '%s' was not previously declared\n", 
-									yylineno, cmd_id_name);
-								quit_with_error(ERR_UNDECLARED);*/
-							}
-							came_from_function_call = FALSE;
-						} else if (declaration_line == NOT_DECLARED) {
-							set_error(ERR_UNDECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - '%s' was not previously declared\n", 
-								yylineno, cmd_id_name);
-							quit_with_error(ERR_UNDECLARED);*/							
-						}
-
-						if (came_from_local_var == TRUE) {
-							int declaration_line = is_declared_on_current_table(stack, local_var_lexeme->value.v_string);
-							if(declaration_line != NOT_DECLARED) {
-								set_error(ERR_DECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-									yylineno, local_var_lexeme->value.v_string, declaration_line);
-								quit_with_error(ERR_DECLARED);*/
-							} else {
-								add_local_var(stack, USER_TYPE, cmd_id_name, FALSE, FALSE, local_var_lexeme);
-							}
-							came_from_local_var = FALSE;
-						}
-
-						if (came_from_attr == TRUE) {
-							char *trash;
-							int id_type = get_id_type(stack, cmd_id_name, &trash);
-							int expr_type = infer_expr_type();
-							int conversion = convert(id_type, expr_type); 
-							if (conversion == CONVERSION_ERROR) {
-								set_error(ERR_WRONG_TYPE,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - incorrect assignation for variable %s\n",
-									yylineno, cmd_id_name);
-								quit_with_error(ERR_WRONG_TYPE);*/
-							}
-
-
-							//printf("\nO TIPO DEVE SER %s", get_type_name(id_type));
-							//printf("\nA EXPR EH %s", get_type_name(infer_expr_type()));
-							came_from_attr = FALSE;
-						}
-
-
 						$$ = $1;
 						add_node($$, $2);
 					}
-				| local_var_type TK_IDENTIFICADOR var_end
+				| cmd_ident cmd_fix_attr 
 					{
-
-						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-						if(declaration_line != NOT_DECLARED) {
-							set_error(ERR_DECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-								yylineno, $2->value.v_string, declaration_line);
-							quit_with_error(ERR_DECLARED);*/
-						} else {
-							add_local_var(stack, local_var_type, NULL, FALSE, FALSE, $2);
-						}
-
+						$$ = $1;
+						add_node($$, $2);
+					}
+				| cmd_ident cmd_fix_call 
+					{
+						$$ = $1;
+						add_node($$, $2);
+					}
+				| type TK_IDENTIFICADOR var_end
+					{
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -1520,118 +1113,6 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 							':' expr foreach_list
 							'{' push_table cmd_block
 					{
-						//printf("[A] id_user_type : %s\n", id_user_type);
-						//print_expr_args();
-						int temp_type;
-						// this function is called to raise errors in functions (if they exists)
-						infer_expr_type();
-						if (is_declared(stack, $3->value.v_string) == FALSE) {
-							set_error(ERR_UNDECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - %s was not declared\n", yylineno, $3->value.v_string);
-							quit_with_error(ERR_UNDECLARED);*/
-						}
-						//printf("\nTYPE OF EXPRS = %s", get_type_name(type));
-						/*printf("\nINT = %i", fe_int_counter);
-						printf("\nFLOAT = %i", fe_float_counter);
-						printf("\nBOOL = %i", fe_bool_counter);
-						printf("\nCHAR = %i", fe_char_counter);
-						printf("\nSTR = %i", fe_string_counter);
-						printf("\nUSER = %i", fe_user_counter);*/
-						//printf("[B] id_user_type : %s\n", id_user_type);
-						//print_expr_args();
-						if (fe_string_counter > 0) {
-							if (fe_int_counter > 0
-								|| fe_float_counter > 0
-								|| fe_bool_counter > 0
-								|| fe_char_counter > 0
-								|| fe_user_counter > 0) {
-								set_error(ERR_WRONG_TYPE,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);*/
-							} else {
-								temp_type = STRING;
-							}
-						} else if (fe_char_counter > 0) {
-							if (fe_int_counter > 0
-								|| fe_float_counter > 0
-								|| fe_bool_counter > 0
-								|| fe_string_counter > 0
-								|| fe_user_counter > 0) {
-								set_error(ERR_WRONG_TYPE,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);*/
-							} else {
-								temp_type = CHAR;
-							}
-						} else if (fe_user_counter > 0) {
-							if (fe_int_counter > 0
-								|| fe_float_counter > 0
-								|| fe_bool_counter > 0
-								|| fe_string_counter > 0
-								|| fe_char_counter > 0) {
-								set_error(ERR_WRONG_TYPE,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - expressions with different types on foreach\n", yylineno);
-								quit_with_error(ERR_WRONG_TYPE);*/
-							} else {
-								temp_type = USER_TYPE;
-							}
-						} else if (fe_float_counter > 0) {
-							temp_type = FLOAT;
-						} else if (fe_int_counter > 0) {
-							temp_type = INT;
-						} else {
-							temp_type = BOOL;
-						}
-						//printf("[C] id_user_type : %s\n", id_user_type);
-						
-						fe_int_counter = 0;
-						fe_float_counter = 0;
-						fe_bool_counter = 0;
-						fe_char_counter = 0;
-						fe_string_counter = 0;
-						fe_user_counter = 0;
-
-						char* user_type_nm;
-						//printf("\nO ID EH %s", $3->value.v_string);
-						int type = get_id_type(stack, $3->value.v_string, &user_type_nm);
-						//printf("[D] id_user_type : %s\n", id_user_type);
-						if (temp_type != type) {
-							if (convert(temp_type, type) == CONVERSION_ERROR) {
-								if (type == USER_TYPE) {
-									set_error(ERR_WRONG_TYPE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
-										yylineno, user_type_nm);*/
-								} else {
-									set_error(ERR_WRONG_TYPE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - a foreach expression is not of the expected type %s.\n", 
-										yylineno, get_type_name(type));*/
-								}
-								//quit_with_error(ERR_WRONG_TYPE);
-							}
-						} else if (type == USER_TYPE) {
-							//printf("[E] id_user_type : %s\n", id_user_type);
-							// id_user_type has the name of the last user type used on return expr
-							//printf("\nTENHO = %s\n", id_user_type);
-							if (id_user_type != NULL) {
-								//printf("\n[F] id_user_type : %s\n", id_user_type);
-								//printf("\n[F] user_type_nm : %s\n", user_type_nm);
-
-								if (strcmp(id_user_type, user_type_nm) != 0) {
-									//printf("\n[G] id_user_type : %s\n", id_user_type);
-									set_error(ERR_WRONG_TYPE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - wrong type on return. Expecting %s. Has %s.\n", 
-										yylineno, user_type_nm, id_user_type);*/
-									quit_with_error(ERR_WRONG_TYPE);
-								}
-							}
-						}
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 						add_node($$, new_node($3));
@@ -1640,44 +1121,91 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						add_node($$, $6);
 						add_node($$, new_node($7));
 						add_node($$, $9);
+
+						if ($6->type != IGNORE_TYPE) {
+							if ($5->type == $6->type) {
+								if ($5->type == USER_TYPE) {
+									if ($5->user_type != NULL && $6->user_type != NULL) {
+										if (strcmp($5->user_type, $6->user_type) == 0) {
+											$$->type = USER_TYPE;
+											$$->user_type = $5->user_type;
+										} else {
+											$$->type = INVALID_TYPE;
+										}
+									}
+								} else {
+									$$->type = $5->type;
+									$$->user_type = NULL;
+								}
+							} else {
+								$$->type = infer_not_expr($5->type, $6->type);
+							}	
+						} else {
+							$$->type = $5->type;
+							$$->user_type = $5->user_type;
+						}
+
+						char* type_name;
+						int var_type = get_id_type(stack, $3->value.v_string, &type_name);
+						if ($$->type != var_type) {
+							if (can_convert($$->type, var_type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							} else {
+								$$->conversion = get_conversion(var_type, $$->type);
+							}
+						} else {
+							if ($$->type == USER_TYPE) {
+								if ($$->user_type != NULL && type_name != NULL) {
+									if (strcmp($$->user_type, type_name) != 0)
+										set_error(ERR_WRONG_TYPE); 
+								}
+							}
+						}
 					}
 
 foreach_list	: ',' foreach_count expr foreach_list 
 					{
-						
 						$$ = new_node($1);
 						add_node($$, $3);
 						add_node($$, $4);
+
+						if ($4->type != IGNORE_TYPE) {
+							if ($3->type == $4->type) {
+								if ($3->type == USER_TYPE) {
+									if ($3->user_type != NULL && $4->user_type != NULL) {
+										if (strcmp($3->user_type, $4->user_type) == 0) {
+											$$->type = USER_TYPE;
+											$$->user_type = $4->user_type;
+										} else {
+											$$->type = INVALID_TYPE;
+										}
+									}
+								} else {
+									$$->type = $3->type;
+									$$->user_type = NULL;
+								}
+							} else {
+								$$->type = infer_not_expr($3->type, $4->type);
+							}	
+						} else {
+							$$->type = $3->type;
+							$$->user_type = $3->user_type;
+						}
+
+						if ($$->type == INVALID_TYPE)
+							set_error(ERR_WRONG_TYPE);
 					}
 				| ')' foreach_count
 					{
-						
 						$$ = new_node($1);
+
+						$$->type = IGNORE_TYPE;
 					}
 
 foreach_count	: %empty
-					{
+					{}
 
-						//print_expr_args();
-
-						fe_int_counter += expr_list.has_int;
-						fe_float_counter += expr_list.has_float;
-						fe_bool_counter += expr_list.has_bool;
-						fe_string_counter += expr_list.has_string;
-						fe_char_counter += expr_list.has_char;
-						fe_user_counter += expr_list.has_user_type;
-						int type = infer_expr_type();
-						//printf("\nTYPE INFERED = %s", get_type_name(type));
-						if (type == INVALID_TYPE) {
-							set_error(ERR_WRONG_TYPE,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - Invalid expression on foreach\n", yylineno);
-							quit_with_error(ERR_WRONG_TYPE);*/
-						}
-						reset_counters();
-					}
-
-switch 		: TK_PR_SWITCH '(' switch_expr ')' '{' push_table cmd_block
+switch 		: TK_PR_SWITCH '(' bool_expr ')' '{' push_table cmd_block
 				{
 					$$ = new_node($1);
 					add_node($$, new_node($2));
@@ -1687,48 +1215,34 @@ switch 		: TK_PR_SWITCH '(' switch_expr ')' '{' push_table cmd_block
 					add_node($$, $7);
 				}
 
-switch_expr : expr
-			{
-				int cond_type = infer_expr_type();
-				if (cond_type != BOOL && cond_type != FLOAT && cond_type != INT) {
-					set_error(ERR_WRONG_TYPE,
-						"", yylineno, NULL, NULL);
-					/*printf("ERROR: line %d - 'switch' conditional should be of type bool, int, or float\n",
-							yylineno);
-					quit_with_error(ERR_WRONG_TYPE);*/
-				}
-				$$ = $1;
-			}
-
 case 		: TK_PR_CASE expr ':'
 				{
-					int type = infer_expr_type();
-					if (type != INT) {
-						set_error(ERR_WRONG_TYPE,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - 'case' only receives integers\n", yylineno);
-						quit_with_error(ERR_WRONG_TYPE);*/
-					}
-
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, new_node($3));
+
+					if ($2->type != INT) {
+						if (can_convert(INT, $2->type) == FALSE) {
+							set_error(ERR_WRONG_TYPE);
+						} else {
+							$2->conversion = get_conversion(INT, $2->type);
+						}
+					}
 				}
 
-cmd_id_fix	: TK_IDENTIFICADOR
+cmd_fix_local_var	: TK_IDENTIFICADOR
 				{
-					came_from_local_var = TRUE;
-					local_var_lexeme = $1;
 					$$ = new_node($1);
 				}
-			| id_seq_simple attr
+cmd_fix_attr		: id_seq_simple attr
 				{
-					$$ = $1;
+					$$ = new_node(NULL);
+					add_node($$, $1);
 					add_node($$, $2);
+					set_node_type($$, $2->type);
 				}
-			| '(' func_call_params piped_expr
+cmd_fix_call		: '(' func_call_params piped_expr
 				{
-					came_from_function_call = TRUE;
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
@@ -1744,127 +1258,90 @@ static_var	: TK_PR_CONST const_var
 					$$ = $1;
 				}
 			
-const_var	: local_var_type TK_IDENTIFICADOR var_end
+const_var	: type TK_IDENTIFICADOR var_end
 				{
-					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-					if(declaration_line != NOT_DECLARED) {
-						set_error(ERR_DECLARED,
-							"", yylineno, NULL, NULL);
-						/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-							yylineno, $2->value.v_string, declaration_line);
-						quit_with_error(ERR_DECLARED);*/
-					} else {
-						add_local_var(stack, local_var_type, NULL, FALSE, TRUE, $2);
-					}
-
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
 				}
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
-					if (is_declared(stack, $1->value.v_string) == NOT_DECLARED) {
-							set_error(ERR_UNDECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - type '%s' was not previously declared\n", 
-								yylineno, $1->value.v_string);
-							quit_with_error(ERR_UNDECLARED);*/					
-					}
-
-					int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-					if(declaration_line != NOT_DECLARED) {
-							set_error(ERR_DECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - variable '%s' was already declared on line %i\n",
-							yylineno, $2->value.v_string, declaration_line);*/
-						quit_with_error(ERR_DECLARED);
-					} else {
-						add_local_var(stack, local_var_type, $1->value.v_string, FALSE, TRUE, $2);
-					}
-
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 				}
 
 var_end 	: TK_OC_LE var_lit
 				{
-					//print_expr_args();
-					//printf("\nLOCAL VAR TYPE = %s", get_type_name(local_var_type));
-					//printf("\nLOCAL VAR LIT TYPE = %s\n", get_type_name(local_var_lit_type));
-					if (local_var_type != local_var_lit_type) {
-						if (convert(local_var_type, local_var_lit_type) == CONVERSION_ERROR) {
-							set_error(ERR_WRONG_TYPE,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - wrong type. Expecting %s, found %s.\n", 
-								yylineno, get_type_name(local_var_type), get_type_name(local_var_lit_type));
-							quit_with_error(ERR_WRONG_TYPE);*/
-						}
-					}
-
-					$$ = new_node($1);
-					add_node($$, $2);
+					$$ = new_node(NULL);
+					add_node($$, new_node($1));
+					add_node($$, $2);;
+					$$->type = $2->type;
+					$$->user_type = $2->user_type;
 				}
 			| %empty
 				{
 					$$ = new_node(NULL);
+					$$->type = NOT_DECLARED;
+					$$->user_type = NULL;
 				}
 
 var_lit		: TK_IDENTIFICADOR
 				{
-					set_local_var_lit_type(USER_TYPE);
 					$$ = new_node($1);
+					$$->type = USER_TYPE;
+					$$->user_type = $1->value.v_string;
 				}
 			| TK_LIT_INT
 				{
-					set_local_var_lit_type(INT);
 					$$ = new_node($1);
+					$$->type = INT;
+					$$->user_type = NULL;
 				}
 			| TK_LIT_FLOAT
 				{
-					set_local_var_lit_type(FLOAT);
 					$$ = new_node($1);
+					$$->type = FLOAT;
+					$$->user_type = NULL;
 				}
 			| TK_LIT_CHAR
 				{
-					set_local_var_lit_type(CHAR);
 					$$ = new_node($1);
+					$$->type = CHAR;
+					$$->user_type = NULL;
 				}
 			| TK_LIT_STRING
 				{
-					set_local_var_lit_type(STRING);
 					$$ = new_node($1);
+					$$->type = STRING;
+					$$->user_type = NULL;
 				}
 			| TK_LIT_TRUE
 				{
-					set_local_var_lit_type(BOOL);
 					$$ = new_node($1);
+					$$->type = BOOL;
+					$$->user_type = NULL;
 				}
 			| TK_LIT_FALSE	
 				{
-					set_local_var_lit_type(BOOL);
 					$$ = new_node($1);
+					$$->type = BOOL;
+					$$->user_type = NULL;
 				}
 
 attr 		: '=' expr
 				{
-					came_from_attr = TRUE;
-
-					//print_expr_args();
-
-					//reset_expr();
-
-					$$ = new_node($1);
+					$$ = new_node(NULL);
+					add_node($$, new_node($1));
 					add_node($$, $2);
+					set_node_type($$, $2->type);
 				}
 			| TK_OC_SL expr 
 				{
-					//reset_expr();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
 			| TK_OC_SR expr 
 				{
-					//reset_expr();
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
@@ -1890,375 +1367,496 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
 					$$ = new_node(NULL);
 				}
 
-bin_op			: '+' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '-' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '*' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '/' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '%'
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '^' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						$$ = new_node($1);
-					}
-				| '|' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| '&' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| '>' 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| '<'
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_AND 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_OR 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_LE
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_NE 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_EQ 
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-				| TK_OC_GE
-					{
-						debug_operands($1->value.v_char, "BIN_OP");
-						num_any_operators++;
-						num_boolean_operators++;
-						$$ = new_node($1);
-					}
-
 un_op 			: not_null_un_op un_op
 					{
-						if(debug_expr)
-							printf("[UN_OP] Com operador\n");
 						$$ = $1;
 						add_node($$, $2);
 					}
 				| %empty
 					{
-						if(debug_expr)
-							printf("[UN_OP] Empty\n");
 						$$ = new_node(NULL);
 					}
 
 not_null_un_op  : '+' 
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					}
 				| '-'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '!'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '&'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '*'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '?'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					} 
 				| '#'
 					{
-						debug_operands($1->value.v_char, "NOT_NULL_UN_OP");
 						$$ = new_node($1);
 					}
 
-expr 			: un_op expr_vals expr_begin
+expr 			: expr '+' expr
 					{
-						if(debug_expr) {
-							printf("[EXPR] id_user_type : %s\n", id_user_type);
-							printf("[EXPR] Final\n");
-						}
-						$$ = $1;
-						add_node($$, $2);
-						add_node($$, $3);
-					}
-
-expr_begin 		: bin_op expr
-					{
-						if(debug_expr)
-							printf("[EXPR_BEGIN] Binop expr\n");
-						$$ = $1;
-						add_node($$, $2);
-					}
-				| '?' expr ':' expr
-					{
-						if(debug_expr)
-							printf("[EXPR_BEGIN] Ternário\n");
-						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
-						add_node($$, $4);
-					} 
-				| %empty
-					{
-						if(debug_expr)
-							printf("[EXPR_BEGIN] Empty\n");
 						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '-' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '*' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '/' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '%' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '^' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '|' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '&' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '>' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr '<' expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr TK_OC_AND expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
+					}
+				| expr TK_OC_OR expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr TK_OC_LE expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr TK_OC_NE expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr TK_OC_EQ expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| expr TK_OC_GE expr
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, new_node($2));
+						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = BOOL;
+
+							if ($1->type == type) {
+								$3->conversion = get_conversion(type, $3->type);
+							} else {
+								$1->conversion = get_conversion(type, $1->type);
+							}
+						}
+					}
+				| un_op expr_vals
+					{
+						$$ = new_node(NULL);
+						add_node($$, $1);
+						add_node($$, $2);
+						set_node_type($$, $2->type);
+						$$->user_type = $2->user_type;
+
+						$$->is_literal = $2->is_literal;
 					}
 
 expr_vals		: TK_LIT_FLOAT
 					{
-						expr_list.has_float = TRUE;
-						debug_expr_vals_float($1->value.v_float, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, FLOAT);
+						$$->is_literal = TRUE;
 					}
 				| TK_LIT_INT
 					{
-						expr_list.has_int = TRUE;
-						debug_expr_vals_int($1->value.v_int, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, INT);
+						$$->is_literal = TRUE;
 					}
 				| id_for_expr id_seq piped 
 					{
-						if(debug_expr)
-							printf("[EXPR_VALS] TK_ID id_seq piped\n");
-
-						if (added_field_type == FALSE) {
-							add_type_to_expr(current_expr_type);
-							added_field_type = TRUE;
-						}
-						int is_function = is_function_declared(stack, expr_id_name);
-						int is_it_array = is_array(stack, expr_id_name);
-						int is_it_user_type = is_user_type(stack, expr_id_name);
-						// Genérico. Se is_declared = TRUE, mas não e'func, array ou type, é variavel
-						int is_it_declared = is_declared(stack, expr_id_name);
-						
-						// Se não foi usado como array, mas é array, então é ERR_VECTOR 
-						if (came_from_array == FALSE) {
-							if (is_it_array == TRUE) {
-								set_error(ERR_VECTOR,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - array '%s' used incorrectly\n",  yylineno, expr_id_name);
-								quit_with_error(ERR_VECTOR);*/
-							}
-						} else {
-							// SE foi usado como array, mas não é, tem que ver o que é pra dar o erro certo
-							if (is_it_array == FALSE) {
-								if (is_function != NOT_DECLARED) {
-									set_error(ERR_FUNCTION,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - function '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_FUNCTION);*/
-								} else if (is_it_user_type == TRUE) {
-									set_error(ERR_USER,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - type '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_USER);*/
-								} else if (is_it_declared != NOT_DECLARED) {
-									set_error(ERR_VARIABLE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - variable '%s' is incorrectly used as array\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VARIABLE);*/
-								} else {
-									set_error(ERR_UNDECLARED,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - array '%s' was not previously declared\n", 
-										yylineno, expr_id_name);
-									quit_with_error(ERR_UNDECLARED);*/
-								}
-							}	
-							came_from_array = FALSE;						
-						}
-
-						// Se foi usado como função e não é, tem que ver o que é pra dar erro
-						if (came_from_function_call == TRUE) {
-							if (is_function == NOT_DECLARED) {
-								if (is_it_user_type == TRUE) {
-									set_error(ERR_USER,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - type '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_USER);*/
-								} else if (is_it_array == TRUE) {
-									set_error(ERR_VECTOR,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - array '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VECTOR);*/
-								} else if (is_it_declared != NOT_DECLARED) {
-									set_error(ERR_VARIABLE,
-										"", yylineno, NULL, NULL);
-									/*printf("ERROR: line %d - variable '%s' used as function\n",  yylineno, expr_id_name);
-									quit_with_error(ERR_VARIABLE);*/
-								}
-								set_error(ERR_UNDECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - function '%s' was not previously declared\n", 
-									yylineno, expr_id_name);
-								quit_with_error(ERR_UNDECLARED);*/
-							}
-							came_from_function_call = FALSE;
-						} else {
-							if (is_function != NOT_DECLARED) {
-								set_error(ERR_FUNCTION,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - function '%s' used as variable\n", 
-									yylineno, expr_id_name);
-								quit_with_error(ERR_FUNCTION);*/
-							}
-							if (is_it_user_type == TRUE) {
-								set_error(ERR_USER,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - type '%s' used as variable\n", 
-									yylineno, expr_id_name);
-								quit_with_error(ERR_USER);*/
-							}
-						}
-						expr_list.has_id = TRUE;
-
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, $3);
+
+						int category = get_category(stack, $1->token->value.v_string);
+
+						if (category != id_category) {
+							if ($1->type != USER_TYPE || id_category != USER_TYPE)
+								switch (category) {
+									case FUNCTION:
+										set_error(ERR_FUNCTION); break;
+									case USER_TYPE:
+										set_error(ERR_USER); break;
+									case ARRAY:
+										set_error(ERR_VECTOR); break;
+									default:
+										set_error(ERR_VARIABLE); break;
+								}
+						}
+
+						if (id_category == FUNCTION) {
+							int num_args = get_func_num_params(stack, $1->token->value.v_string);
+							int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+
+							if (num_args == func_call_param_counter) {
+								int index;
+								for (index = 0; index < num_args; index++) {
+									if (expected_types[index] != function_arguments[index].type) {
+										if (can_convert(expected_types[index], function_arguments[index].type) == FALSE)
+											set_error(ERR_WRONG_TYPE_ARGS);	
+									}
+								}
+							} else if (num_args > func_call_param_counter) {
+								set_error(ERR_MISSING_ARGS);
+							} else {
+								set_error(ERR_EXCESS_ARGS);
+							}
+
+							free(expected_types);
+							free(function_arguments);
+							function_arguments = NULL;
+							func_call_param_counter = 0;
+						}
+
+						if (category == USER_TYPE)
+							set_error(ERR_USER);
+
+						if($2->user_type != NULL) {
+							char* type_name;
+							int id_type = get_id_type(stack, $1->token->value.v_string, &type_name);
+							if (type_name != NULL) {
+								int type = get_id_field_type(stack, type_name, $2->user_type);
+								if (type == INVALID_FIELD) {
+									set_error(ERR_UNDECLARED);
+								} else {
+									$$->type = type;
+								}
+							}
+						} 
+
+						id_category = VARIABLE;
+
 					}
 				| TK_LIT_CHAR 
 					{
-						expr_list.has_char = TRUE;
-						debug_expr_vals_char($1->value.v_char, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, CHAR);
+						$$->is_literal = TRUE;
 					}
 				| TK_LIT_STRING 
 					{
-						expr_list.has_string = TRUE;
-						debug_expr_vals_string($1->value.v_string, "EXPR_VALS");
 						$$ = new_node($1);
+						set_node_type($$, STRING);
+						$$->is_literal = TRUE;
 					}
 				|'(' expr ')' 
 					{
-						if(debug_expr)
-							("[EXPR_VALUE] ( expr )\n");
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, $2);
 						add_node($$, new_node($3));
+
+						$$->type = $2->type;
+						$$->user_type = $2->user_type;
 					}
 				| bool
 					{
-						expr_list.has_bool = TRUE;
 						$$ = $1;
+						set_node_type($$, BOOL);
+						$$->is_literal = TRUE;
 					}
 
 id_for_expr		: TK_IDENTIFICADOR
 					{
-						called_function = $1->value.v_string;
-
-						if(debug_expr)
-							printf("[ID_FOR_EXPR] ID [%s]\n", $1->value.v_string);
-						expr_id_name = $1->value.v_string;
-						if (is_declared(stack, expr_id_name) == FALSE) {
-							set_error(ERR_UNDECLARED,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - %s was not declared\n", yylineno, expr_id_name);
-							quit_with_error(ERR_UNDECLARED);*/
-						}
-						// IMPORTANT: the method below already fills id_user_type if type = USER_TYPE
-						// Otherwise, id_user_type is NULL
-						current_expr_type = get_id_type(stack, $1->value.v_string, &id_user_type);
-						//if(current_expr_type == NOT_DECLARED)
-						/*{
-							printf("Erro! Identificador não declarado!\n");
-							exit(ERR_UNDECLARED);
-						}*/
-						
-						if(debug_expr) {
-							printf("[ID_FOR_EXPR] current_expr_type : %d\n", current_expr_type);
-							printf("[ID FOR EXPR] id_user_type : %s\n", id_user_type);
-						}
-
 						$$ = new_node($1);
+
+						if (is_declared(stack, $1->value.v_string) == FALSE)
+							set_error(ERR_UNDECLARED);
+
+						char* type_name;
+						int type = get_id_type(stack, $1->value.v_string, &type_name);
+
+						$$->type = type;
+						$$->user_type = type_name;				
 					}
 
 piped 			: %empty
 					{
-						if(debug_expr)
-							printf("[PIPED] Empty\n");
 						$$ = new_node(NULL);
 					}
 				| pipe TK_IDENTIFICADOR id_seq piped_expr
 					{
-						if(debug_expr)
-							printf("[PIPED] pipe TK_IDENTIFICADOR id_seq piped_expr\n");
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -2267,164 +1865,82 @@ piped 			: %empty
 
 id_seq			:  id_seq_simple
 					{
-						if(debug_expr) {
-							printf("[ID_SEQ] id_user_type : %s\n", id_user_type);
-							printf("[ID_SEQ] id_seq_simple\n");
-						}
 						$$ = $1;
 					}
 				| '(' func_call_params
 					{
-						if(debug_expr)
-							printf("[ID_SEQ] func_call_params\n");
-						came_from_function_call = TRUE;
 						$$ = new_node($1);
 						add_node($$, $2);
+
+						id_category = FUNCTION;
 					} 
 
-id_seq_field 	: '$' TK_IDENTIFICADOR id_seq_field_vec 
+id_seq_field 	: '$' TK_IDENTIFICADOR  
 					{
-						if(debug_expr)
-							printf("[ID_SEQ_FIELD] $ TK_ID vec\n");
-
-						if (id_user_type == NULL) {
-							set_error(ERR_VARIABLE,
-								"", yylineno, NULL, NULL);
-							/*printf("ERROR: line %d - variable is not a user type\n", yylineno);
-							quit_with_error(ERR_VARIABLE);*/
-						} else {
-
-							
-							int type = get_id_field_type(stack, id_user_type, $2->value.v_string);
-							
-							if(debug_expr) {
-								printf("[ID_SEQ_FIELD] type : %d\n", type);
-							}
-							if(type == NOT_DECLARED || type == NOT_USER_TYPE || type == INVALID_FIELD)
-							{
-								set_error(ERR_UNDECLARED,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - not declared\n", yylineno);
-								exit(ERR_UNDECLARED);*/
-							}
-							
-							add_type_to_expr(type);
-							added_field_type = TRUE;
-							input_helper_flag = TRUE;
-						}
-						
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, new_node($2));
-						add_node($$, $3);
-					}
-				| %empty
-					{
-						if(debug_expr) {
-							printf("[ID_SEQ_FIELD] id_user_type : %s\n", id_user_type);
-							printf("[ID_SEQ_FIELD] empty\n");
-						}
-						$$ = new_node(NULL);
-					}
 
-id_seq_field_vec: '[' expr ']'
-					{
-						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
-					} 
+						id_category = USER_TYPE;
+
+						$$->user_type = $2->value.v_string;
+					}
 				| %empty
 					{
 						$$ = new_node(NULL);
+						$$->user_type = NULL;
 					}
 
 id_seq_simple	: '[' expr ']' id_seq_field
 					{
-						came_from_array = TRUE;
-						if(debug_expr)
-							printf("[ID_SEQ_SIMPLE] Com vetor\n");
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
+
+						if ($2->type != INT) {
+							if (can_convert(INT, $2->type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							} else {
+								$2->conversion = get_conversion(INT, $2->type);
+							}
+						}
+
+						id_category = ARRAY;
+
+						$$->user_type = $4->user_type;
 					} 
 				|  id_seq_field
 					{
-						if(debug_expr) {
-							printf("[ID_SEQ_SIMPLE] id_user_type : %s\n", id_user_type);
-							printf("[ID_SEQ_SIMPLE] Sem vetor\n");
-						}
-
 						$$ = $1;
 					}
 
 proccess_expr		: %empty
 						{
-							num_func_params++;
-							int type = infer_expr_type();
-							//printf("\nPROCESSEI UM %s", get_type_name(type));
-							add_param_type(type);
 						}
 
 func_call_params	: ')' 
 						{	
-							//printf("\nTENHO %i PARAMS", num_func_params);
-							if(debug_expr)
-								printf("[FUNC_CALL_PARAMS] ')'\n");
 							$$ = new_node($1);
 						}
 					| expr proccess_expr func_call_params_body
 						{
-							
-
-							//printf("\nTENHO %i PARAMS", num_func_params);
-							int called_func_num_params = get_func_num_params(stack, called_function);
-							if (called_func_num_params < 0) {
-								set_error(ERR_FUNCTION,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - '%s' is not a function\n",
-									yylineno, called_function);
-								quit_with_error(ERR_FUNCTION);*/
-							}
-							if (num_func_params > called_func_num_params) {
-								set_error(ERR_EXCESS_ARGS,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - too many arguments (%i) for function %s (expecting %i)\n",
-									yylineno, num_func_params, called_function, called_func_num_params);
-								quit_with_error(ERR_EXCESS_ARGS);*/
-							} else if (num_func_params < called_func_num_params) {
-								set_error(ERR_MISSING_ARGS,
-									"", yylineno, NULL, NULL);
-								/*printf("ERROR: line %d - missing arguments (%i) for function %s (expecting %i)\n", 
-									yylineno, num_func_params, called_function, called_func_num_params);
-								quit_with_error(ERR_MISSING_ARGS);*/
-							} else {
-								if (called_func_num_params > 0) {
-									int i;
-									int* called_func_params = get_func_params_types(stack, called_function);
-									for (i = 0; i < called_func_num_params; i++) {
-										if (func_params_types[i] != called_func_params[i]) {	
-											set_error(ERR_WRONG_TYPE_ARGS,
-												"", yylineno, NULL, NULL);
-											/*printf("ERROR: line %d - parameter %i has the wrong type\n", yylineno, (i+1));
-											quit_with_error(ERR_WRONG_TYPE_ARGS);*/
-										}
-									}
-									free(called_func_params);
-									called_func_params = NULL;
-								}
-							}
-							reset_param_types();
-
-							if(debug_expr)
-								printf("[FUNC_CALL_PARAMS] expr func_call_params_body\n");
 							$$ = $1;
 							add_node($$, $3);
+
+							if (func_call_param_counter == 0) {
+								function_arguments = malloc(sizeof(func_call_arg));
+							} else {
+								function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+							}
+							function_arguments[func_call_param_counter].type = $1->type;
+							function_arguments[func_call_param_counter].user_type = $1->user_type;
+
+							func_call_param_counter++;
 						}
 					| '.' proccess_expr func_call_params_body
 						{
-							printf("\nTENHO %i PARAMS", num_func_params);
-							if(debug_expr)
-								printf("[FUNC_CALL_PARAMS] '.' func_call_params_body\n");
 							$$ = new_node($1);
 							add_node($$, $3);
 						}
@@ -2443,6 +1959,16 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 							{
 								$$ = $1;
 								add_node($$, $3);
+
+								if (func_call_param_counter == 0) {
+									function_arguments = malloc(sizeof(func_call_arg));
+								} else {
+									function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+								}
+								function_arguments[func_call_param_counter].type = $1->type;
+								function_arguments[func_call_param_counter].user_type = $1->user_type;
+
+								func_call_param_counter++;
 							}
 						| '.' proccess_expr func_call_params_body
 							{
@@ -2453,407 +1979,93 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 
 %%
 
-void yyerror(char const *s)
-{
+void yyerror(char const *s) {
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
 }
 
 void init_table_stack() {
-	
 	stack = (table_stack *) malloc(sizeof(table_stack));
 	stack->array = NULL;
 	stack->num_tables = NO_TABLES;
-
-	//printf("Inicializei stack->numtables\n");
-				
-	//printf("\tPilha inicializada!\n");
-
-	//printf("Primeiro print_stack\n");
-	//print_stack(stack);
-
-				
-	//first table will be global scope table
 	table created_table = create_table();
 	stack->num_tables = 0;
 	stack->array = malloc(sizeof(table));
 	stack->array[0] = created_table;
-
-	//printf("\tSegundo print_stack\n");
-	//print_stack(stack);	
 }
 
-void set_field_scope(char *scope) {
-	has_scope = TRUE;
-	if (args_allocated == TRUE) {
-		list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-	} else {
-		list_user_type_args = malloc(sizeof(user_type_args));
-		args_allocated = TRUE;
-	}
-	list_user_type_args[num_types].scope = scope;
-}
-
-void set_field_default_scope() {
-	//if(list_user_type_args[num_types - 1].scope == NULL) {
-		if(debug_user_type)
-			printf("[PARAM_BEGIN] Scope is null\n");
-		list_user_type_args[num_types - 1].scope = "PUBLIC";
-	//}
-}
-
-void set_field_type(int type) {
-	if(has_scope == FALSE) {
-		if (args_allocated == TRUE) {
-			list_user_type_args = realloc(list_user_type_args, sizeof(user_type_args) * (num_types + 1));
-		} else {
-			list_user_type_args = malloc(sizeof(user_type_args));
-			args_allocated = TRUE;
-		}
-	}
-				
-	has_scope = FALSE;
-	list_user_type_args[num_types].token_type = type;
-	num_types++;
-}
-
-void set_field_name(char* name) {
-	list_user_type_args[num_types - 1].token_name = name;
-}
-
-void set_global_var_type(int type) {
-	globalvar_args.type = type;
-}
-
-void set_global_var_user_type(char* type) {
-	globalvar_args.type = USER_TYPE;
-	globalvar_args.user_type = type;
-	globalvar_args.user_type_size = get_user_type_size(stack, type);
-}
-
-void set_global_var_static(int is_static) {
-	globalvar_args.is_static = is_static;
-}
-
-void set_global_var_as_array(int is_array) {
-	globalvar_args.is_array = is_array;
-}
-
-void set_global_var_name(char* name) {
-	globalvar_args.name = name;
-}
-
-void set_global_var_size(int size) {
-	globalvar_args.array_size = size;
-}
-
-void set_function_type(int type) {
-	function_type = type;
-}
-
-void set_user_type_arg(char *type) {
-	function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-	function_args[num_func_args].type = USER_TYPE;
-	function_args[num_func_args].user_type = type;
-}
-
-void set_arg_type(int type) {
-	function_args = realloc(function_args, sizeof(func_args) * (num_func_args + 1));
-	function_args[num_func_args].type = type;
-}
-
-void set_func_info(char* name, int is_const) {
-	function_args[num_func_args].name = name;
-	function_args[num_func_args].is_const = is_const;
-	num_func_args++;
-}
-
-void reset_func_vars() {
-	function_args = NULL;
-	function_type = UNDECLARED_TYPE;
-	num_func_args = 0;
-	func_user_type_name = NULL;
-	expr_list = init_expr_args();
-}
-
-void set_local_var_type(int type) {
-	local_var_type = type;
-}
-
-void set_local_var_lit_type(int type) {
-	local_var_lit_type = type;
-}
-
-int convert(int expected_type, int attr_type) {
-	if (expected_type == INT) {
-		switch(attr_type) {
-			case FLOAT: return FLOAT_TO_INT;
-			case BOOL: return BOOL_TO_INT;
-			case INT: return NO_CONVERSION;
-			default: return CONVERSION_ERROR;
-		}
-	} else if (expected_type == FLOAT) {
-		switch(attr_type) {
-			case INT: return INT_TO_FLOAT;
-			case BOOL: return BOOL_TO_FLOAT;
-			case FLOAT: return NO_CONVERSION;
-			default: return CONVERSION_ERROR;
-		}
-	} else if (expected_type == BOOL) {
-		switch(attr_type) {
-			case INT: return INT_TO_BOOL;
-			case FLOAT: return FLOAT_TO_BOOL;
-			case BOOL: return NO_CONVERSION;
-			default: return CONVERSION_ERROR;
-		}
-	} else {
-		if (expected_type == attr_type) {
-			return NO_CONVERSION;
-		} else {
-			return CONVERSION_ERROR;
-		}
+void set_error(int error_code) {
+	if(error == NULL) {
+		error = new_error(error_code, yylineno);
 	}
 }
 
-char* get_type_name(int type) {
-	switch (type) {
-		case INT:
-			return "int";
-		case FLOAT:
-			return "float";
-		case BOOL:
-			return "bool";
-		case CHAR:
-			return "char";
-		case STRING:
-			return "string";
-		case USER_TYPE:
-			return "user type";
-		default:
-			return "invalid";
-	}
-}
-
-void quit_with_error(int error) {
-	libera(arvore);
-  	arvore = NULL;
-  	yylex_destroy();
-  	//pop(stack);
-	free_table_stack(stack);
-	exit(error);
-}
-
-void reset_counters() {
-	reset_expr();
-	num_boolean_operators = 0;
-	num_any_operators = 0;
-}
-
-void debug_operands(char expr, char * type_operand)
-{
-	if(debug_expr)
-		printf("[%s] Signal : %c\n", type_operand, expr);
-}
-
-void debug_expr_vals_char(char expr, char * type_operand)
-{
-	if(debug_expr)
-		printf("[%s] VALUE : %c\n", type_operand, expr);
-}
-
-void debug_expr_vals_int(int expr, char * type_operand)
-{
-	if(debug_expr)
-		printf("[%s] VALUE : %d\n", type_operand, expr);
-}
-
-void debug_expr_vals_float(float expr, char * type_operand)
-{
-	if(debug_expr)
-		printf("[%s] VALUE : %f\n", type_operand, expr);
-}
-
-void debug_expr_vals_string(char * expr, char * type_operand)
-{
-	if(debug_expr)
-		printf("[%s] VALUE : %s\n", type_operand, expr);
-}
-
-void print_expr_args() {
-	printf("\nhas int = %i", expr_list.has_int);
-	printf("\nhas float = %i", expr_list.has_float);
-	//printf("\nhas id = %i", expr_list.has_id);
-	printf("\nhas bool = %i", expr_list.has_bool);
-	printf("\nhas chat = %i", expr_list.has_char);
-	printf("\nhas str = %i", expr_list.has_string);
-	printf("\nhas user type = %i\n", expr_list.has_user_type);
-}
-
-void add_type_to_expr(int type) {
-	switch (type) {
-		case INT:
-			expr_list.has_int = TRUE;
-			break;
-		case FLOAT:
-			expr_list.has_float = TRUE;
-			break;
-		case BOOL:
-			expr_list.has_bool = TRUE;
-			break;
-		case CHAR:
-			expr_list.has_char = TRUE;
-			break;
-		case STRING:
-			expr_list.has_string = TRUE;
-			break;
-		case USER_TYPE:
-			expr_list.has_user_type = TRUE;
-			break;
-	}
-}
-
-int infer_expr_type() {
-	//printf("\nENTRE NO INFER");
-	//print_expr_args();
-	if (expr_list.has_char) {
-		//printf("\nTENHO CHAR");
-		if (has_numerical()) {
-			set_error(ERR_CHAR_TO_X,
-				"", yylineno, NULL, NULL);
-			/*printf("ERROR: line %d - expression mixing char with numericals\n", yylineno);
-			quit_with_error(ERR_CHAR_TO_X);*/
-		} else if (expr_list.has_string || expr_list.has_user_type) {
-			reset_counters();
+int infer(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_CHAR_TO_X);
 			return INVALID_TYPE;
 		} else {
-			if (num_any_operators > 1) {
-				reset_counters();
-				return INVALID_TYPE;
-			}
-			if (num_boolean_operators == 1) {
-				reset_counters();
-				return BOOL;
-			}
-			reset_counters();
 			return CHAR;
 		}
-	} else if (expr_list.has_string) {
-
-		//printf("\nTENHO STR");
-		if (has_numerical()) {
-			set_error(ERR_STRING_TO_X,
-				"", yylineno, NULL, NULL);
-			/*printf("ERROR: line %d - expression mixing string with numericals\n", yylineno);
-			quit_with_error(ERR_STRING_TO_X);*/
-		} else if (expr_list.has_char || expr_list.has_user_type) {
-			reset_counters();
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_STRING_TO_X);
 			return INVALID_TYPE;
 		} else {
-			if (num_boolean_operators == 1) {
-				reset_counters();
-				return BOOL;
-			}
-			if (num_any_operators - num_boolean_operators > 0) {
-				reset_counters();
-				return INVALID_TYPE;
-			}
-			reset_counters();
 			return STRING;
 		}
-	} else if (expr_list.has_user_type) {
-		//printf("\nTENHO USER TYPE");
-		if (has_numerical()) {
-			set_error(ERR_USER_TO_X,
-				"", yylineno, NULL, NULL);
-			/*printf("ERROR: line %d - expression mixing user type with numericals\n", yylineno);
-			quit_with_error(ERR_USER_TO_X);*/
-		} else if (expr_list.has_char || expr_list.has_string) {
-			reset_counters();
-			return INVALID_TYPE;
-		} else if (num_any_operators > 0) {
-			reset_counters();
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_USER_TO_X);
 			return INVALID_TYPE;
 		} else {
-			reset_counters();
 			return USER_TYPE;
 		}
-	} else if (expr_list.has_float) {
-		//printf("\nTENHO FLOAT");
-		if (num_boolean_operators == 1) {
-			reset_counters();
-			return BOOL;
-		}
-		else if (num_boolean_operators > 1) {
-			reset_counters();
-			return INVALID_TYPE;
-		}
-		reset_counters();
+	} else if (type_a == FLOAT || type_b == FLOAT) {
 		return FLOAT;
-	} else if (expr_list.has_int) {
-		//printf("\nTENHO INT");
-		if (num_boolean_operators == 1) {
-			reset_counters();
-			return BOOL;
-		}
-		else if (num_boolean_operators > 1) {
-			reset_counters();
-			return INVALID_TYPE;
-		}
-		reset_counters();
+	} else if (type_a == INT || type_b == INT) {
 		return INT;
 	} else {
-		//printf("\nTENHO BOOL");
-		if (num_boolean_operators == 1) {
-			reset_counters();
-			return BOOL;
-		}
-		else if (num_boolean_operators > 1) {
-			reset_counters();
-			return INVALID_TYPE;
-		}
-		reset_counters();
 		return BOOL;
 	}
 }
 
-void add_param_type(int type) {
-	if (func_params_types == NULL || num_func_params == 0) {
-		func_params_types = malloc(sizeof(int));
-		func_params_types[0] = type;
+int infer_not_expr(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (type_a == FLOAT || type_b == FLOAT) {
+		return FLOAT;
+	} else if (type_a == INT || type_b == INT) {
+		return INT;
 	} else {
-		func_params_types == realloc(func_params_types, sizeof(int)*num_func_params);
-		func_params_types[num_func_params-1] = type;
-	}
-}
-
-void reset_param_types() {
-	//int i;
-	//for (i = 0; i < num_func_params; i++) {
-	//	free(func_params_types[i]);
-	//}
-	if (func_params_types != NULL ){
-		free(func_params_types);
-		func_params_types = NULL;
-	}
-	num_func_params = 0;
-}
-
-void reset_expr() {
-	added_field_type = FALSE;
-	expr_list = init_expr_args();
-}
-
-int has_numerical() {
-	return expr_list.has_int || expr_list.has_float || expr_list.has_bool;
-}
-
-void set_error(int p_error_code, char* p_error_message, int p_line, char* p_param_str_1, char* p_param_str_2) {
-	//printf("ENTREI NA SET");
-	if (has_error == FALSE) {
-		error_code = p_error_code;
-		error_message = p_error_message;
-		line = p_line;
-		param_str_1 = p_param_str_1;
-		param_str_2 = p_param_str_2;
-		has_error = TRUE;
+		return BOOL;
 	}
 }

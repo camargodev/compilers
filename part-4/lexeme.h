@@ -29,6 +29,8 @@
 */
 
 #define UNDECLARED_TYPE -1
+#define IGNORE_TYPE		-5
+
 
 #define INT 	105
 #define FLOAT 	106

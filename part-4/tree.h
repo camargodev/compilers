@@ -4,14 +4,18 @@
 typedef struct node {
 	struct 	Lexeme* token;
 	int		conversion;
-	int		node_type;
+	int		type;
+	char*	user_type;
+	int		is_literal;
 	int 	children_num;
 	struct 	node **children;
 } Node;
 
 Node* new_node(struct Lexeme* token);
 
-Node* new_full_node(struct Lexeme* token, int node_type, int conversion);
+void set_node_type(Node* token, int type);
+
+void set_node_conversion(Node* token, int conversion);
 
 void add_node(Node *root, Node *child);
 
