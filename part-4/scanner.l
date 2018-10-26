@@ -4,7 +4,7 @@
 	#include <stdio.h>
 	#include <string.h>
 	#include <stdlib.h>
-	#include "new_parser.tab.h"
+	#include "parser.tab.h"
 	#include "lexeme.h"
 	#include "tree.h"
 

@@ -3,14 +3,8 @@
 all: parser.y scanner.l main.c
 	bison -d parser.y --report-file=report
 	flex scanner.l
-	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c
-	gcc -g -o etapa4 lex.yy.o parser.tab.o tree.o table.o main.o -lfl
-
-old: new_parser.y scanner.l main.c
-	bison -d new_parser.y --report-file=report
-	flex scanner.l
-	gcc -g -c lex.yy.c new_parser.tab.c tree.c table.c main.c error_helper.c conversions.c
-	gcc -g -o etapa4 lex.yy.o new_parser.tab.o tree.o table.o main.o error_helper.o conversions.o -lfl
+	gcc -g -c lex.yy.c parser.tab.c tree.c table.c main.c error_helper.c conversions.c
+	gcc -g -o etapa4 lex.yy.o parser.tab.o tree.o table.o main.o error_helper.o conversions.o -lfl
 
 tst: ./test.sh tests/results.txt ./etapa4
 	./test.sh
@@ -39,6 +33,8 @@ clean:
 	rm -f tree_test.o
 	rm -f lexeme.o
 	rm -f main.o
+	rm -f conversions.o
+	rm -f error_helper.o
 	rm -f .parser.y.swp
 	rm -f tests/tempresults.txt
 	
