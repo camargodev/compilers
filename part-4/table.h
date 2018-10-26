@@ -116,13 +116,7 @@ void add_user_type(table_stack * stack, Lexeme * token);
 void add_user_type_properties(table_stack * stack, char * key, user_type_args token);
 table_line inicialize_line(Lexeme * token_name);
 
-void print_stack(table_stack * stack);
-void print_cabecalho_table_part1();
-void print_cabecalho_table_part2();
-
 void initialize_stack();
-
-void print_user_type_list(user_type_args * list_user_type_args, int num_types);
 
 global_var_args initialize_global_var_args();
 void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token);
@@ -131,23 +125,16 @@ int get_user_type_size(table_stack * stack, char * token);
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
 int is_function_declared(table_stack * stack, char* token);
 void set_func_as_static(table_stack * stack, char* token);
-int is_symbol_user_type(table_stack * stack, char* token);
 
 void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
 
-void free_line(table_line line);
-void free_table(table table);
 void free_table_stack(table_stack * stack);
 
 expr_args init_expr_args();
 
 int get_id_type(table_stack * stack, char* token, char** user_type_return);
 int get_id_field_type(table_stack * stack, char* token, char* field);
-int is_user_type(table_stack * stack, char* token);
 int get_func_num_params(table_stack * stack, char* token);
 int* get_func_params_types(table_stack * stack, char* token);
-int is_array(table_stack * stack, char* token);
-
-void current_function_name(table_stack *stack);
 
 int get_category(table_stack * stack, char* token);
