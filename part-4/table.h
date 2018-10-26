@@ -61,6 +61,11 @@ typedef struct func {
 	Lexeme * lexeme;
 } function_data;
 
+typedef struct function_call_arg {
+	int type;
+	char *user_type;
+} func_call_arg;
+
 typedef struct line {
 	
 	char * token_name; // KEY
@@ -144,3 +149,5 @@ int* get_func_params_types(table_stack * stack, char* token);
 int is_array(table_stack * stack, char* token);
 
 void current_function_name(table_stack *stack);
+
+int get_category(table_stack * stack, char* token);

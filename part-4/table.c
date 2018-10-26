@@ -531,12 +531,13 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		
-		line.category = VARIABLE;
-		
-		if(globalvar_args.is_array)
+		if(globalvar_args.is_array) {
+			line.category = ARRAY;
 			line.array_size = globalvar_args.array_size;
-		else
+		} else {
+			line.category = VARIABLE;
 			line.array_size = 0;
+		}
 
 		line.token_type = globalvar_args.type;
 
@@ -588,7 +589,6 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 
 void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token)
 {
-	//printf("AEAEEA\n");
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)
@@ -611,7 +611,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 		line.token_size = 0;
 
 		line.token_type = type;
-
+		
 		if (user_type != NULL)
 			line.user_type = strdup(user_type);
 		else
@@ -1024,6 +1024,36 @@ int* get_func_params_types(table_stack * stack, char* token) {
 			num_actual_table--;
 		}		
 		return NULL;
+	}
+}
+
+int get_category(table_stack * stack, char* token) {
+	
+	if (stack->num_tables == NO_TABLES)
+	{
+		return NONE;
+	}
+	else
+	{
+		int num_actual_table = stack->num_tables;
+		
+		while(num_actual_table != NO_TABLES)
+		{
+			int line_counter = 0;
+			if (stack->array[num_actual_table].num_lines != NO_LINES)
+			{
+				while(line_counter <= stack->array[num_actual_table].num_lines)
+				{					
+					if (strcmp(stack->array[num_actual_table].lines[line_counter].token_name, token) == 0) 
+					{
+						return stack->array[num_actual_table].lines[line_counter].category;
+					}
+					line_counter++;
+				}
+			}
+			num_actual_table--;
+		}		
+		return NONE;
 	}
 }
 

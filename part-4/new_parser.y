@@ -9,6 +9,7 @@
 	#include "errors.h"
 	#include "error_helper.h"
 	#include "conversions.h"
+	#include "category.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -20,14 +21,21 @@
 	user_type_args *type_arguments;
 	char* scope = "public";
 
+	int func_call_param_counter = 0;
+	func_call_arg* function_arguments;
+
 	global_var_args global_var;
 
 	function_data function;
+
+	int id_category = VARIABLE;
 
 	int yylex(void);
 	void yyerror(char const *s);
 
 	void init_table_stack();
+	int infer(int type_a, int type_b);
+	int infer_not_expr(int type_a, int type_b);
 
 %}
 
@@ -213,7 +221,7 @@ initializer : %empty
 destroyer : %empty
 			{
 				if (error != NULL) {
-					printf("ERROR - line %i = %s\n", error->line, get_error_message(error->error_code));
+					printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
 					exit(error->error_code);
 				}
 			}
@@ -319,26 +327,31 @@ func_type  :  TK_PR_INT
 			{ 	
 				$$ = new_node($1); 
 				set_node_type($$, INT);
+				function.type = INT;
 			}
 		| TK_PR_FLOAT
 			{ 
 				$$ = new_node($1); 
 				set_node_type($$, FLOAT);
+				function.type = FLOAT;
 			}
 		| TK_PR_BOOL
 			{ 
 				$$ = new_node($1);   
 				set_node_type($$, BOOL);
+				function.type = BOOL;
 			}
 		| TK_PR_CHAR
 			{ 
 				$$ = new_node($1);  
 				set_node_type($$, CHAR);
+				function.type = CHAR;
 			}
 		| TK_PR_STRING
 			{ 
 				$$ = new_node($1); 
 				set_node_type($$, STRING);
+				function.type = STRING;
 			}
 
 func_arg_type  :  TK_PR_INT
@@ -630,8 +643,7 @@ func_begin      : func_type func_name '(' func_params
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
-
-						function.type = $1->type;
+						
 					}
 
 				| func_name_user_type '(' func_params
@@ -702,12 +714,7 @@ func_params_end : ')' add_func func_body
 
 add_func 		: %empty
 					{
-						add_function(stack, function.type, function.type_name, function.args_counter, function.function_args, function.lexeme);
-
-						function.function_args = NULL;
-						function.type = 0;
-						function.args_counter = 0;
-						function.type_name = NULL;
+						add_function(stack, function.type, function.type_name, function.args_counter, function.function_args, function.lexeme);	
 					}
 
 func_body       : '{' push_table cmd_block 
@@ -722,8 +729,12 @@ push_table		: %empty
 					}
 
 pop_table		: %empty
-					{
+					{						
 						pop(stack);
+						function.function_args = NULL;
+						function.type = 0;
+						function.args_counter = 0;
+						function.type_name = NULL;
 					}
 
 cmd_block	: '}' pop_table
@@ -758,20 +769,62 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							set_error(ERR_DECLARED);
 						else 
 							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
-						
-
 					}
 				| cmd_ident cmd_fix_attr ';'
 					{
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
+
+						char* type_name;
+						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+						if (type != $2->type) {
+							if (can_convert(type, $2->type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							}
+						} else if (type == USER_TYPE) {
+							if (strcmp(type_name, $1->user_type) != 0) {
+								set_error(ERR_WRONG_TYPE);
+							}
+						}
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
+
+						int num_args = get_func_num_params(stack, $1->token->value.v_string);
+						int category = get_category(stack, $1->token->value.v_string);
+						int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+
+						if (category == FUNCTION) {
+							if (num_args == func_call_param_counter) {
+								int index;
+								for (index = 0; index < num_args; index++) {
+									if (expected_types[index] != function_arguments[index].type) {
+										if (can_convert(expected_types[index], function_arguments[index].type) == FALSE)
+											set_error(ERR_WRONG_TYPE_ARGS);	
+									}
+								}
+							} else if (num_args > func_call_param_counter) {
+								set_error(ERR_MISSING_ARGS);
+							} else {
+								set_error(ERR_EXCESS_ARGS);
+							}
+						} else if (category == USER_TYPE) {
+							set_error(ERR_USER);
+						} else if (category == ARRAY) {
+							set_error(ERR_VECTOR);
+						} else {
+							set_error(ERR_VARIABLE);
+						}
+
+						free(expected_types);
+						free(function_arguments);
+						function_arguments = NULL;
+						func_call_param_counter = 0;
+
 					}
 				| TK_PR_STATIC static_var ';'
 					{
@@ -798,17 +851,17 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						else
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
 
-						printf("\nlocal var type = %i", $1->type);
-						printf("\nvar end = %i", $3->type);
-
 						if ($3->type != NOT_DECLARED) 
 							if ($1->type == $3->type) {
 								if ($1->type == USER_TYPE)
 									if (strcmp($1->user_type, $3->user_type) != 0)
 										set_error(ERR_WRONG_TYPE);		
 							} else 
-								if (can_convert($1->type, $3->type) == FALSE)
+								if (can_convert($1->type, $3->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
+								} else {
+									$3->conversion = get_conversion($1->type, $3->type);
+								}
 													
 					}
 				| if_then ';'
@@ -880,6 +933,10 @@ input 		: TK_PR_INPUT expr
 				{
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					if ($2->is_literal == TRUE) {
+						set_error(ERR_WRONG_PAR_INPUT);
+					}
 				}
 
 output 		: TK_PR_OUTPUT expr output_vals
@@ -887,6 +944,17 @@ output 		: TK_PR_OUTPUT expr output_vals
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
+
+					if ($2->type != BOOL && $2->type != INT && $2->type != FLOAT) { 
+						if ($2->type != STRING) {
+							set_error(ERR_WRONG_PAR_OUTPUT);
+						} else {
+							if ($2->is_literal == FALSE) {
+								set_error(ERR_WRONG_PAR_OUTPUT);
+							}
+						}
+					}
+					
 				}
 
 output_vals : ';'
@@ -898,6 +966,16 @@ output_vals : ';'
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
+
+					if ($2->type != BOOL && $2->type != INT && $2->type != FLOAT) { 
+						if ($2->type != STRING) {
+							set_error(ERR_WRONG_PAR_OUTPUT);
+						} else {
+							if ($2->is_literal == FALSE) {
+								set_error(ERR_WRONG_PAR_OUTPUT);
+							}
+						}
+					}
 				}
 
 if_then 	: TK_PR_IF '(' if_then_expr ')'
@@ -917,6 +995,12 @@ if_then 	: TK_PR_IF '(' if_then_expr ')'
 if_then_expr : expr 
 			{
 				$$ = $1;
+
+				if ($$->type != BOOL) {
+					if (can_convert(BOOL, $$->type) == FALSE) {
+						set_error(ERR_WRONG_TYPE);
+					}
+				}
 			}
 
 else 		: TK_PR_ELSE '{' cmd_block
@@ -945,6 +1029,12 @@ while 		: TK_PR_WHILE '(' while_expr ')'
 while_expr	: expr 
 				{
 					$$ = $1;
+
+					if ($$->type != BOOL) {
+						if (can_convert(BOOL, $$->type) == FALSE) {
+							set_error(ERR_WRONG_TYPE);
+						}
+					}
 				}
 
 do_while 	: TK_PR_DO '{' push_table cmd_block
@@ -962,6 +1052,12 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 do_while_expr: expr 
 				{
 					$$ = $1;
+
+					if ($$->type != BOOL) {
+						if (can_convert(BOOL, $$->type) == FALSE) {
+							set_error(ERR_WRONG_TYPE);
+						}
+					}
 				}
 
 continue 	: TK_PR_CONTINUE
@@ -978,6 +1074,17 @@ return 		: TK_PR_RETURN expr
 				{
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					if (function.type != $2->type) {
+						if (can_convert(function.type, $2->type) == FALSE)
+							set_error(ERR_WRONG_PAR_RETURN);
+					} else {
+						if (function.type == USER_TYPE) {
+							if (strcmp(function.type_name, $2->user_type) != 0) {
+								set_error(ERR_WRONG_PAR_RETURN);
+							}
+						}
+					}
 				}
 
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
@@ -1000,25 +1107,28 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 for_expr 	: expr
 			{	
 				$$ = $1;
+
+				if ($$->type != BOOL) {
+					if (can_convert(BOOL, $$->type) == FALSE) {
+						set_error(ERR_WRONG_TYPE);
+					}
+				}
 			}
 
-cmd_for 	: cmd_ident cmd_fix_local_var ';'
+cmd_for 	: cmd_ident cmd_fix_local_var 
 					{
 						$$ = $1;
 						add_node($$, $2);
-						add_node($$, new_node($3));
 					}
-				| cmd_ident cmd_fix_attr ';'
+				| cmd_ident cmd_fix_attr 
 					{
 						$$ = $1;
 						add_node($$, $2);
-						add_node($$, new_node($3));
 					}
-				| cmd_ident cmd_fix_call ';'
+				| cmd_ident cmd_fix_call 
 					{
 						$$ = $1;
 						add_node($$, $2);
-						add_node($$, new_node($3));
 					}
 				| local_var_type TK_IDENTIFICADOR var_end
 					{
@@ -1121,6 +1231,43 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						add_node($$, $6);
 						add_node($$, new_node($7));
 						add_node($$, $9);
+
+						if ($6->type != IGNORE_TYPE) {
+							if ($5->type == $6->type) {
+								if ($5->type == USER_TYPE) {
+									if ($5->user_type != NULL && $6->user_type != NULL) {
+										if (strcmp($5->user_type, $6->user_type) == 0) {
+											$$->type = USER_TYPE;
+											$$->user_type = $5->user_type;
+										} else {
+											$$->type = INVALID_TYPE;
+										}
+									}
+								} else {
+									$$->type = $5->type;
+									$$->user_type = NULL;
+								}
+							} else {
+								$$->type = infer_not_expr($5->type, $6->type);
+							}	
+						} else {
+							$$->type = $5->type;
+							$$->user_type = $5->user_type;
+						}
+
+						char* type_name;
+						int var_type = get_id_type(stack, $3->value.v_string, &type_name);
+						if ($$->type != var_type) {
+							if (can_convert($$->type, var_type) == FALSE)
+								set_error(ERR_WRONG_TYPE);
+						} else {
+							if ($$->type == USER_TYPE) {
+								if ($$->user_type != NULL && type_name != NULL) {
+									if (strcmp($$->user_type, type_name) != 0)
+										set_error(ERR_WRONG_TYPE); 
+								}
+							}
+						}
 					}
 
 foreach_list	: ',' foreach_count expr foreach_list 
@@ -1128,10 +1275,38 @@ foreach_list	: ',' foreach_count expr foreach_list
 						$$ = new_node($1);
 						add_node($$, $3);
 						add_node($$, $4);
+
+						if ($4->type != IGNORE_TYPE) {
+							if ($3->type == $4->type) {
+								if ($3->type == USER_TYPE) {
+									if ($3->user_type != NULL && $4->user_type != NULL) {
+										if (strcmp($3->user_type, $4->user_type) == 0) {
+											$$->type = USER_TYPE;
+											$$->user_type = $4->user_type;
+										} else {
+											$$->type = INVALID_TYPE;
+										}
+									}
+								} else {
+									$$->type = $3->type;
+									$$->user_type = NULL;
+								}
+							} else {
+								$$->type = infer_not_expr($3->type, $4->type);
+							}	
+						} else {
+							$$->type = $3->type;
+							$$->user_type = $3->user_type;
+						}
+
+						if ($$->type == INVALID_TYPE)
+							set_error(ERR_WRONG_TYPE);
 					}
 				| ')' foreach_count
 					{
 						$$ = new_node($1);
+
+						$$->type = IGNORE_TYPE;
 					}
 
 foreach_count	: %empty
@@ -1150,6 +1325,12 @@ switch 		: TK_PR_SWITCH '(' switch_expr ')' '{' push_table cmd_block
 switch_expr : expr
 			{
 				$$ = $1;
+
+				if ($$->type != BOOL) {
+					if (can_convert(BOOL, $$->type) == FALSE) {
+						set_error(ERR_WRONG_TYPE);
+					}
+				}
 			}
 
 case 		: TK_PR_CASE expr ':'
@@ -1157,6 +1338,12 @@ case 		: TK_PR_CASE expr ':'
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, new_node($3));
+
+					if ($2->type != INT) {
+						if (can_convert(INT, $2->type) == FALSE) {
+							set_error(ERR_WRONG_TYPE);
+						}
+					}
 				}
 
 cmd_fix_local_var	: TK_IDENTIFICADOR
@@ -1341,6 +1528,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '-' expr
 					{
@@ -1348,6 +1542,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '*' expr
 					{
@@ -1355,6 +1556,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '/' expr
 					{
@@ -1362,6 +1570,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '%' expr
 					{
@@ -1369,6 +1584,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '^' expr
 					{
@@ -1376,6 +1598,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = $1->type;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '|' expr
 					{
@@ -1383,6 +1612,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '&' expr
 					{
@@ -1390,6 +1626,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '>' expr
 					{
@@ -1397,6 +1640,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr '<' expr
 					{
@@ -1404,6 +1654,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_AND expr
 					{
@@ -1411,6 +1668,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_OR expr
 					{
@@ -1418,6 +1682,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_LE expr
 					{
@@ -1425,6 +1696,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_NE expr
 					{
@@ -1432,6 +1710,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_EQ expr
 					{
@@ -1439,6 +1724,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| expr TK_OC_GE expr
 					{
@@ -1446,6 +1738,13 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, new_node($2));
 						add_node($$, $3);
+
+						if ($1->type == $3->type) {
+							$$->type = BOOL;
+						} else {
+							int type = infer($1->type, $3->type);
+							$$->type = type;
+						}
 					}
 				| un_op expr_vals
 					{
@@ -1453,49 +1752,129 @@ expr 			: expr '+' expr
 						add_node($$, $1);
 						add_node($$, $2);
 						set_node_type($$, $2->type);
+						$$->user_type = $2->user_type;
+
+						$$->is_literal = $2->is_literal;
 					}
 
 expr_vals		: TK_LIT_FLOAT
 					{
 						$$ = new_node($1);
 						set_node_type($$, FLOAT);
+						$$->is_literal = TRUE;
 					}
 				| TK_LIT_INT
 					{
 						$$ = new_node($1);
 						set_node_type($$, INT);
+						$$->is_literal = TRUE;
 					}
 				| id_for_expr id_seq piped 
 					{
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, $3);
+
+						int category = get_category(stack, $1->token->value.v_string);
+
+						if (category != id_category) {
+							if ($1->type != USER_TYPE || id_category != USER_TYPE)
+								switch (category) {
+									case FUNCTION:
+										set_error(ERR_FUNCTION); break;
+									case USER_TYPE:
+										set_error(ERR_USER); break;
+									case ARRAY:
+										set_error(ERR_VECTOR); break;
+									default:
+										set_error(ERR_VARIABLE); break;
+								}
+						}
+
+						if (id_category == FUNCTION) {
+							int num_args = get_func_num_params(stack, $1->token->value.v_string);
+							int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+
+							if (num_args == func_call_param_counter) {
+								int index;
+								for (index = 0; index < num_args; index++) {
+									if (expected_types[index] != function_arguments[index].type) {
+										if (can_convert(expected_types[index], function_arguments[index].type) == FALSE)
+											set_error(ERR_WRONG_TYPE_ARGS);	
+									}
+								}
+							} else if (num_args > func_call_param_counter) {
+								set_error(ERR_MISSING_ARGS);
+							} else {
+								set_error(ERR_EXCESS_ARGS);
+							}
+
+							free(expected_types);
+							free(function_arguments);
+							function_arguments = NULL;
+							func_call_param_counter = 0;
+						}
+
+						if (category == USER_TYPE)
+							set_error(ERR_USER);
+
+						if($2->user_type != NULL) {
+							char* type_name;
+							int id_type = get_id_type(stack, $1->token->value.v_string, &type_name);
+							if (type_name != NULL) {
+								int type = get_id_field_type(stack, type_name, $2->user_type);
+								if (type == INVALID_FIELD) {
+									set_error(ERR_UNDECLARED);
+								} else {
+									$$->type = type;
+								}
+							}
+						} 
+
+						id_category = VARIABLE;
+
 					}
 				| TK_LIT_CHAR 
 					{
 						$$ = new_node($1);
 						set_node_type($$, CHAR);
+						$$->is_literal = TRUE;
 					}
 				| TK_LIT_STRING 
 					{
 						$$ = new_node($1);
 						set_node_type($$, STRING);
+						$$->is_literal = TRUE;
 					}
 				|'(' expr ')' 
 					{
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, $2);
 						add_node($$, new_node($3));
+
+						$$->type = $2->type;
+						$$->user_type = $2->user_type;
 					}
 				| bool
 					{
 						$$ = $1;
 						set_node_type($$, BOOL);
+						$$->is_literal = TRUE;
 					}
 
 id_for_expr		: TK_IDENTIFICADOR
 					{
 						$$ = new_node($1);
+
+						if (is_declared(stack, $1->value.v_string) == FALSE)
+							set_error(ERR_UNDECLARED);
+
+						char* type_name;
+						int type = get_id_type(stack, $1->value.v_string, &type_name);
+
+						$$->type = type;
+						$$->user_type = type_name;				
 					}
 
 piped 			: %empty
@@ -1518,24 +1897,41 @@ id_seq			:  id_seq_simple
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
+
+						id_category = FUNCTION;
 					} 
 
 id_seq_field 	: '$' TK_IDENTIFICADOR  
 					{
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, new_node($2));
+
+						id_category = USER_TYPE;
+
+						$$->user_type = $2->value.v_string;
 					}
 				| %empty
 					{
 						$$ = new_node(NULL);
+						$$->user_type = NULL;
 					}
 
 id_seq_simple	: '[' expr ']' id_seq_field
 					{
-						$$ = new_node($1);
+						$$ = new_node(NULL);
+						add_node($$, new_node($1));
 						add_node($$, $2);
 						add_node($$, new_node($3));
 						add_node($$, $4);
+
+						if (can_convert(INT, $2->type) == FALSE) {
+							set_error(ERR_WRONG_TYPE);
+						}
+
+						id_category = ARRAY;
+
+						$$->user_type = $4->user_type;
 					} 
 				|  id_seq_field
 					{
@@ -1554,6 +1950,16 @@ func_call_params	: ')'
 						{
 							$$ = $1;
 							add_node($$, $3);
+
+							if (func_call_param_counter == 0) {
+								function_arguments = malloc(sizeof(func_call_arg));
+							} else {
+								function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+							}
+							function_arguments[func_call_param_counter].type = $1->type;
+							function_arguments[func_call_param_counter].user_type = $1->user_type;
+
+							func_call_param_counter++;
 						}
 					| '.' proccess_expr func_call_params_body
 						{
@@ -1575,6 +1981,16 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 							{
 								$$ = $1;
 								add_node($$, $3);
+
+								if (func_call_param_counter == 0) {
+									function_arguments = malloc(sizeof(func_call_arg));
+								} else {
+									function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+								}
+								function_arguments[func_call_param_counter].type = $1->type;
+								function_arguments[func_call_param_counter].user_type = $1->user_type;
+
+								func_call_param_counter++;
 							}
 						| '.' proccess_expr func_call_params_body
 							{
@@ -1602,5 +2018,76 @@ void init_table_stack() {
 void set_error(int error_code) {
 	if(error == NULL) {
 		error = new_error(error_code, yylineno);
+	}
+}
+
+int infer(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_CHAR_TO_X);
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_STRING_TO_X);
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			set_error(ERR_USER_TO_X);
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (type_a == FLOAT || type_b == FLOAT) {
+		return FLOAT;
+	} else if (type_a == INT || type_b == INT) {
+		return INT;
+	} else {
+		return BOOL;
+	}
+}
+
+int infer_not_expr(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (type_a == FLOAT || type_b == FLOAT) {
+		return FLOAT;
+	} else if (type_a == INT || type_b == INT) {
+		return INT;
+	} else {
+		return BOOL;
 	}
 }

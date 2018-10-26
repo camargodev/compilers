@@ -6,6 +6,7 @@ typedef struct node {
 	int		conversion;
 	int		type;
 	char*	user_type;
+	int		is_literal;
 	int 	children_num;
 	struct 	node **children;
 } Node;

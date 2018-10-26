@@ -25,6 +25,7 @@ Node* new_node(struct Lexeme* token) {
 	node->children_num = NO_CHILDREN;
 	node->type = UNDECLARED_TYPE;
 	node->conversion = NO_CONVERSION;
+	node->is_literal = FALSE;
 	node->children = (Node**) malloc(sizeof(Node**));
 
 	return node;
@@ -53,8 +54,8 @@ void print_token(struct Lexeme* lex_val) {
 		print_string(lex_val->value.v_string);
 	} else if (lex_val->token_type == SPECIAL_CHAR) {
 		print_special_char(lex_val->value.v_char);
-		if (lex_val->value.v_char == '{' || lex_val->value.v_char == '}' || lex_val->value.v_char == ';')
-			printf("\n"); 
+		//if (lex_val->value.v_char == '{' || lex_val->value.v_char == '}' || lex_val->value.v_char == ';')
+		//	printf("\n"); 
 	} else if (lex_val->token_type == LITERAL) {
 		switch (lex_val->literal_type) {
 			case INT:
@@ -88,6 +89,8 @@ void descompila(void *node) {
 			print_token(tree_node->token);
 			if (tree_node->type != -1)
 				printf(" : %s", get_name(tree_node->type));
+			if (tree_node->conversion != NO_CONVERSION)
+				printf(" - Conv = %i", tree_node->conversion);
 		}
 		
 		while(children_counter > NO_CHILDREN) {
