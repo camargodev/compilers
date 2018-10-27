@@ -704,6 +704,22 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 								set_error(ERR_WRONG_TYPE);
 							}
 						}
+
+						int category = get_category(stack, $1->token->value.v_string);
+						if (category != id_category) {
+							if ($1->type != USER_TYPE || id_category != USER_TYPE)
+								switch (category) {
+									case FUNCTION:
+										set_error(ERR_FUNCTION); break;
+									case USER_TYPE:
+										set_error(ERR_USER); break;
+									case ARRAY:
+										set_error(ERR_VECTOR); break;
+									default:
+										set_error(ERR_VARIABLE); break;
+								}
+						}
+
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -1750,7 +1766,6 @@ expr_vals		: TK_LIT_FLOAT
 						add_node($$, $3);
 
 						int category = get_category(stack, $1->token->value.v_string);
-
 						if (category != id_category) {
 							if ($1->type != USER_TYPE || id_category != USER_TYPE)
 								switch (category) {
