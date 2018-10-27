@@ -1,0 +1,9 @@
+//ERR_USER_TO_X
+class AST_t [ public int a : public int b ];
+int main()
+{
+  int b;
+  AST_t c;
+  b = c;
+  return b;
+}

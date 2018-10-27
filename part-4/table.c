@@ -461,3 +461,16 @@ table_line* get_line(table_stack * stack, char* token) {
 		return NULL;
 	}
 }
+
+int get_param_type(char* field, int num_params, func_args* params) {
+	int index;
+	if (field == NULL)
+		return NOT_DECLARED;
+	if (params == NULL)
+		return NOT_DECLARED;
+	for (index = 0; index < num_params; index++) {
+		if (strcmp(params[index].name, field) == 0)
+			return params[index].type;
+	}
+	return NOT_DECLARED;
+}

@@ -138,3 +138,4 @@ int get_func_num_params(table_stack * stack, char* token);
 int* get_func_params_types(table_stack * stack, char* token);
 
 int get_category(table_stack * stack, char* token);
+int get_param_type(char* field, int num_params, func_args* params);

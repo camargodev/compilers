@@ -671,6 +671,7 @@ cmd_ident	: TK_IDENTIFICADOR
 					int declaration_line = is_declared(stack, $1->value.v_string);
 					if(declaration_line == NOT_DECLARED) 
 						set_error(ERR_UNDECLARED);
+
 				}
 
 cmd 		: cmd_ident cmd_fix_local_var ';'
@@ -1766,18 +1767,20 @@ expr_vals		: TK_LIT_FLOAT
 						add_node($$, $3);
 
 						int category = get_category(stack, $1->token->value.v_string);
-						if (category != id_category) {
-							if ($1->type != USER_TYPE || id_category != USER_TYPE)
-								switch (category) {
-									case FUNCTION:
-										set_error(ERR_FUNCTION); break;
-									case USER_TYPE:
-										set_error(ERR_USER); break;
-									case ARRAY:
-										set_error(ERR_VECTOR); break;
-									default:
-										set_error(ERR_VARIABLE); break;
-								}
+						if (get_param_type($1->token->value.v_string, function.args_counter, function.function_args) == NOT_DECLARED) {
+							if (category != id_category) {
+								if ($1->type != USER_TYPE || id_category != USER_TYPE)
+									switch (category) {
+										case FUNCTION:
+											set_error(ERR_FUNCTION); break;
+										case USER_TYPE:
+											set_error(ERR_USER); break;
+										case ARRAY:
+											set_error(ERR_VECTOR); break;
+										default:
+											set_error(ERR_VARIABLE); break;
+									}
+							}
 						}
 
 						if (id_category == FUNCTION) {
@@ -1820,6 +1823,7 @@ expr_vals		: TK_LIT_FLOAT
 							}
 						} 
 
+						// Reset id_category
 						id_category = VARIABLE;
 
 					}
@@ -1856,14 +1860,23 @@ id_for_expr		: TK_IDENTIFICADOR
 					{
 						$$ = new_node($1);
 
-						if (is_declared(stack, $1->value.v_string) == FALSE)
-							set_error(ERR_UNDECLARED);
+						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
+						if (param_type == NOT_DECLARED) {
+							
+							if (is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+								set_error(ERR_UNDECLARED);
 
-						char* type_name;
-						int type = get_id_type(stack, $1->value.v_string, &type_name);
+							char* type_name;
+							int type = get_id_type(stack, $1->value.v_string, &type_name);
 
-						$$->type = type;
-						$$->user_type = type_name;				
+							$$->type = type;
+							$$->user_type = type_name;
+						} else {
+							$$->type = param_type;
+						}
+						
+
+										
 					}
 
 piped 			: %empty
