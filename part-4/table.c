@@ -215,23 +215,28 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 
 		switch(globalvar_args.type) {
 			case INT:
-				line.token_size = line.token_size + SIZE_INT;
+				line.token_size = (globalvar_args.is_array) ? 
+							line.token_size + (SIZE_INT * globalvar_args.array_size) : line.token_size + SIZE_INT;
 				break;
 			case FLOAT:
-				line.token_size = line.token_size + SIZE_FLOAT;
+				line.token_size = (globalvar_args.is_array) ?
+							line.token_size + (SIZE_FLOAT * globalvar_args.array_size) : line.token_size + SIZE_FLOAT;
 				break;
 			case CHAR:
-				line.token_size = line.token_size + SIZE_CHAR;
+				line.token_size = (globalvar_args.is_array) ?
+							line.token_size + (SIZE_CHAR * globalvar_args.array_size) : line.token_size + SIZE_CHAR;
 				break;
 			case BOOL:
-				line.token_size = line.token_size + SIZE_BOOL;
+				line.token_size = (globalvar_args.is_array) ?
+							line.token_size + (SIZE_BOOL * globalvar_args.array_size) : line.token_size + SIZE_BOOL;
 				break;
-			case STRING:
+			case STRING: //se for array, tem que ver essa parte.
 				line.token_size = line.token_size + strlen(globalvar_args.name);
 				break;
 			case USER_TYPE:
 				line.user_type = strdup(globalvar_args.user_type);
-				line.token_size = globalvar_args.user_type_size;
+				line.token_size = (globalvar_args.is_array) ?
+							(globalvar_args.user_type_size * globalvar_args.array_size) : globalvar_args.user_type_size;
 				break;
 			default:
 				break;
