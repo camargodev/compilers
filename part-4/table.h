@@ -129,7 +129,7 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 
 void free_table_stack(table_stack * stack);
 
-expr_args init_expr_args();"
+expr_args init_expr_args();
 
 
 int get_id_type(table_stack * stack, char* token, char** user_type_return);

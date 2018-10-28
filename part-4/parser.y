@@ -200,7 +200,7 @@
 
 programa :  initializer set_tree destroyer
 			{
-				print_stack(stack);
+				//print_stack(stack);
 			}
 
 set_tree	: start 
@@ -684,7 +684,8 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($3));
 	
 						int declaration_line = is_declared_on_current_table(stack, $2->token->value.v_string);
-						if(declaration_line != NOT_DECLARED) 
+						int param_type = get_param_type($2->token->value.v_string, function.args_counter, function.function_args);
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED) 
 							set_error(ERR_DECLARED);
 						else 
 							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
@@ -697,6 +698,10 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 
 						char* type_name;
 						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+
+						if ($2->user_type != NULL)
+							type = get_id_field_type(stack, type_name, $2->user_type);
+
 						if (type != $2->type) {
 							if (can_convert(type, $2->type) == FALSE) {
 								set_error(ERR_WRONG_TYPE);
@@ -791,7 +796,8 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($4));
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-						if(declaration_line != NOT_DECLARED)
+						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED)
 							set_error(ERR_DECLARED);
 						else
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
@@ -863,11 +869,11 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						$$ = $1;
 						add_node($$, new_node($2));
 					}
-				| '{' cmd_block ';'
+				| '{' push_table cmd_block ';'
 					{
 						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
+						add_node($$, $3);
+						add_node($$, new_node($4));
 					}
 				| output 
 					{
@@ -1272,7 +1278,8 @@ cmd_fix_attr		: id_seq_simple attr
 					add_node($$, $2);
 					set_node_type($$, $2->type);
 
-					$$->token = $2->token;					
+					$$->token = $2->token;	
+					$$->user_type = $1->user_type;				
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
 				{
@@ -1793,7 +1800,7 @@ expr_vals		: TK_LIT_FLOAT
 						int category = get_category(stack, $1->token->value.v_string);
 						if (get_param_type($1->token->value.v_string, function.args_counter, function.function_args) == NOT_DECLARED) {
 							if (category != id_category) {
-								if ($1->type != USER_TYPE || id_category != USER_TYPE)
+								if ($1->type != USER_TYPE)
 									switch (category) {
 										case FUNCTION:
 											set_error(ERR_FUNCTION); break;
@@ -1884,6 +1891,8 @@ expr_vals		: TK_LIT_FLOAT
 id_for_expr		: TK_IDENTIFICADOR
 					{
 						$$ = new_node($1);
+
+						id_category = VARIABLE;
 
 						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
 						if (param_type == NOT_DECLARED) {
