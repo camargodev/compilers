@@ -1,2 +1,10 @@
-a[30] int;
-b int;
+int f(){
+	string a;
+	string b <= "a";
+	a = "abc";
+	b = a;
+	b = "abcd";
+	a = b;
+
+	return 0;
+}

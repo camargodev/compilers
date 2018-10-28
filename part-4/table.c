@@ -309,7 +309,11 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 		line.function_args = NULL;
 
 		line.num_user_type_args = 0;
-		line.token_size = 0;
+		
+		//if(token->type == STRING)
+		//	line.token_size = strlen();
+		//else
+			line.token_size = 0;
 
 		line.token_type = type;
 
@@ -479,3 +483,25 @@ int get_param_type(char* field, int num_params, func_args* params) {
 	}
 	return NOT_DECLARED;
 }
+
+void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data) {
+	
+	table_line* line = get_line(stack, token_update->value.v_string);
+	char* substr = malloc(sizeof(token_data->value.v_string));
+	strncpy(substr, token_data->value.v_string, 1);
+	if(strcmp(substr,"\"") == 0){
+		line->token_size = strlen(token_data->value.v_string) - 2;
+	}
+	else{
+		table_line* line2 = get_line(stack, token_data->value.v_string);
+		line->token_size = line2->token_size;
+	}
+
+	return;
+}
+
+int get_size(table_stack* stack, Lexeme* token) {
+	return get_line(stack, token->value.v_string)->token_size;
+}
+
+

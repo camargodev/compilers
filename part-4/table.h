@@ -1,6 +1,5 @@
 // João Vitor de Camargo
 // Marcellus Farias
-
 #include "lexeme.h"
 #include "nature.h"
 #include "size.h"
@@ -130,7 +129,8 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 
 void free_table_stack(table_stack * stack);
 
-expr_args init_expr_args();
+expr_args init_expr_args();"
+
 
 int get_id_type(table_stack * stack, char* token, char** user_type_return);
 int get_id_field_type(table_stack * stack, char* token, char* field);
@@ -139,3 +139,7 @@ int* get_func_params_types(table_stack * stack, char* token);
 
 int get_category(table_stack * stack, char* token);
 int get_param_type(char* field, int num_params, func_args* params);
+
+int get_size(table_stack* stack, Lexeme* token);
+void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data);
+

@@ -10,6 +10,7 @@
 	#include "error_helper.h"
 	#include "conversions.h"
 	#include "category.h"
+	#include "debug_print.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -198,7 +199,9 @@
 */
 
 programa :  initializer set_tree destroyer
-			{}
+			{
+				print_stack(stack);
+			}
 
 set_tree	: start 
 			{
@@ -720,7 +723,14 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 										set_error(ERR_VARIABLE); break;
 								}
 						}
-
+						
+						if($1->type == USER_TYPE && $2->type == STRING) {
+							printf("Token_data [%s]\n", $2->token->value.v_string);
+							printf("Size do token [%s] antes : %d\n", $1->token->value.v_string, get_size(stack, $1->token));
+							update_string_size(stack, $1->token, $2->token);
+							printf("Size do token [%s] depois : %d\n", $1->token->value.v_string, get_size(stack, $1->token));
+						}
+						
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -797,7 +807,11 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 								} else {
 									$3->conversion = get_conversion($1->type, $3->type);
 								}
-													
+						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
+							printf("Size do token [%s] antes : %d\n", $2->value.v_string, get_size(stack, $2));
+							update_string_size(stack, $2, $3->token);
+							printf("Size do token [%s] depois : %d\n", $2->value.v_string, get_size(stack, $2));
+						}							
 					}
 				| if_then ';'
 					{
@@ -1257,6 +1271,8 @@ cmd_fix_attr		: id_seq_simple attr
 					add_node($$, $1);
 					add_node($$, $2);
 					set_node_type($$, $2->type);
+
+					$$->token = $2->token;					
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
 				{
@@ -1294,6 +1310,8 @@ var_end 	: TK_OC_LE var_lit
 					add_node($$, $2);;
 					$$->type = $2->type;
 					$$->user_type = $2->user_type;
+
+					$$->token = $2->token;
 				}
 			| %empty
 				{
@@ -1307,6 +1325,7 @@ var_lit		: TK_IDENTIFICADOR
 					$$ = new_node($1);
 					$$->type = USER_TYPE;
 					$$->user_type = $1->value.v_string;
+					$$->token = $1;
 				}
 			| TK_LIT_INT
 				{
@@ -1331,6 +1350,7 @@ var_lit		: TK_IDENTIFICADOR
 					$$ = new_node($1);
 					$$->type = STRING;
 					$$->user_type = NULL;
+					$$->token = $1;
 				}
 			| TK_LIT_TRUE
 				{
@@ -1351,6 +1371,8 @@ attr 		: '=' expr
 					add_node($$, new_node($1));
 					add_node($$, $2);
 					set_node_type($$, $2->type);
+
+					$$->token = $2->token;
 				}
 			| TK_OC_SL expr 
 				{
@@ -1746,6 +1768,8 @@ expr 			: expr '+' expr
 						$$->user_type = $2->user_type;
 
 						$$->is_literal = $2->is_literal;
+
+						$$->token = $2->token;						
 					}
 
 expr_vals		: TK_LIT_FLOAT
@@ -1838,6 +1862,7 @@ expr_vals		: TK_LIT_FLOAT
 						$$ = new_node($1);
 						set_node_type($$, STRING);
 						$$->is_literal = TRUE;
+						$$->token = $1;						
 					}
 				|'(' expr ')' 
 					{
@@ -1873,10 +1898,7 @@ id_for_expr		: TK_IDENTIFICADOR
 							$$->user_type = type_name;
 						} else {
 							$$->type = param_type;
-						}
-						
-
-										
+						}															
 					}
 
 piped 			: %empty
@@ -1893,7 +1915,7 @@ piped 			: %empty
 
 id_seq			:  id_seq_simple
 					{
-						$$ = $1;
+						$$ = $1;						
 					}
 				| '(' func_call_params
 					{
@@ -1941,7 +1963,7 @@ id_seq_simple	: '[' expr ']' id_seq_field
 					} 
 				|  id_seq_field
 					{
-						$$ = $1;
+						$$ = $1;											
 					}
 
 proccess_expr		: %empty
