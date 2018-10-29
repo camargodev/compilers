@@ -1,5 +1,43 @@
 # Etapa 4 - Análise Semântica
 
+### Importante!
+
+O grupo considerou como ```ERR_USER_TO_X``` algo como:
+```
+class ponto[int x];
+
+int f() {
+	ponto p;
+	int a;
+	a = 3 + p; // ERR_USER_TO_X ocorre aqui
+}
+```
+Como ```ERR_CHAR_TO_X``` algo como:
+```
+int f() {
+	char c;
+	int a;
+	a = 3 + c; // ERR_CHAR_TO_X ocorre aqui
+}
+```
+Como ```ERR_STRING_TO_X``` algo como:
+```
+int f() {
+	string str;
+	int a;
+	a = 3 + str; // ERR_STRING_TO_X ocorre aqui
+}
+```
+Já atribuições diretas foram colocadas como ```ERR_WRONG_TYPE```, como abaixo:
+```
+int f() {
+	string str;
+	int a;
+	a = str; // ERR_WRONG_TYPE ocorre aqui
+}
+```
+Notou-se certa ambiguidade nesses erros, então preferimos explicitar nossa interpretação. :)
+
 ### Requisitos
 
 ## Construir uma tabela de símbolos
