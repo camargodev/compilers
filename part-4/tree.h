@@ -7,6 +7,7 @@ typedef struct node {
 	int		type;
 	char*	user_type;
 	int		is_literal;
+	int		point;
 	int 	children_num;
 	struct 	node **children;
 } Node;

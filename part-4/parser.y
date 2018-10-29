@@ -15,7 +15,7 @@
 	extern int yylineno;
 	extern void* arvore;
 	extern int yylex_destroy(void);
-	
+
 	table_stack * stack;
 
 	Error* error = NULL;
@@ -32,6 +32,11 @@
 	function_data function;
 
 	int id_category = VARIABLE;
+
+	int first_call_num_params = 0;
+	int checked_first_call = FALSE;
+	int last_piped_function_type = NOT_DECLARED;
+	char* last_piped_function_type_name = NULL;
 
 	int yylex(void);
 	void yyerror(char const *s);
@@ -159,7 +164,7 @@
 %type <node> expr
 %type <node> expr_vals
 %type <node> id_for_expr
-%type <node> piped
+//%type <node> piped
 %type <node> id_seq
 %type <node> id_seq_field
 %type <node> id_seq_simple
@@ -400,10 +405,18 @@ bool    : TK_LIT_TRUE
 pipe 	: TK_OC_FORWARD_PIPE
 			{ 
 				$$ = new_node($1); 
+				if (checked_first_call == FALSE) {
+					first_call_num_params = func_call_param_counter;
+					checked_first_call = TRUE;
+				}
 			}
 		| TK_OC_BASH_PIPE
 			{ 
 				$$ = new_node($1); 
+				if (checked_first_call == FALSE) {
+					first_call_num_params = func_call_param_counter;
+					checked_first_call = TRUE;
+				}
 			}
 
 new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
@@ -778,6 +791,17 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							set_error(ERR_VECTOR);
 						} else {
 							set_error(ERR_VARIABLE);
+						}
+
+
+						if ($2->type != NOT_DECLARED) {
+							char* dummy;
+							int func_type = get_id_type(stack, $1->token->value.v_string, &dummy);
+							if (func_type != $2->type) {
+								if (can_convert(func_type, $2->type) == FALSE) {
+									set_error(ERR_WRONG_TYPE);
+								}
+							}
 						}
 
 						free(expected_types);
@@ -1296,6 +1320,8 @@ cmd_fix_call		: '(' func_call_params piped_expr
 					$$ = new_node($1);
 					add_node($$, $2);
 					add_node($$, $3);
+
+					$$->type = $3->type;
 				}
 
 static_var	: TK_PR_CONST const_var
@@ -1401,26 +1427,70 @@ attr 		: '=' expr
 					$$ = new_node($1);
 					add_node($$, $2);
 				}
-			| pipe un_op TK_IDENTIFICADOR id_seq piped_expr 
+			| pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr 
 				{
 					$$ = $1;
 					add_node($$, $2);
 					add_node($$, new_node($3));
-					add_node($$, $4);
+					add_node($$, new_node($4));
 					add_node($$, $5);
+					add_node($$, $6);
 				}
 
-piped_expr	: pipe un_op TK_IDENTIFICADOR id_seq piped_expr
+piped_expr	: pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr
 				{
 					$$ = $1;
 					add_node($$, $2);
 					add_node($$, new_node($3));
-					add_node($$, $4);
+					add_node($$, new_node($4));
 					add_node($$, $5);
+					add_node($$, $6);
+
+					int declaration_line = is_declared(stack, $3->value.v_string);
+					if (declaration_line == NOT_DECLARED)
+						set_error(ERR_UNDECLARED);
+
+					int category = get_category(stack, $3->value.v_string);
+					if (category != FUNCTION) {
+						if (category == VARIABLE)
+							set_error(ERR_VARIABLE);
+						else if (category == ARRAY)
+							set_error(ERR_VECTOR);
+						else if (category == USER_TYPE)
+							set_error(ERR_USER);
+					}
+
+					int point = func_call_param_counter - $5->point -1;
+					if (point >= 0) {
+						int num_expected_args = get_func_num_params(stack, $3->value.v_string);
+						int* expected_types = get_func_params_types(stack, $3->value.v_string);
+						if (point < num_expected_args) {
+							$$->type = expected_types[point];
+						}
+						free(expected_types);
+					}
+
+					char* dummy;
+					int func_type = get_id_type(stack, $3->value.v_string, &dummy);
+						
+					if ($6->type != NOT_DECLARED) {
+						if (func_type != $6->type) {
+							if (can_convert(func_type, $6->type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							}
+						}
+					} else {
+						last_piped_function_type = func_type;
+						last_piped_function_type_name = dummy;
+					}
+
+					func_call_param_counter = first_call_num_params;
 				}
 			| %empty 
 				{
 					$$ = new_node(NULL);
+					$$->point = -1;
+					$$->type = NOT_DECLARED;
 				}
 
 un_op 			: not_null_un_op un_op
@@ -1801,11 +1871,11 @@ expr_vals		: TK_LIT_FLOAT
 						set_node_type($$, INT);
 						$$->is_literal = TRUE;
 					}
-				| id_for_expr id_seq piped 
+				| id_for_expr id_seq 
 					{
 						$$ = $1;
 						add_node($$, $2);
-						add_node($$, $3);
+						//add_node($$, $3);
 
 						int category = get_category(stack, $1->token->value.v_string);
 						if (get_param_type($1->token->value.v_string, function.args_counter, function.function_args) == NOT_DECLARED) {
@@ -1864,6 +1934,13 @@ expr_vals		: TK_LIT_FLOAT
 							}
 						} 
 
+						if (last_piped_function_type != NOT_DECLARED) {
+							$$->type = last_piped_function_type;
+							$$->user_type = last_piped_function_type_name;
+							last_piped_function_type = NOT_DECLARED;
+							last_piped_function_type_name = NULL;
+						}
+
 						// Reset id_category
 						id_category = VARIABLE;
 
@@ -1920,7 +1997,7 @@ id_for_expr		: TK_IDENTIFICADOR
 						}															
 					}
 
-piped 			: %empty
+/*piped 			: %empty
 					{
 						$$ = new_node(NULL);
 					}
@@ -1930,16 +2007,17 @@ piped 			: %empty
 						add_node($$, new_node($2));
 						add_node($$, $3);
 						add_node($$, $4);
-					}
+					}*/
 
 id_seq			:  id_seq_simple
 					{
 						$$ = $1;						
 					}
-				| '(' func_call_params
+				| '(' func_call_params piped_expr
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
+						add_node($$, $3);
 
 						id_category = FUNCTION;
 					} 
@@ -2006,22 +2084,36 @@ func_call_params	: ')'
 							function_arguments[func_call_param_counter].type = $1->type;
 							function_arguments[func_call_param_counter].user_type = $1->user_type;
 
+							$$->point = $3->point;
 							func_call_param_counter++;
 						}
 					| '.' proccess_expr func_call_params_body
 						{
 							$$ = new_node($1);
 							add_node($$, $3);
+
+							if (func_call_param_counter == 0) {
+								function_arguments = malloc(sizeof(func_call_arg));
+							} else {
+								function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+							}
+							function_arguments[func_call_param_counter].type = NOT_DECLARED;
+							function_arguments[func_call_param_counter].user_type = NULL;
+							
+							$$->point = func_call_param_counter;
+							func_call_param_counter++;
 						}
 
 func_call_params_body 	: ')' 
 						{
 							$$ = new_node($1);
+							$$->point = -1;
 						}
 						| ',' func_call_params_end
 						{
 							$$ = new_node($1);
 							add_node($$, $2);
+							$$->point = $2->point;
 						}
 
 func_call_params_end 	: expr proccess_expr func_call_params_body
@@ -2037,6 +2129,7 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 								function_arguments[func_call_param_counter].type = $1->type;
 								function_arguments[func_call_param_counter].user_type = $1->user_type;
 
+								$$->point = $3->point;
 								func_call_param_counter++;
 							}
 						| '.' proccess_expr func_call_params_body
@@ -2044,6 +2137,17 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 								
 								$$ = new_node($1);
 								add_node($$, $3);
+
+								if (func_call_param_counter == 0) {
+									function_arguments = malloc(sizeof(func_call_arg));
+								} else {
+									function_arguments = realloc(function_arguments, (func_call_param_counter+1)*sizeof(func_call_arg));
+								}
+								function_arguments[func_call_param_counter].type = NOT_DECLARED;
+								function_arguments[func_call_param_counter].user_type = NULL;
+
+								$$->point = func_call_param_counter;
+								func_call_param_counter++;
 							}
 
 %%
