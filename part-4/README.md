@@ -1,6 +1,6 @@
 # Etapa 4 - Análise Semântica
 
-### Importante!
+## Importante!
 
 O grupo considerou como ```ERR_USER_TO_X``` algo como:
 ```
@@ -38,9 +38,9 @@ int f() {
 ```
 Notou-se certa ambiguidade nesses erros, então preferimos explicitar nossa interpretação. :)
 
-### Requisitos
+## Requisitos
 
-## Construir uma tabela de símbolos
+### Construir uma tabela de símbolos
 
 No arquivo ```table.h``` estão declaradas as estruturas necessárias relacionadas à tabela de símbolos.
 Primeiramente, há a ```table_line```, que corresponde a uma linha de uma tabela de símbolos.
@@ -53,7 +53,7 @@ Uma linha de tabela pode possuir n argumentos (se for função) ou n campos (se 
 Por fim, também foi inserido o conceito de categoria. Cada símbolo possui uma categoria, podendo ser
 - ```USER_TYPE```, ```VARIABLE```, ```FUNCTION``` ou ```ARRAY```.
 
-## Verificação de Declarações
+### Verificação de Declarações
 
 A declaração de um identificador só pode ser dada quando aquele identificador ainda não foi declarado.
 A exceção é se ele está declarado em escopos diferentes (um ```int x``` global e um local são permitidos).
@@ -74,7 +74,7 @@ if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
 ```
 
 
-## Uso correto de identificadores
+### Uso correto de identificadores
 
 Uma função ```x()``` só pode ser usada como função. O mesmo vale para arrays, variáveis e tipos de usuário.
 Para essa validação, é usada a categoria já explicada. Um exemplo de validação é:
@@ -93,7 +93,7 @@ if (category != id_category) {
 }
 ```
 
-## Verificação de tipo e tamanho dos nós da AST
+### Verificação de tipo e tamanho dos nós da AST
 
 Na estrutura do nó da árvore (declarada em ```tree.h```), foi adicionado o campo ```type```.
 Quando necessário, esse campo é preenchido informando o tipo do nó.
@@ -121,19 +121,19 @@ Quanto à tamanho, são destacados os casos não triviais:
 - definição de tamanho de array = tamanho do tipo * número de elementos.
 - definição de tamanho de string = feito dinamicamente com a função ```update_string_size(...)```.
 
-## Anotação de conversão implícita
+### Anotação de conversão implícita
 
 Outro campo também foi adicionado no nó da árvore: o ```conversion```, que marca a conversão feita no nodo.
 Para isso, as conversões possíveis estão definidas em ```conversions.h```.
 Nesse mesmo arquivo, está declarada a função ```get_conversion(...)```, que recebe dois tipos e retorna a conversão do segundo tipo para o primeiro.
 O exemplo de marcação de conversão foi dado anteriormente.
 
-## Argumentos de funções
+### Argumentos de funções
 
 A checagem de número e tipos dos argumentos é feita usando o auxílio da estrutura ```func_call_arg```.
 Os argumentos usados são salvos e depois o número/tipos dos argumentos é comparado com o esperado pela função.
 
-## Verificação dos tipos em comandos
+### Verificação dos tipos em comandos
 
 Em todos os comandos, há uma checagem sobre o tipo esperado.
 Além disso, caso possível/necessário, é realizada/marcada a conversão.
