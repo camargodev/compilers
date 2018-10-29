@@ -34,28 +34,32 @@ You can just get into the part specific folder and run the same command.
 
 The root folder has everything that is necessary for running this compiler.
 Each specific part folder just marks the evolution of the project.
+Just run ```make``` to generate the necessary files. Visiting the ```Makefile``` of each folder will show you how to test.
 
 ### Part 1 [Aug 2018]
 
-Basically, a lexer scanner was developed to accept the tokens of the language.
-If you access ```part-1/scanner.l```, you'll see the most basic lexer scanner of all.
-It just has some simple rules that establish what is part of the language.
-This scanner is entirely lexical, with no syntactic or semantic context.
-Still, you'll need ```flex``` and can generate a executable file/test with ```make``` and ```make test```.
+A lexer scanner was developed to accept the tokens of the language.
+This scanner uses only ```flex``` and is available at ```part-1/scanner.l```.
 
 ### Part 2 [Sep 2018]
 
 In this part, ```bison``` was introduced to perform the syntactic analysis.
 If you access ```part-2/parser.y```, you'll see that now some syntactic rules were done to give some sense to the inputs.
-Still, no semantic analysis is performed, so something like ```int x = true;``` is accepted.
-Again, ```make``` and ```make test``` do the tricks for these one.
+Still, no semantic analysis is performed, so something like ```int x = "hello";``` is accepted.
 
-### Part 3 [IN DEVELOPMENT]
+### Part 3 [Oct 2018]
 
-In this part, the AST will be build together with the syntactic analysis.
+In this part, the AST (Abstract Syntax Tree) is build within the syntactic analysis.
 For this, structs like the ones ```tree.h``` and ```lexeme.h``` were developed.
 Also, values were added to tokens on ```scanner.l``` and tree construction functions were used on ```parser.y```.
-I don't need to write again about ```make``` and ```make test```.
+
+### Part 4 [Oct 2018]
+
+In this part, the semantic analysis was added.
+During the syntactic analysis, the tokens were semanticly verified.
+This part will prevent the use of undeclared identifiers or double declaration of a identifier, for example.
+A lot of structs were developed, but the most important are on ```table.h```, like ```table_stack``` that represents a stack of symbol tables.
+Also, nodes for ```tree.h``` now have types (like a expression node) and conversions are marked on nodes.
 
 ## Built With
 
