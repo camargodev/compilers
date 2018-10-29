@@ -14,6 +14,8 @@
 	
 	extern int yylineno;
 	extern void* arvore;
+	extern int yylex_destroy(void);
+	
 	table_stack * stack;
 
 	Error* error = NULL;
@@ -200,7 +202,6 @@
 
 programa :  initializer set_tree destroyer
 			{
-				//print_stack(stack);
 			}
 
 set_tree	: start 
@@ -216,9 +217,18 @@ initializer : %empty
 
 destroyer : %empty
 			{
+				//print_stack(stack);
+				free_table_stack(stack);
 				if (error != NULL) {
+					int error_code = error->error_code;
 					printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
-					exit(error->error_code);
+					
+					free(error);
+				  	libera(arvore);
+				  	arvore = NULL;
+				  	yylex_destroy();
+					
+					exit(error_code);
 				}
 			}
 

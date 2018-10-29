@@ -382,10 +382,10 @@ void free_table_stack(table_stack * stack) {
 		while(num_actual_table != NO_TABLES) {
 			free_table(stack->array[num_actual_table]);
 			num_actual_table--;
-		}		
-		free(stack);
-		stack = NULL;
-		return;
+		}
+	free(stack->array);
+	free(stack);
+	stack = NULL;
 	}
 }
 
@@ -496,7 +496,7 @@ void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token
 		table_line* line2 = get_line(stack, token_data->value.v_string);
 		line->token_size = line2->token_size;
 	}
-
+	free(substr);
 	return;
 }
 

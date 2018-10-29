@@ -17,6 +17,10 @@ syntest: ./etapa4 syntest.txt
 	diff eq1.txt eq2.txt
 	echo $?
 
+lktst: ./leak_test.sh ./etapa4
+	./leak_test.sh
+	echo $?
+
 clean:
 	rm -f etapa4
 	rm -f parser.tab.c
