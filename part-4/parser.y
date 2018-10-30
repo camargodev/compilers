@@ -10,7 +10,6 @@
 	#include "error_helper.h"
 	#include "conversions.h"
 	#include "category.h"
-	#include "debug_print.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -1175,12 +1174,11 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						func_call_param_counter = 0;
 
 					}
-				| type TK_IDENTIFICADOR var_end ';'
+				| type TK_IDENTIFICADOR var_end 
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
-						add_node($$, new_node($4));
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
