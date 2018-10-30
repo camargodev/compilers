@@ -753,10 +753,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						}
 						
 						if($1->type == USER_TYPE && $2->type == STRING) {
-							printf("Token_data [%s]\n", $2->token->value.v_string);
-							printf("Size do token [%s] antes : %d\n", $1->token->value.v_string, get_size(stack, $1->token));
-							update_string_size(stack, $1->token, $2->token);
-							printf("Size do token [%s] depois : %d\n", $1->token->value.v_string, get_size(stack, $1->token));
+							update_string_size(stack, $1->token, $2->token);							
 						}
 						
 					}
@@ -848,9 +845,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 									$3->conversion = get_conversion($1->type, $3->type);
 								}
 						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
-							printf("Size do token [%s] antes : %d\n", $2->value.v_string, get_size(stack, $2));
 							update_string_size(stack, $2, $3->token);
-							printf("Size do token [%s] depois : %d\n", $2->value.v_string, get_size(stack, $2));
 						}							
 					}
 				| if_then ';'
@@ -2063,18 +2058,14 @@ id_seq_simple	: '[' expr ']' id_seq_field
 						$$ = $1;											
 					}
 
-proccess_expr		: %empty
-						{
-						}
-
 func_call_params	: ')' 
 						{	
 							$$ = new_node($1);
 						}
-					| expr proccess_expr func_call_params_body
+					| expr func_call_params_body
 						{
 							$$ = $1;
-							add_node($$, $3);
+							add_node($$, $2);
 
 							if (func_call_param_counter == 0) {
 								function_arguments = malloc(sizeof(func_call_arg));
@@ -2084,13 +2075,13 @@ func_call_params	: ')'
 							function_arguments[func_call_param_counter].type = $1->type;
 							function_arguments[func_call_param_counter].user_type = $1->user_type;
 
-							$$->point = $3->point;
+							$$->point = $2->point;
 							func_call_param_counter++;
 						}
-					| '.' proccess_expr func_call_params_body
+					| '.' func_call_params_body
 						{
 							$$ = new_node($1);
-							add_node($$, $3);
+							add_node($$, $2);
 
 							if (func_call_param_counter == 0) {
 								function_arguments = malloc(sizeof(func_call_arg));
@@ -2116,10 +2107,10 @@ func_call_params_body 	: ')'
 							$$->point = $2->point;
 						}
 
-func_call_params_end 	: expr proccess_expr func_call_params_body
+func_call_params_end 	: expr func_call_params_body
 							{
 								$$ = $1;
-								add_node($$, $3);
+								add_node($$, $2);
 
 								if (func_call_param_counter == 0) {
 									function_arguments = malloc(sizeof(func_call_arg));
@@ -2129,14 +2120,14 @@ func_call_params_end 	: expr proccess_expr func_call_params_body
 								function_arguments[func_call_param_counter].type = $1->type;
 								function_arguments[func_call_param_counter].user_type = $1->user_type;
 
-								$$->point = $3->point;
+								$$->point = $2->point;
 								func_call_param_counter++;
 							}
-						| '.' proccess_expr func_call_params_body
+						| '.' func_call_params_body
 							{
 								
 								$$ = new_node($1);
-								add_node($$, $3);
+								add_node($$, $2);
 
 								if (func_call_param_counter == 0) {
 									function_arguments = malloc(sizeof(func_call_arg));
