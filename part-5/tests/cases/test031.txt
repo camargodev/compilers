@@ -1,0 +1,6 @@
+bool k() {
+	int a;
+	bool b;
+	float c;
+	c = a + b;
+}

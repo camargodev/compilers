@@ -1,0 +1,6 @@
+class x[int pop];
+int g() {
+	int i;
+	x objeto;
+	case objeto:
+}

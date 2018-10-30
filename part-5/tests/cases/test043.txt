@@ -1,0 +1,4 @@
+class ponto[int x : float y];
+bool k() {
+	ponto();
+}

@@ -1,0 +1,6 @@
+class ponto[int x : float y];
+bool k() {
+	ponto p;
+	char s;
+	s = p$x + p$y + true;
+}

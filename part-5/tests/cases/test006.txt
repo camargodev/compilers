@@ -1,0 +1,9 @@
+int f() {}
+
+x bool;
+
+class ponto0[int x : int y];
+
+int g() {}
+
+x int;

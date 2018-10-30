@@ -1,0 +1,4 @@
+int g() {
+	float i;
+	case i+2+true:
+}

@@ -1,0 +1,7 @@
+int f(int x) {}
+string g() {}
+
+int h() {
+	char a;
+	a = g() %>% f(.);
+}

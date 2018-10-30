@@ -1,0 +1,9 @@
+//ERR_USER
+class AST_t [ public int a : public int b ];
+int main()
+{
+  int b;
+  float a;
+  AST_t c;
+  return b*a+c;
+}

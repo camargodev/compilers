@@ -1,0 +1,6 @@
+int f() {
+	char c;
+	switch (c) {
+		int i;
+	};
+}

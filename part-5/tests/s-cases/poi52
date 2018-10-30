@@ -1,0 +1,8 @@
+//O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função
+//ERR_WRONG_PAR_RETURN
+class AST_t [ public int a : public int b ];
+AST_t main()
+{
+  bool a;
+  return "a";
+}

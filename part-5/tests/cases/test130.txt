@@ -1,0 +1,7 @@
+// ERR_CHAR_TO_X
+x char;
+str string;
+int f()
+{
+  str = x;
+}

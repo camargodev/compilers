@@ -1,0 +1,7 @@
+x int;
+bool k() {
+	int x;
+}
+bool k2() {
+	int x;
+}

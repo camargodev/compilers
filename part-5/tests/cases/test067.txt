@@ -1,0 +1,7 @@
+class ponto[int a];
+int x() {
+	ponto a;
+	ponto b;
+	ponto c;
+	foreach(a : b, c) {};
+}

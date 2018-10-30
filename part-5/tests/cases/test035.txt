@@ -1,0 +1,6 @@
+class ponto[int x : int y];
+bool k() {
+	ponto p;
+	string s;
+	s = p + 1;
+}

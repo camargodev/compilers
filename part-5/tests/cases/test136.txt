@@ -1,0 +1,6 @@
+int f(int x) {}
+char g() {}
+
+int h() {
+	g() %>% f(.);
+}

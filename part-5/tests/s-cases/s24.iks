@@ -1,0 +1,7 @@
+// ERR_CHAR_TO_X
+x[10] int;
+int f()
+{
+  char c;
+  x[c] = 3;
+}
