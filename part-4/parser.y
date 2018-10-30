@@ -1071,26 +1071,138 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 					add_node($$, $11);
 				}
 
-cmd_for 	: cmd_ident cmd_fix_local_var 
+cmd_for 	: cmd_ident cmd_fix_local_var
 					{
 						$$ = $1;
 						add_node($$, $2);
+						
+						int declaration_line = is_declared_on_current_table(stack, $2->token->value.v_string);
+						int param_type = get_param_type($2->token->value.v_string, function.args_counter, function.function_args);
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED) 
+							set_error(ERR_DECLARED);
+						else 
+							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
 					}
-				| cmd_ident cmd_fix_attr 
+				| cmd_ident cmd_fix_attr
 					{
 						$$ = $1;
 						add_node($$, $2);
+						
+						char* type_name;
+						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+
+						if ($2->user_type != NULL)
+							type = get_id_field_type(stack, type_name, $2->user_type);
+
+						if (type != $2->type) {
+							if (can_convert(type, $2->type) == FALSE) {
+								set_error(ERR_WRONG_TYPE);
+							} else {
+								$2->conversion = get_conversion(type, $2->type);
+							}
+						} else if (type == USER_TYPE) {
+							if (strcmp(type_name, $1->user_type) != 0) {
+								set_error(ERR_WRONG_TYPE);
+							}
+						}
+
+						int category = get_category(stack, $1->token->value.v_string);
+						if (category != id_category) {
+							if ($1->type != USER_TYPE || id_category != USER_TYPE)
+								switch (category) {
+									case FUNCTION:
+										set_error(ERR_FUNCTION); break;
+									case USER_TYPE:
+										set_error(ERR_USER); break;
+									case ARRAY:
+										set_error(ERR_VECTOR); break;
+									default:
+										set_error(ERR_VARIABLE); break;
+								}
+						}
+						
+						if($1->type == USER_TYPE && $2->type == STRING) {
+							update_string_size(stack, $1->token, $2->token);							
+						}
+						
 					}
-				| cmd_ident cmd_fix_call 
+				| cmd_ident cmd_fix_call
 					{
 						$$ = $1;
 						add_node($$, $2);
+						
+						int num_args = get_func_num_params(stack, $1->token->value.v_string);
+						int category = get_category(stack, $1->token->value.v_string);
+						int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+
+						if (category == FUNCTION) {
+							if (num_args == func_call_param_counter) {
+								int index;
+								for (index = 0; index < num_args; index++) {
+									if (expected_types[index] != function_arguments[index].type) {
+										if (can_convert(expected_types[index], function_arguments[index].type) == FALSE) {
+											set_error(ERR_WRONG_TYPE_ARGS);	
+										} 
+									}
+								}
+							} else if (num_args > func_call_param_counter) {
+								set_error(ERR_MISSING_ARGS);
+							} else {
+								set_error(ERR_EXCESS_ARGS);
+							}
+						} else if (category == USER_TYPE) {
+							set_error(ERR_USER);
+						} else if (category == ARRAY) {
+							set_error(ERR_VECTOR);
+						} else {
+							set_error(ERR_VARIABLE);
+						}
+
+
+						if ($2->type != NOT_DECLARED) {
+							char* dummy;
+							int func_type = get_id_type(stack, $1->token->value.v_string, &dummy);
+							if (func_type != $2->type) {
+								if (can_convert(func_type, $2->type) == FALSE) {
+									set_error(ERR_WRONG_TYPE);
+								}
+							}
+						}
+
+						free(expected_types);
+						free(function_arguments);
+						function_arguments = NULL;
+						func_call_param_counter = 0;
+
 					}
-				| type TK_IDENTIFICADOR var_end
+				| type TK_IDENTIFICADOR var_end ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
+						add_node($$, new_node($4));
+
+						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED)
+							set_error(ERR_DECLARED);
+						else
+							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+
+						if ($3->type != NOT_DECLARED) 
+							if ($1->type == $3->type) {
+								if ($1->type == USER_TYPE)
+									if (strcmp($1->user_type, $3->user_type) != 0)
+										set_error(ERR_WRONG_TYPE);		
+							} else 
+								if (can_convert($1->type, $3->type) == FALSE) {
+									set_error(ERR_WRONG_TYPE);
+								} else {
+									$3->conversion = get_conversion($1->type, $3->type);
+								}
+						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
+							update_string_size(stack, $2, $3->token);
+						}							
 					}
 				| TK_PR_STATIC static_var
 					{
@@ -1147,10 +1259,10 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						$$ = new_node($1);
 						add_node($$, $2);
 					}
-				| '{' cmd_block 
+				| '{' push_table cmd_block 
 					{
 						$$ = new_node($1);
-						add_node($$, $2);
+						add_node($$, $3);
 					}
 
 for_fst_list	: ',' cmd_for for_fst_list
