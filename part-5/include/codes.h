@@ -1,72 +1,73 @@
 // João Vitor de Camargo
 // Marcellus Farias
 
-#define NOP  00000
+#define NOP  0
 
 /* Arithmetical expressions */
 
-#define ADD   00001
-#define SUB   00002
-#define MULT  00003
-#define DIV   00004
-#define ADDI  00005
-#define SUBI  00006
-#define RSUBI 00007
-#define MULTI 00008
-#define DIVI  00009
-#define RDIVI 00010
+#define ADD    1
+#define SUB    2
+#define MULT   3
+#define DIV    4
+#define ADDI   5
+#define SUBI   6
+#define RSUBI  7
+#define MULTI  8
+#define DIVI   9
+#define RDIVI 10
 
 /* Shifts */
 
-#define LSHIFT  00011
-#define LSHIFTI 00012
-#define RSHIFT  00013
-#define RSHIFTI 00014
+#define LSHIFT  11
+#define LSHIFTI 12
+#define RSHIFT  13
+#define RSHIFTI 14
 
 /* Memory operations */
 
-#define LOAD     00015
-#define LOADAI   00016
-#define LOADA0   00017
-#define CLOAD    00018
-#define CLOADAI  00019
-#define CLOADA0  00020
+#define LOAD     15
+#define LOADAI   16
+#define LOADA0   17
+#define CLOAD    18
+#define CLOADAI  19
+#define CLOADA0  20
 
-#define STORE    00021
-#define STOREAI  00022
-#define STOREA0  00023
-#define CSTORE   00024
-#define CSTOREAI 00025
-#define CSTOREA0 00026
+#define STORE    21
+#define STOREAI  22
+#define STOREA0  23
+#define CSTORE   24
+#define CSTOREAI 25
+#define CSTOREA0 26
 
 /* Register copy operations */
 
-#define I2I 00027
-#define C2C 00028
-#define C2I 00029
-#define I2C 00030
+#define I2I 27
+#define C2C 28
+#define C2I 29
+#define I2C 30
 
 /* Flow */
 
-#define CMP_LT 00031
-#define CMP_LE 00032
-#define CMP_EQ 00033
-#define CMP_GE 00034
-#define CMP_GT 00035
-#define CMP_NE 00036
-#define CBR    00037
+#define CMP_LT 31
+#define CMP_LE 32
+#define CMP_EQ 33
+#define CMP_GE 34
+#define CMP_GT 35
+#define CMP_NE 36
+#define CBR    37
 
 /* Jumps */
 
-#define JUMPI 00038
-#define JUMP  00039
+#define JUMPI 38
+#define JUMP  39
 
 /* Logical */
 
-#define AND  00040
-#define ANDI 00041
-#define OR   00042
-#define ORI  00043
-#define XOR  00044
-#define XORI 00045
+#define AND  40
+#define ANDI 41
+#define OR   42
+#define ORI  43
+#define XOR  44
+#define XORI 45
 
+char* get_instruction_name(int code);

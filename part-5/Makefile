@@ -21,12 +21,9 @@ lktst: scripts/leak_test.sh ./etapa4
 	scripts/leak_test.sh
 	echo $?
 
-iloctst: tests/iloc_test.c include/iloc.h src/iloc.c
-	gcc -g -c src/iloc.c
-	gcc -g -o iloc tests/iloc_test.c iloc.o
-	./iloc
-	rm -f iloc.o
-	rm -f iloc
+iloctst: tests/iloc_test.c include/iloc.h src/iloc.c include/codes.h src/codes.c
+	gcc -g -c src/iloc.c src/codes.c
+	gcc -g -o iloc tests/iloc_test.c iloc.o codes.o
 
 clean:
 	rm -f etapa5
@@ -49,5 +46,8 @@ clean:
 	rm -f parser.y.swp
 	rm -f tests/tempresults.txt
 	rm -f debug_print.o
+	rm -f iloc.o
+	rm -f codes.o
+	rm -f iloc
 	
 

@@ -30,6 +30,14 @@ typedef struct i_op_list {
 } iloc_op_list;
 
 iloc_op_list* new_op_list();
+iloc_arg* new_arg(int type, void* argum);
+
+iloc_operation* new_2arg_op(int op_code, iloc_arg* arg1, iloc_arg* arg2);
+iloc_operation* new_3arg_op(int op_code, iloc_arg* arg1, iloc_arg* arg2, iloc_arg* arg3);
+iloc_operation* new_nop();
+
 void add_op(iloc_op_list* list, iloc_operation* op);
-void add_arg(iloc_operation* op, iloc_arg* arg);
+
 void free_op_list(iloc_op_list* list);
+
+void print_code(iloc_op_list* list);
