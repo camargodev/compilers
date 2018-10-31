@@ -9,7 +9,7 @@ void free_arg(iloc_arg* arg);
 void free_op(iloc_operation* op);
 
 iloc_op_list* new_op_list() {
-	iloc_op_list list = (iloc_op_list*) malloc(sizeof(iloc_op_list));
+	iloc_op_list *list = (iloc_op_list*) malloc(sizeof(iloc_op_list));
 	list->num_ops = 0;
 	list->ops = NULL;
 	return list;
@@ -39,7 +39,7 @@ void free_op_list(iloc_op_list* list) {
 	if (list != NULL) {
 		int op_index;
 		for (op_index = 0; op_index < list->num_ops; op_index++) {
-			free_op(list->ops[op_index])
+			free_op(list->ops[op_index]);
 		}
 		free(list->ops);
 		list->ops = NULL;
@@ -52,7 +52,7 @@ void free_op(iloc_operation* op) {
 	if (op != NULL) {
 		int arg_index;
 		for (arg_index = 0; arg_index < op->num_args; arg_index++) {
-			free_arg(op->args[arg_index])
+			free_arg(op->args[arg_index]);
 		}
 		free(op->args);
 		op->args = NULL;
@@ -64,8 +64,8 @@ void free_op(iloc_operation* op) {
 void free_arg(iloc_arg* arg) {
 	if (arg != NULL) {
 		if (arg->type == CONSTANT || arg->type == LABEL) {
-			free(arg->argument.str_var);
-			arg->argument.str_var = NULL;
+			free(arg->arg.str_var);
+			arg->arg.str_var = NULL;
 		}
 		free(arg);
 		arg = NULL;
