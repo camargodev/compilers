@@ -98,16 +98,20 @@ int is_arg_freed(iloc_arg* arg) {
 	return 0;
 }
 
+
+
 void print_code(iloc_op_list* list) {
 	int op_index;
 	for (op_index = 0; op_index < list->num_ops; op_index++) {
 		iloc_operation *tmp_op = list->ops[op_index];
 		printf("%s ", get_instruction_name(tmp_op->op_code));
 		if (tmp_op->op_code != NOP) {
-			if (tmp_op->num_args == 3) {
-				printf("%s, %s, %s", tmp_op->args[0]->arg.str_var, tmp_op->args[1]->arg.str_var, tmp_op->args[2]->arg.str_var);
-			} else if (tmp_op->num_args == 2) {
-				printf("%s, %s", tmp_op->args[0]->arg.str_var, tmp_op->args[1]->arg.str_var);
+			int arg_index;
+			for (arg_index = 0; arg_index < tmp_op->num_args; arg_index++) {
+				if (tmp_op->args[arg_index]->type == CONSTANT)
+					printf("%i ", tmp_op->args[arg_index]->arg.int_const);
+				else
+					printf("%s ", tmp_op->args[arg_index]->arg.str_var);
 			}
 		}
 		tmp_op = NULL;
@@ -153,10 +157,12 @@ void free_op(iloc_operation* op) {
 
 void set_arg_to_freedom(iloc_arg* argum) {
 	if (argum != NULL) {
-		if (!is_arg_freed(argum)) {
-			if (argum->type != CONSTANT) {
+		if (argum->type != CONSTANT) {
+			if (!is_arg_freed(argum)) {
 				add_to_freed_args(argum);
 			}
+		} else {
+			free(argum);
 		}
 		argum = NULL;
 	}
