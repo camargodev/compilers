@@ -17,7 +17,7 @@ syntest: ./etapa5 syntest.txt
 	diff eq1.txt eq2.txt
 	echo $?
 
-lktst: scripts/leak_test.sh ./etapa4
+lktst: scripts/leak_test.sh ./etapa5
 	scripts/leak_test.sh
 	echo $?
 

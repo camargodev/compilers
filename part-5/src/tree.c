@@ -116,9 +116,7 @@ void libera(void *node) {
 		}
 
 		if (tree_node->token != NULL) {
-			if (tree_node->token->token_type == KEYWORD
-				|| tree_node->token->token_type == OPERATOR
-				|| tree_node->token->token_type == IDENTIFIER) {
+			if (tree_node->token->token_type == KEYWORD || tree_node->token->token_type == OPERATOR || tree_node->token->token_type == IDENTIFIER) {
 				free(tree_node->token->value.v_string);
 			} else if (tree_node->token->token_type == LITERAL) {			
 				switch (tree_node->token->literal_type) {
