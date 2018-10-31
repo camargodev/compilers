@@ -7,12 +7,11 @@
 #include "../include/iloc.h"
 #include "../include/codes.h"
 
-void free_arg(iloc_arg* arg);
+void set_arg_to_freedom(iloc_arg* arg);
 void free_op(iloc_operation* op);
 
 int num_freed_registers = 0;
-char** freed_registers = NULL;
-
+iloc_arg** freed_registers = NULL;
 
 iloc_op_list* new_op_list() {
 	iloc_op_list *list = (iloc_op_list*) malloc(sizeof(iloc_op_list));
@@ -44,7 +43,7 @@ void add_op(iloc_op_list* list, iloc_operation* op) {
 	if (list->ops == NULL) {
 		list->ops = (iloc_operation**) malloc(sizeof(iloc_operation));
 	} else {
-		list->ops = (iloc_operation**) realloc(list->ops, list->num_ops * sizeof(iloc_operation));
+		list->ops = (iloc_operation**) realloc(list->ops, (list->num_ops+1) * sizeof(iloc_operation));
 	} 
 	list->ops[list->num_ops] = op;
 	list->num_ops++;
@@ -54,7 +53,7 @@ void add_arg(iloc_operation* op, iloc_arg* arg) {
 	if (op->args == NULL) {
 		op->args = (iloc_arg**) malloc(sizeof(iloc_arg));
 	} else {
-		op->args = (iloc_arg**) realloc(op->args, op->num_args * sizeof(iloc_arg));
+		op->args = (iloc_arg**) realloc(op->args, (op->num_args+1) * sizeof(iloc_arg));
 	}
 	op->args[op->num_args] = arg;
 	op->num_args++;
@@ -81,19 +80,18 @@ iloc_operation* new_nop() {
 
 void add_to_freed_args(iloc_arg* arg) {
 	if (num_freed_registers == 0) {
-		freed_registers = (char**) malloc(sizeof(char*));
+		freed_registers = (iloc_arg**) malloc(sizeof(iloc_arg));
 	} else {
-		freed_registers = (char**) realloc(freed_registers, (num_freed_registers+1) * sizeof(char*));
+		freed_registers = (iloc_arg**) realloc(freed_registers, (num_freed_registers+1) * sizeof(iloc_arg));
 	}
-	freed_registers[num_freed_registers] = strdup(arg->arg.str_var);
+	freed_registers[num_freed_registers] = arg;
 	num_freed_registers++;
 }
 
 int is_arg_freed(iloc_arg* arg) {
 	int index;
 	for (index = 0; index < num_freed_registers; index++) {
-		printf("(%s)\n", arg->arg.str_var);
-		if (strcmp(freed_registers[index], arg->arg.str_var) == 0) {
+		if (strcmp(freed_registers[index]->arg.str_var, arg->arg.str_var) == 0) {
 			return 1;
 		}
 	}
@@ -123,6 +121,7 @@ void free_register_list() {
 		free(freed_registers[index]);
 	}
 	free(freed_registers);
+	freed_registers = NULL;
 }
 
 void free_op_list(iloc_op_list* list) {
@@ -143,7 +142,7 @@ void free_op(iloc_operation* op) {
 	if (op != NULL) {
 		int arg_index;
 		for (arg_index = 0; arg_index < op->num_args; arg_index++) {
-			free_arg(op->args[arg_index]);
+			set_arg_to_freedom(op->args[arg_index]);
 		}
 		free(op->args);
 		op->args = NULL;
@@ -152,16 +151,12 @@ void free_op(iloc_operation* op) {
 	}
 }
 
-void free_arg(iloc_arg* argum) {
+void set_arg_to_freedom(iloc_arg* argum) {
 	if (argum != NULL) {
-		/*if (arg->type == REGISTER || arg->type == LABEL) {
-			//free(arg->arg.str_var);
-			arg->arg.str_var = NULL;
-		}*/
 		if (!is_arg_freed(argum)) {
-			if (argum->type != CONSTANT)
+			if (argum->type != CONSTANT) {
 				add_to_freed_args(argum);
-			free(argum);
+			}
 		}
 		argum = NULL;
 	}
