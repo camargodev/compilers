@@ -49,5 +49,6 @@ clean:
 	rm -f iloc.o
 	rm -f codes.o
 	rm -f iloc
+	rm -f tmplk.txt
 	
 

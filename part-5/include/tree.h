@@ -3,11 +3,12 @@
 
 typedef struct node {
 	struct 	Lexeme* token;
+	struct  iloc_op_list* code;
 	int		conversion;
 	int		type;
 	char*	user_type;
 	int		is_literal;
-	int		point;
+	int		point; // Used for pipes
 	int 	children_num;
 	struct 	node **children;
 } Node;

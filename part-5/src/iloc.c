@@ -78,6 +78,13 @@ iloc_operation* new_nop() {
 	return new_op(NOP);
 }
 
+char* new_reg() {
+	char* reg = (char*) malloc(32);
+	sprintf(reg, "%s%d", "r", reg_count);
+	reg_count++;
+	return reg;
+}
+
 void add_to_freed_args(iloc_arg* arg) {
 	if (num_freed_registers == 0) {
 		freed_registers = (iloc_arg**) malloc(sizeof(iloc_arg));
@@ -97,8 +104,6 @@ int is_arg_freed(iloc_arg* arg) {
 	}
 	return 0;
 }
-
-
 
 void print_code(iloc_op_list* list) {
 	int op_index;
@@ -122,6 +127,8 @@ void print_code(iloc_op_list* list) {
 void free_register_list() {
 	int index;
 	for (index = 0; index < num_freed_registers; index++) {
+		if (freed_registers[index]->type != CONSTANT)
+			free(freed_registers[index]->arg.str_var);
 		free(freed_registers[index]);
 	}
 	free(freed_registers);

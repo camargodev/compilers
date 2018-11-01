@@ -11,5 +11,5 @@ for file in $(ls tests/cases/); do
 	else
 		echo "    Has LEAKS"
 	fi
-	rm -f tmplk.txt
 done
+rm -f tmplk.txt

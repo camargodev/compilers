@@ -1,17 +1,20 @@
 // João Vitor de Camargo
 // Marcellus Farias
 
+/* Possible values for iloc_arg->type */
+#define CONSTANT 122
+#define LABEL	 123
+#define REGISTER 124
+
+/* To generate new unique regs */
+static int reg_count = 0;
+
 /*  Just integer constants and
 	identifiers will be used for now */
 union argument {
 	int 	int_const;
 	char* 	str_var;
 };
-
-/* Possible values for iloc_arg->type */
-#define CONSTANT 122
-#define LABEL	 123
-#define REGISTER 124
 
 typedef struct i_arg {
 	int type;
@@ -38,6 +41,9 @@ iloc_operation* new_nop();
 
 void add_op(iloc_op_list* list, iloc_operation* op);
 
+char* new_reg();
+
 void free_op_list(iloc_op_list* list);
 
 void print_code(iloc_op_list* list);
+

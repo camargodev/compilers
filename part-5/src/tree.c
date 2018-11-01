@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../include/lexeme.h"
+#include "../include/iloc.h"
 #include "../include/tree.h"
 #include "../include/conversions.h"
 
@@ -25,6 +26,7 @@ Node* new_node(struct Lexeme* token) {
 	node->children_num = NO_CHILDREN;
 	node->type = UNDECLARED_TYPE;
 	node->user_type = NULL;
+	node->code = NULL;
 	node->conversion = NO_CONVERSION;
 	node->point = -1;
 	node->is_literal = FALSE;
