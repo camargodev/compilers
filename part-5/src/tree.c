@@ -24,6 +24,7 @@ Node* new_node(struct Lexeme* token) {
 	node->token = token;
 	node->children_num = NO_CHILDREN;
 	node->type = UNDECLARED_TYPE;
+	node->user_type = NULL;
 	node->conversion = NO_CONVERSION;
 	node->point = -1;
 	node->is_literal = FALSE;

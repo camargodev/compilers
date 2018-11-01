@@ -5,4 +5,5 @@ bool k() {
 	string d <= "a";
 	char e <= 'e';
 	bool f <= false;
+	string xx;
 }

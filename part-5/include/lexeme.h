@@ -77,4 +77,6 @@ typedef struct Lexeme {
 
 */
 
+struct Lexeme* copy_lexeme(struct Lexeme* token);
+
 #endif

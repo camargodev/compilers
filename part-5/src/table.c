@@ -487,16 +487,18 @@ int get_param_type(char* field, int num_params, func_args* params) {
 void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data) {
 	
 	table_line* line = get_line(stack, token_update->value.v_string);
-	char* substr = malloc(sizeof(token_data->value.v_string));
-	strncpy(substr, token_data->value.v_string, 1);
-	if(strcmp(substr,"\"") == 0){
+	//char* substr = malloc(sizeof(token_data->value.v_string));
+	//strncpy(substr, token_data->value.v_string, 1);
+	//printf("\n%s", substr);
+	//char* s = "\"";
+	if(sizeof(token_data->value.v_string) > 0) {
 		line->token_size = strlen(token_data->value.v_string) - 2;
 	}
-	else{
+	else {
 		table_line* line2 = get_line(stack, token_data->value.v_string);
 		line->token_size = line2->token_size;
 	}
-	free(substr);
+	//free(substr);
 	return;
 }
 

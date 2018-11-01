@@ -154,7 +154,6 @@
 %type <node> cmd_fix_call
 %type <node> static_var		
 %type <node> const_var
-%type <node> attr_tk
 %type <node> var_end
 %type <node> var_lit
 %type <node> attr
@@ -819,37 +818,33 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, $2);
 						add_node($$, new_node($3));
 					}
-				| type TK_IDENTIFICADOR attr_tk var_end ';'
+				| type TK_IDENTIFICADOR var_end ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
-						add_node($$, $4);
-						add_node($$, new_node($5));
+						add_node($$, new_node($4));
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
-						
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED)
 							set_error(ERR_DECLARED);
 						else
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
 
-						if ($4->type != NOT_DECLARED) {
-							if ($1->type == $4->type) {
+						if ($3->type != NOT_DECLARED) 
+							if ($1->type == $3->type) {
 								if ($1->type == USER_TYPE)
-									if (strcmp($1->user_type, $4->user_type) != 0)
+									if (strcmp($1->user_type, $3->user_type) != 0)
 										set_error(ERR_WRONG_TYPE);		
-							} else {
-								if (can_convert($1->type, $4->type) == FALSE) {
+							} else 
+								if (can_convert($1->type, $3->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
 								} else {
-									$4->conversion = get_conversion($1->type, $4->type);
+									$3->conversion = get_conversion($1->type, $3->type);
 								}
-							}
-						}
-						if($4->token != NULL && $1->type == STRING && $4->type == STRING) {
-							update_string_size(stack, $2, $4->token);
+						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
+							update_string_size(stack, $2, $3->token);
 						}							
 					}
 				| if_then ';'
@@ -1179,12 +1174,11 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						func_call_param_counter = 0;
 
 					}
-				| type TK_IDENTIFICADOR attr_tk var_end 
+				| type TK_IDENTIFICADOR var_end 
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
-						add_node($$, $4);
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
@@ -1193,19 +1187,19 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						else
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
 
-						if ($4->type != NOT_DECLARED) 
-							if ($1->type == $4->type) {
+						if ($3->type != NOT_DECLARED) 
+							if ($1->type == $3->type) {
 								if ($1->type == USER_TYPE)
-									if (strcmp($1->user_type, $4->user_type) != 0)
+									if (strcmp($1->user_type, $3->user_type) != 0)
 										set_error(ERR_WRONG_TYPE);		
 							} else 
-								if (can_convert($1->type, $4->type) == FALSE) {
+								if (can_convert($1->type, $3->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
 								} else {
-									$4->conversion = get_conversion($1->type, $4->type);
+									$3->conversion = get_conversion($1->type, $3->type);
 								}
-						if($4->token != NULL && $1->type == STRING && $4->type == STRING) {
-							update_string_size(stack, $2, $4->token);
+						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
+							update_string_size(stack, $2, $3->token);
 						}							
 					}
 				| TK_PR_STATIC static_var
@@ -1423,7 +1417,7 @@ cmd_fix_attr		: id_seq_simple attr
 					add_node($$, $2);
 					set_node_type($$, $2->type);
 
-					$$->token = $2->token;	
+					$$->token = copy_lexeme($2->token);	
 					$$->user_type = $1->user_type;				
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
@@ -1445,12 +1439,11 @@ static_var	: TK_PR_CONST const_var
 					$$ = $1;
 				}
 			
-const_var	: type TK_IDENTIFICADOR attr_tk var_end
+const_var	: type TK_IDENTIFICADOR var_end
 				{
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
-					add_node($$, $4);
 				}
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
@@ -1458,25 +1451,15 @@ const_var	: type TK_IDENTIFICADOR attr_tk var_end
 					add_node($$, new_node($2));
 				}
 
-attr_tk		: TK_OC_LE 
+var_end 	: TK_OC_LE var_lit
 				{
-					$$ = new_node($1);
-				}
-			  | %empty
-			  	{
-			  		$$ = new_node(NULL);
-			  	}
+					$$ = new_node(NULL);
+					add_node($$, new_node($1));
+					add_node($$, $2);;
+					$$->type = $2->type;
+					$$->user_type = $2->user_type;
 
-var_end 	: var_lit
-				{
-					$$ = $1;
-					//$$ = new_node(NULL);
-					//add_node($$, new_node($1));
-					//add_node($$, $2);
-					//$$->type = $2->type;
-					//$$->user_type = $2->user_type;
-
-					//$$->token = $2->token;
+					$$->token = copy_lexeme($2->token);
 				}
 			| %empty
 				{
@@ -1537,7 +1520,7 @@ attr 		: '=' expr
 					add_node($$, $2);
 					set_node_type($$, $2->type);
 
-					$$->token = $2->token;
+					$$->token = copy_lexeme($2->token);
 				}
 			| TK_OC_SL expr 
 				{
@@ -1978,7 +1961,7 @@ expr 			: expr '+' expr
 
 						$$->is_literal = $2->is_literal;
 
-						$$->token = $2->token;						
+						$$->token = copy_lexeme($2->token);						
 					}
 
 expr_vals		: TK_LIT_FLOAT
