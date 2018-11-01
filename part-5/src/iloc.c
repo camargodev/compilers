@@ -59,6 +59,12 @@ void add_arg(iloc_operation* op, iloc_arg* arg) {
 	op->num_args++;
 }
 
+iloc_operation* new_1arg_op(int op_code, iloc_arg* arg1) {
+	iloc_operation *op = new_op(op_code);
+	add_arg(op, arg1);
+	return op;
+}
+
 iloc_operation* new_2arg_op(int op_code, iloc_arg* arg1, iloc_arg* arg2) {
 	iloc_operation *op = new_op(op_code);
 	add_arg(op, arg1);
@@ -105,22 +111,59 @@ int is_arg_freed(iloc_arg* arg) {
 	return 0;
 }
 
+void reag_arg(iloc_arg* arg) {
+	if (arg->type == CONSTANT) {
+		printf("%i", arg->arg.int_const);
+	} else {
+		printf("%s", arg->arg.str_var);
+	}
+}
+
+void read_op(iloc_operation* op) {
+	printf("%s ", get_instruction_name(op->op_code));
+	if (op->op_code != NOP) {
+		switch(get_instruction_type(op->op_code)) {
+			
+			case ONE_IN_ONE_OUT:
+				reag_arg(op->args[0]);
+				printf(" => ");
+				reag_arg(op->args[1]);
+				break;
+			
+			case ONE_IN_TWO_OUT:
+				reag_arg(op->args[0]);
+				printf(" => ");
+				reag_arg(op->args[1]);
+				printf(", ");
+				reag_arg(op->args[2]);
+				break;
+			
+			case TWO_IN_ONE_OUT:
+				reag_arg(op->args[0]);
+				printf(", ");
+				reag_arg(op->args[1]);
+				printf(" => ");
+				reag_arg(op->args[2]);
+				break;
+
+			case ONE_OUT:
+				printf("=> ");
+				reag_arg(op->args[0]);
+				break;
+
+			default: break;
+
+		}
+	}
+	printf("\n");
+}
+
 void print_code(iloc_op_list* list) {
 	int op_index;
 	for (op_index = 0; op_index < list->num_ops; op_index++) {
-		iloc_operation *tmp_op = list->ops[op_index];
-		printf("%s ", get_instruction_name(tmp_op->op_code));
-		if (tmp_op->op_code != NOP) {
-			int arg_index;
-			for (arg_index = 0; arg_index < tmp_op->num_args; arg_index++) {
-				if (tmp_op->args[arg_index]->type == CONSTANT)
-					printf("%i ", tmp_op->args[arg_index]->arg.int_const);
-				else
-					printf("%s ", tmp_op->args[arg_index]->arg.str_var);
-			}
+		if (list->ops[op_index] != NULL) {
+			read_op(list->ops[op_index]);	
 		}
-		tmp_op = NULL;
-		printf("\n");
 	}
 }
 

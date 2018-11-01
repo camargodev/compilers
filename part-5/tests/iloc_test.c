@@ -24,12 +24,13 @@ int main() {
 	iloc_operation* add2 = new_3arg_op(ADD, r0, r2, r3);
 	iloc_operation* sub1 = new_3arg_op(SUB, r3, r2, r4);
 	iloc_operation* sub2 = new_3arg_op(SUB, r3, r2, r4);
-	iloc_operation* add3 = new_3arg_op(ADD, r0, i2, r3);
+	iloc_operation* add3 = new_3arg_op(ADDI, r0, i2, r3);
 	iloc_operation* sub3 = new_3arg_op(SUB, r7, r2, r4);
 	iloc_operation* nop1 = new_nop();
-	iloc_operation* jmp1 = new_2arg_op(JUMP, r4, r5);
+	iloc_operation* jmp1 = new_1arg_op(JUMP, r4);
 	iloc_operation* mult = new_3arg_op(MULT, r3, r5, r6);
-	iloc_operation* jmp2 = new_2arg_op(JUMP, r2, i1);
+	iloc_operation* jmp2 = new_1arg_op(JUMPI, i1);
+	iloc_operation* stri = new_3arg_op(STOREAI, r3, r5, r6);
 	iloc_operation* nop2 = new_nop();
 	
 	add_op(list, add1);
@@ -42,6 +43,7 @@ int main() {
 	add_op(list, jmp1);
 	add_op(list, mult);
 	add_op(list, jmp2);
+	add_op(list, stri);
 	add_op(list, nop2);
 
 	print_code(list);
