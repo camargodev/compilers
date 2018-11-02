@@ -1,54 +1,147 @@
 # João Vi4tor de Camargo (274722) e Marcellus Farias (281984)
 
-all: parser.y scanner.l src/main.c
-	bison -d parser.y --report-file=report
-	flex scanner.l
-	gcc -g -c lex.yy.c parser.tab.c src/tree.c src/table.c src/main.c src/error.c src/conversions.c src/lexeme.c
-	gcc -g -o etapa5 lex.yy.o parser.tab.o tree.o table.o main.o error.o conversions.o lexeme.o -lfl
+CC     = gcc
+PART   = etapa5
+EXEC   = ./${PART}
+FLAGS  = -g -c
+LFLAGS = -g -o
+BFLAGS = -d
 
-tst: scripts/test.sh tests/results.txt ./etapa5
-	scripts/test.sh
-	diff tests/results.txt tests/tempresults.txt
-	echo $?
+TST  = tests
+SRC  = src
+LIB  = include
+SCP  = scripts
 
-syntest: ./etapa5 syntest.txt
-	./etapa4 < syntest.txt > eq1.txt
-	./etapa4 < eq1.txt > eq2.txt
-	diff eq1.txt eq2.txt
-	echo $?
+SCN  = scanner
+PSR  = parser
+LXM  = lexeme
+TBL  = table
+TREE = tree
+ERR  = error
+CNV  = conversions
+ILOC = iloc
+CDS  = codes
+MAIN = main
+ITST = iloc_test
+LEX  = lex.yy
 
-lktst: scripts/leak_test.sh ./etapa5
-	scripts/leak_test.sh
-	echo $?
+SYNTEST  = ${TST}/syntest.txt
 
-iloctst: tests/iloc_test.c include/iloc.h src/iloc.c include/codes.h src/codes.c
-	gcc -g -c src/iloc.c src/codes.c
-	gcc -g -o iloc tests/iloc_test.c iloc.o codes.o
+SCNFONT  = ${SCN}.l
+SCNFLEX  = ${LEX}.c
+PSRFONT  = ${PSR}.y
+PSRBISON = ${PSR}.tab.c
+LXMFONT  = ${SRC}/${LXM}.c
+TBLFONT  = ${SRC}/${TBL}.c
+TREEFONT = ${SRC}/${TREE}.c
+ERRFONT  = ${SRC}/${ERR}.c
+CNVFONT  = ${SRC}/${CNV}.c
+ILOCFONT = ${SRC}/${ILOC}.c
+CDSFONT  = ${SRC}/${CDS}.c
+MAINFONT = ${SRC}/${MAIN}.c
+ITSTFONT = ${TST}/${ITST}.c
+
+SCNGEN  = ${LEX}.o
+PSRGEN  = ${PSR}.tab.o
+LXMGEN  = ${LXM}.o
+TBLGEN  = ${TBL}.o
+TREEGEN = ${TREE}.o
+ERRGEN  = ${ERR}.o
+CNVGEN  = ${CNV}.o
+ILOCGEN = ${ILOC}.o
+CDSGEN  = ${CDS}.o
+MAINGEN = ${MAIN}.o
+ITSTGEN = ${ITST}.o
+
+PSRLIB  = ${PSR}.tab.h
+LXMLIB  = ${LIB}/${LXM}.h
+TBLLIB  = ${LIB}/${TBL}.h
+TREELIB = ${LIB}/${TREE}.h
+ERRLIB  = ${LIB}/${ERR}.h
+CNVLIB  = ${LIB}/${CNV}.h
+ILOCLIB = ${LIB}/${ILOC}.h
+CDSLIB  = ${LIB}/${CDS}.h
+
+SEMTST  = ${SCP}/sem_test.sh
+LKTST   = ${SCP}/leak_test.sh
+RESULTS = ${TST}/results.txt
+TMPRES  = ${TST}/tempresults.txt
+
+OUTPUT  = ${PSR}.output
+LKTMP   = tmplk.txt
+
+all: parser scanner main lexeme tree table error conversions
+	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} -lfl
+
+parser: ${PSRFONT}
+	bison ${BFLAGS} ${PSRFONT}
+	${CC} ${FLAGS} ${PSRBISON}
+
+scanner: ${SCNFONT}
+	flex ${SCNFONT}
+	${CC} ${FLAGS} ${SCNFLEX}
+
+main: ${MAINFONT}
+	${CC} ${FLAGS} ${MAINFONT}
+
+lexeme: ${LXMFONT} ${LXMLIB}
+	${CC} ${FLAGS} ${LXMFONT}
+
+tree: ${TREEFONT} ${TREELIB} ${LXMLIB}
+	${CC} ${FLAGS} ${TREEFONT}
+
+table: ${TBLFONT} ${TBLLIB} ${LXMLIB}
+	${CC} ${FLAGS} ${TBLFONT}
+
+error: ${ERRFONT} ${ERRLIB}
+	${CC} ${FLAGS} ${ERRFONT}
+
+conversions: ${CNVFONT} ${CNVLIB}
+	${CC} ${FLAGS} ${CNVFONT}
+
+semtest: ${EXEC} ${SEMTST} ${RESULTS}
+	${SEMTST}
+	diff ${RESULTS} ${TMPRES}
+
+syntest: ${EXEC} ${SYNTEST}
+	${EXEC} < ${SYNTEST} > r.txt
+	${EXEC} < r.txt      > s.txt
+	diff r.txt s.txt
+	rm -f r.txt
+	rm -f s.txt
+
+lktst: ${EXEC} ${LKTST}
+	${LKTST}
+
+iloctst: ciloc codes mainiloc
+	gcc ${LFLAGS} ${ILOC} ${ILOCGEN} ${CDSGEN} ${ITSTGEN}
+
+ciloc: ${ILOCFONT} 
+	${CC} ${FLAGS} ${ILOCFONT}
+
+codes: ${CDSFONT}
+	${CC} ${FLAGS} ${CDSFONT}
+
+mainiloc: ${ITSTFONT}
+	${CC} ${FLAGS} ${ITSTFONT}	
 
 clean:
-	rm -f etapa5
-	rm -f parser.tab.c
-	rm -f parser.tab.o
-	rm -f parser.tab.h
-	rm -f parser.output
-	rm -f lex.yy.o
-	rm -f lex.yy.c
-	rm -f report
-	rm -f tree
-	rm -f tree.o
-	rm -f table
-	rm -f table.o
-	rm -f tree_test.o
-	rm -f lexeme.o
-	rm -f main.o
-	rm -f conversions.o
-	rm -f error.o
-	rm -f parser.y.swp
-	rm -f tests/tempresults.txt
-	rm -f debug_print.o
-	rm -f iloc.o
-	rm -f codes.o
-	rm -f iloc
-	rm -f tmplk.txt
-	
-
+	rm -f ${EXEC}
+	rm -f ${PSRBISON}
+	rm -f ${PSRGEN}
+	rm -f ${PSRLIB}
+	rm -f ${SCNFLEX}
+	rm -f ${SCNGEN}
+	rm -f ${MAINGEN}
+	rm -f ${LXMGEN}
+	rm -f ${TBLGEN}
+	rm -f ${TREEGEN}
+	rm -f ${ERRGEN}
+	rm -f ${CNVGEN}
+	rm -f ${TMPRES}
+	rm -f ${ILOC}
+	rm -f ${ILOCGEN}
+	rm -f ${CDSGEN}
+	rm -f ${ITSTGEN}
+	rm -f ${OUTPUT}
+	rm -f ${LKTMP}
