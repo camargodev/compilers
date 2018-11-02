@@ -6,8 +6,7 @@
 	#include "include/tree.h"
 	#include "include/lexeme.h"
 	#include "include/table.h"
-	#include "include/errors.h"
-	#include "include/error_helper.h"
+	#include "include/error.h"
 	#include "include/conversions.h"
 	#include "include/category.h"
 	

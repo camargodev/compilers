@@ -3,12 +3,7 @@
 
 
 #include <stdlib.h>
-#include "../include/errors.h"
-
-typedef struct error {
-	int error_code;
-	int line;
-} Error;
+#include "../include/error.h"
 
 Error* new_error(int error_code, int line) {
 	Error* err = malloc(sizeof(Error));

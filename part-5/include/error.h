@@ -23,3 +23,12 @@
 #define ERR_WRONG_PAR_INPUT  50 //parâmetro não é identificador
 #define ERR_WRONG_PAR_OUTPUT 51 //parâmetro não é literal string ou expressão
 #define ERR_WRONG_PAR_RETURN 52 //parâmetro não é expressão compatível com tipo do retorno
+
+typedef struct error {
+	int error_code;
+	int line;
+} Error;
+
+Error* new_error(int error_code, int line);
+void set_error(int error_code);
+char* get_error_message(int error_code);
