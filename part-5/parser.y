@@ -9,6 +9,7 @@
 	#include "include/error.h"
 	#include "include/conversions.h"
 	#include "include/category.h"
+	#include "include/debug_print.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -170,22 +171,15 @@
 %type <node> func_call_params_body
 %type <node> func_call_params_end
 
-%left '*'
-%left '+'
-%left '-'
-%left '/'
-%left '%'
-%left '^'
-%left '|'
-%left '&'
-%left '>'
-%left '<'
-%left TK_OC_AND
 %left TK_OC_OR
-%left TK_OC_LE
-%left TK_OC_NE
-%left TK_OC_EQ
-%left TK_OC_GE
+%left TK_OC_AND
+%left '|'
+%left '^'
+%left '&'
+%left TK_OC_NE TK_OC_EQ
+%left '<' '>' TK_OC_LE TK_OC_GE
+%left '+' '-'
+%left '*' '/' '%'
 
 
 %start programa
@@ -1638,6 +1632,7 @@ not_null_un_op  : '+'
 
 expr 			: expr '+' expr
 					{
+						printf("Passamos primeiro pela adição!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));
@@ -1678,6 +1673,7 @@ expr 			: expr '+' expr
 					}
 				| expr '*' expr
 					{
+						printf("Passamos primeiro pela multiplicação!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));
@@ -1698,6 +1694,7 @@ expr 			: expr '+' expr
 					}
 				| expr '/' expr
 					{
+						printf("Passamos primeiro pela divisão!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));

@@ -24,6 +24,7 @@ CDS  = codes
 MAIN = main
 ITST = iloc_test
 LEX  = lex.yy
+DEB	 = debug_print
 
 SYNTEST  = ${TST}/syntest.txt
 
@@ -38,6 +39,7 @@ ERRFONT  = ${SRC}/${ERR}.c
 CNVFONT  = ${SRC}/${CNV}.c
 ILOCFONT = ${SRC}/${ILOC}.c
 CDSFONT  = ${SRC}/${CDS}.c
+DEBFONT  = ${SRC}/${DEB}.c
 MAINFONT = ${SRC}/${MAIN}.c
 ITSTFONT = ${TST}/${ITST}.c
 
@@ -50,6 +52,7 @@ ERRGEN  = ${ERR}.o
 CNVGEN  = ${CNV}.o
 ILOCGEN = ${ILOC}.o
 CDSGEN  = ${CDS}.o
+DEBGEN	= ${DEB}.o
 MAINGEN = ${MAIN}.o
 ITSTGEN = ${ITST}.o
 
@@ -61,6 +64,7 @@ ERRLIB  = ${LIB}/${ERR}.h
 CNVLIB  = ${LIB}/${CNV}.h
 ILOCLIB = ${LIB}/${ILOC}.h
 CDSLIB  = ${LIB}/${CDS}.h
+DEBLIB	= ${LIB}/${DEB}.h
 
 SEMTST  = ${SCP}/sem_test.sh
 LKTST   = ${SCP}/leak_test.sh
@@ -70,8 +74,8 @@ TMPRES  = ${TST}/tempresults.txt
 OUTPUT  = ${PSR}.output
 LKTMP   = tmplk.txt
 
-all: parser scanner main lexeme tree table error conversions
-	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} -lfl
+all: parser scanner main lexeme tree table error conversions debug
+	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} ${DEBGEN} -lfl
 
 parser: ${PSRFONT}
 	bison ${BFLAGS} ${PSRFONT}
@@ -92,6 +96,9 @@ tree: ${TREEFONT} ${TREELIB} ${LXMLIB}
 
 table: ${TBLFONT} ${TBLLIB} ${LXMLIB}
 	${CC} ${FLAGS} ${TBLFONT}
+
+debug: ${DEBFONT} ${DEBLIB} ${LXMLIB}
+	${CC} ${FLAGS} ${DEBFONT}
 
 error: ${ERRFONT} ${ERRLIB}
 	${CC} ${FLAGS} ${ERRFONT}
@@ -145,3 +152,4 @@ clean:
 	rm -f ${ITSTGEN}
 	rm -f ${OUTPUT}
 	rm -f ${LKTMP}
+	rm -f ${DEBGEN}

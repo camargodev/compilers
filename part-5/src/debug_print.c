@@ -1,10 +1,11 @@
-#include "table.h"
-#include "lexeme.h"
-#include "category.h"
+#include "../include/table.h"
+#include "../include/lexeme.h"
+#include "../include/category.h"
 //#include "tree.h"
 //#include "size.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "../include/debug_print.h"
 
 void print_cabecalho_table_part1()
 {
