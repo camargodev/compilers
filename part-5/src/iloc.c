@@ -120,6 +120,18 @@ iloc_operation* add(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(ADD, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* sub(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(SUB, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* mult(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(MULT, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* div_op(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(DIV, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
 
 /* Free + Print functions */
 
@@ -197,6 +209,7 @@ void print_code(iloc_op_list* list) {
 			read_op(list->ops[op_index]);	
 		}
 	}
+	printf("\n");
 }
 
 void free_register_list() {

@@ -1515,6 +1515,8 @@ attr 		: '=' expr
 					set_node_type($$, $2->type);
 
 					$$->token = copy_lexeme($2->token);
+
+					print_code($2->code);
 				}
 			| TK_OC_SL expr 
 				{
@@ -1654,8 +1656,6 @@ expr 			: expr '+' expr
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, add($1->result_reg, $3->result_reg, $$->result_reg));
-
-						print_code($$->code);
 					}
 				| expr '-' expr
 					{
@@ -1676,6 +1676,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, sub($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr '*' expr
 					{
@@ -1696,6 +1700,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, mult($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr '/' expr
 					{
@@ -1716,6 +1724,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, div_op($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr '%' expr
 					{

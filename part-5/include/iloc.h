@@ -57,5 +57,11 @@ iloc_operation* loadi(int value, char* reg);
 
 iloc_operation* add(char* regop, char* regop2, char* regdst);
 
+iloc_operation* sub(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* mult(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* div_op(char* regop1, char* regop2, char* regdst);
+
 #endif
 
