@@ -36,7 +36,7 @@ typedef struct i_op_list {
 } iloc_op_list;
 
 iloc_op_list* new_op_list();
-iloc_op_list* concat_op_lists(iloc_op_list* list1, iloc_op_list* list2);
+iloc_op_list* concat_code(iloc_op_list* list1, iloc_op_list* list2);
 
 iloc_arg* new_arg(int type, void* argum);
 
@@ -54,6 +54,8 @@ void free_op_list(iloc_op_list* list);
 void print_code(iloc_op_list* list);
 
 iloc_operation* loadi(int value, char* reg);
+
+iloc_operation* add(char* regop, char* regop2, char* regdst);
 
 #endif
 

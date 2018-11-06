@@ -48,7 +48,7 @@ int main() {
 	add_op(list2, stri);
 	add_op(list2, nop2);
 
-	iloc_op_list* final = concat_op_lists(list, list2);
+	iloc_op_list* final = concat_code(list, list2);
 
 	print_code(final);
 

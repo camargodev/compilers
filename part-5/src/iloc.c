@@ -21,7 +21,7 @@ iloc_op_list* new_op_list() {
 	return list;
 }
 
-iloc_op_list* concat_op_lists(iloc_op_list* list1, iloc_op_list* list2) {
+iloc_op_list* concat_code(iloc_op_list* list1, iloc_op_list* list2) {
 	iloc_op_list *mixed_list = new_op_list();
 	int index;
 	
@@ -36,7 +36,7 @@ iloc_op_list* concat_op_lists(iloc_op_list* list1, iloc_op_list* list2) {
 	list1 = NULL;
 	free_list_and_ops(list2);
 	list2 = NULL;
-	
+
 	return mixed_list;
 }
 
@@ -114,6 +114,10 @@ char* new_reg() {
 /* Instructions */
 iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
+}
+
+iloc_operation* add(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(ADD, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
 
 

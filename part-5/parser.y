@@ -1633,7 +1633,6 @@ not_null_un_op  : '+'
 
 expr 			: expr '+' expr
 					{
-						printf("Passamos primeiro pela adição!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));
@@ -1651,6 +1650,12 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, add($1->result_reg, $3->result_reg, $$->result_reg));
+
+						print_code($$->code);
 					}
 				| expr '-' expr
 					{
@@ -1674,7 +1679,6 @@ expr 			: expr '+' expr
 					}
 				| expr '*' expr
 					{
-						printf("Passamos primeiro pela multiplicação!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));
@@ -1695,7 +1699,6 @@ expr 			: expr '+' expr
 					}
 				| expr '/' expr
 					{
-						printf("Passamos primeiro pela divisão!\n");
 						$$ = new_node(NULL);
 						add_node($$, $1);
 						add_node($$, new_node($2));
@@ -1958,7 +1961,10 @@ expr 			: expr '+' expr
 
 						$$->is_literal = $2->is_literal;
 
-						$$->token = copy_lexeme($2->token);						
+						$$->token = copy_lexeme($2->token);	
+
+						$$->code = $2->code;
+						$$->result_reg = $2->result_reg;					
 					}
 
 expr_vals		: TK_LIT_FLOAT
