@@ -5,6 +5,7 @@
 
 int main() {
 	iloc_op_list* list = new_op_list();
+	iloc_op_list* list2 = new_op_list();
 
 	int fourteen = 14;
 	int sixhun = 600;
@@ -40,13 +41,16 @@ int main() {
 	add_op(list, add3);
 	add_op(list, sub3);
 	add_op(list, nop1);
-	add_op(list, jmp1);
-	add_op(list, mult);
-	add_op(list, jmp2);
-	add_op(list, stri);
-	add_op(list, nop2);
+	
+	add_op(list2, jmp1);
+	add_op(list2, mult);
+	add_op(list2, jmp2);
+	add_op(list2, stri);
+	add_op(list2, nop2);
 
-	print_code(list);
+	iloc_op_list* final = concat_op_lists(list, list2);
 
-	free_op_list(list);
+	print_code(final);
+
+	free_op_list(final);
 }

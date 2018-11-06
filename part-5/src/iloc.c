@@ -9,6 +9,7 @@
 
 void set_arg_to_freedom(iloc_arg* arg);
 void free_op(iloc_operation* op);
+void free_list_and_ops(iloc_op_list* list);
 
 int num_freed_registers = 0;
 iloc_arg** freed_registers = NULL;
@@ -18,6 +19,25 @@ iloc_op_list* new_op_list() {
 	list->num_ops = 0;
 	list->ops = NULL;
 	return list;
+}
+
+iloc_op_list* concat_op_lists(iloc_op_list* list1, iloc_op_list* list2) {
+	iloc_op_list *mixed_list = new_op_list();
+	int index;
+	
+	for (index = 0; index < list1->num_ops; index++) {
+		add_op(mixed_list, list1->ops[index]);
+	}
+	for (index = 0; index < list2->num_ops; index++) {
+		add_op(mixed_list, list2->ops[index]);
+	}
+	
+	free_list_and_ops(list1);
+	list1 = NULL;
+	free_list_and_ops(list2);
+	list2 = NULL;
+	
+	return mixed_list;
 }
 
 iloc_operation* new_op(int op_code) {
@@ -184,6 +204,7 @@ void free_register_list() {
 	}
 	free(freed_registers);
 	freed_registers = NULL;
+	num_freed_registers = 0;
 }
 
 void free_op_list(iloc_op_list* list) {
@@ -223,5 +244,14 @@ void set_arg_to_freedom(iloc_arg* argum) {
 			free(argum);
 		}
 		argum = NULL;
+	}
+}
+
+void free_list_and_ops(iloc_op_list* list) {
+	if (list != NULL) {
+		free(list->ops);
+		list->ops = NULL;
+		free(list);
+		list = NULL;
 	}
 }
