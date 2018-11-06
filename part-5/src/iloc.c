@@ -91,6 +91,14 @@ char* new_reg() {
 	return reg;
 }
 
+/* Instructions */
+iloc_operation* loadi(int value, char* reg) {
+	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
+}
+
+
+/* Free + Print functions */
+
 void add_to_freed_args(iloc_arg* arg) {
 	if (num_freed_registers == 0) {
 		freed_registers = (iloc_arg**) malloc(sizeof(iloc_arg));

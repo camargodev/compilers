@@ -10,6 +10,7 @@
 	#include "include/conversions.h"
 	#include "include/category.h"
 	#include "include/debug_print.h"
+	#include "include/iloc.h"
 	
 	extern int yylineno;
 	extern void* arvore;
@@ -1971,6 +1972,11 @@ expr_vals		: TK_LIT_FLOAT
 						$$ = new_node($1);
 						set_node_type($$, INT);
 						$$->is_literal = TRUE;
+
+						$$->result_reg = new_reg();
+						add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));
+						//print_code($$->code);
+						//printf("\nREG = %s", $$->result_reg);
 					}
 				| id_for_expr id_seq 
 					{

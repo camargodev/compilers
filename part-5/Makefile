@@ -74,8 +74,8 @@ TMPRES  = ${TST}/tempresults.txt
 OUTPUT  = ${PSR}.output
 LKTMP   = tmplk.txt
 
-all: parser scanner main lexeme tree table error conversions debug
-	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} ${DEBGEN} -lfl
+all: parser scanner main lexeme tree table error conversions debug ciloc codes
+	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} ${DEBGEN} ${ILOCGEN} ${CDSGEN} -lfl
 
 parser: ${PSRFONT}
 	bison ${BFLAGS} ${PSRFONT}

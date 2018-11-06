@@ -1,6 +1,9 @@
 // João Vitor de Camargo
 // Marcellus Farias
 
+#ifndef ILOC_H
+#define ILOC_H
+
 /* Possible values for iloc_arg->type */
 #define CONSTANT 122
 #define LABEL	 123
@@ -47,4 +50,8 @@ char* new_reg();
 void free_op_list(iloc_op_list* list);
 
 void print_code(iloc_op_list* list);
+
+iloc_operation* loadi(int value, char* reg);
+
+#endif
 

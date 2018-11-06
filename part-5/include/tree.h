@@ -1,14 +1,21 @@
 // João Vitor de Camargo
 // Marcellus Farias
+#include "iloc.h"
+
 
 typedef struct node {
 	struct 	Lexeme* token;
-	struct  iloc_op_list* code;
+	
+	char*	result_reg;
+	iloc_op_list* code;
+	
 	int		conversion;
 	int		type;
 	char*	user_type;
+	
 	int		is_literal;
 	int		point; // Used for pipes
+	
 	int 	children_num;
 	struct 	node **children;
 } Node;

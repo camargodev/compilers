@@ -28,6 +28,7 @@ char* get_instruction_name(int code) {
 		
 		/*( Memory operations )*/
 		case LOAD:    return "LOAD";
+		case LOADI:   return "LOADI";
 		case LOADAI:  return "LOADAI";
 		case LOADA0:  return "LOADA0";
 		case CLOAD:   return "CLOAD";
