@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern int displacement_rfp;
+
 table_line* get_line(table_stack * stack, char* token);
 void free_line(table_line line);
 void free_table(table table);
@@ -202,7 +204,8 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		line.token_name = strdup(globalvar_args.name);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		
+		line.mem_address = displacement_rfp;
+
 		if (globalvar_args.is_array) {
 			line.category = ARRAY;
 			line.array_size = globalvar_args.array_size;
@@ -263,6 +266,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
+		line.mem_address = 0;
 		
 		line.category = FUNCTION;
 		line.is_static = FALSE;
@@ -299,6 +303,7 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
+		line.mem_address = displacement_rfp;
 		
 		line.category = VARIABLE;
 		line.is_static = lv_static;
@@ -506,4 +511,7 @@ int get_size(table_stack* stack, Lexeme* token) {
 	return get_line(stack, token->value.v_string)->token_size;
 }
 
+int get_mem_address(table_stack* stack, Lexeme* token) {
+	return get_line(stack, token->value.v_string)->mem_address;
+}
 

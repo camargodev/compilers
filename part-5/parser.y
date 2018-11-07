@@ -45,6 +45,7 @@
 	int infer(int type_a, int type_b);
 	int infer_not_expr(int type_a, int type_b);
 
+	int displacement_rfp = 0;
 %}
 
 %verbose
@@ -215,7 +216,6 @@ initializer : %empty
 
 destroyer : %empty
 			{
-				//print_stack(stack);
 				free_table_stack(stack);
 				if (error != NULL) {
 					int error_code = error->error_code;
@@ -490,6 +490,9 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 							set_error(ERR_DECLARED);
 						} 
 						
+						if(global_var.type == INT)
+							displacement_rfp = displacement_rfp + 4;
+
 						global_var.name = $1->value.v_string;
 						add_global_var(stack, global_var, $1);
 
@@ -663,7 +666,8 @@ push_table		: %empty
 					}
 
 pop_table		: %empty
-					{						
+					{	
+						//print_stack(stack);					
 						pop(stack);
 						function.function_args = NULL;
 						function.type = 0;
@@ -748,7 +752,15 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						if($1->type == USER_TYPE && $2->type == STRING) {
 							update_string_size(stack, $1->token, $2->token);							
 						}
-						
+
+						$$->code = $2->code;
+						$$->result_reg = new_reg();
+
+						char* reg_temp = new_reg();
+						add_op($$->code, loadai("rfp", get_mem_address(stack, $1->token), reg_temp));
+						add_op($$->code, store($2->result_reg, reg_temp));	
+
+						print_code($2->code);											
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -821,10 +833,16 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
-						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED)
+						
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
 							set_error(ERR_DECLARED);
-						else
+						}
+						else{
+							if($1->type == INT)
+								displacement_rfp = displacement_rfp + 4;
+
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+						}
 
 						if ($3->type != NOT_DECLARED) 
 							if ($1->type == $3->type) {
@@ -1176,10 +1194,16 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 
 						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
-						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED)
+						
+						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
 							set_error(ERR_DECLARED);
-						else
+						}
+						else{
+							if($1->type == INT)
+								displacement_rfp = displacement_rfp + 4;
+
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+						}
 
 						if ($3->type != NOT_DECLARED) 
 							if ($1->type == $3->type) {
@@ -1412,7 +1436,9 @@ cmd_fix_attr		: id_seq_simple attr
 					set_node_type($$, $2->type);
 
 					$$->token = copy_lexeme($2->token);	
-					$$->user_type = $1->user_type;				
+					$$->user_type = $1->user_type;	
+					$$->result_reg = $2->result_reg;
+					$$->code = $2->code;			
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
 				{
@@ -1515,8 +1541,8 @@ attr 		: '=' expr
 					set_node_type($$, $2->type);
 
 					$$->token = copy_lexeme($2->token);
-
-					print_code($2->code);
+					$$->result_reg = $2->result_reg;
+					$$->code = $2->code;					
 				}
 			| TK_OC_SL expr 
 				{
@@ -2119,7 +2145,12 @@ id_for_expr		: TK_IDENTIFICADOR
 							$$->user_type = type_name;
 						} else {
 							$$->type = param_type;
-						}															
+						}	
+
+						$$->result_reg = new_reg();
+						//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
+						//printf("Result_Reg [%s]\n", $$->result_reg);
+						add_op($$->code, loadai("rfp", get_mem_address(stack, $$->token), $$->result_reg));							
 					}
 
 /*piped 			: %empty

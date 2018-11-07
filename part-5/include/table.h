@@ -83,6 +83,10 @@ typedef struct line {
 	int num_func_args;
 	Lexeme *lexeme;
 
+	//INFO FOR CODE GENERATION
+	int mem_address;
+
+
 } table_line;
 
 typedef struct table {
@@ -142,4 +146,5 @@ int get_param_type(char* field, int num_params, func_args* params);
 
 int get_size(table_stack* stack, Lexeme* token);
 void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data);
+int get_mem_address(table_stack* stack, Lexeme* token);
 

@@ -116,6 +116,14 @@ iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
 }
 
+iloc_operation* loadai(char* regop1, int value, char* regdst) {
+	return new_3arg_op(LOADAI, new_arg(REGISTER, regop1), new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* store(char* regop1, char* regdst) {
+	return new_2arg_op(STORE, new_arg(REGISTER, regop1), new_arg(REGISTER, regdst));
+}
+
 iloc_operation* add(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(ADD, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }

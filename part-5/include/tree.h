@@ -38,4 +38,4 @@ void print_token(struct Lexeme* lex_val);
 
 void descompila(void *node);
 
-void libera(void *node) ;
+void libera(void *node);

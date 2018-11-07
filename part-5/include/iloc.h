@@ -55,6 +55,10 @@ void print_code(iloc_op_list* list);
 
 iloc_operation* loadi(int value, char* reg);
 
+iloc_operation* loadai(char* regop1, int value, char* regdst);
+
+iloc_operation* store(char* regop1, char* regdst);
+
 iloc_operation* add(char* regop, char* regop2, char* regdst);
 
 iloc_operation* sub(char* regop1, char* regop2, char* regdst);

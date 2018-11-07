@@ -19,6 +19,7 @@ void print_cabecalho_table_part1()
 	printf("\tIUT");
 	printf("\tASI");
 	printf("\tNUT");
+	printf("\tDIS");
 	
 	printf("\n");
 
@@ -63,6 +64,7 @@ void print_line(table_line line)
 	printf("%d\t", (line.user_type != NULL) ? TRUE : FALSE);
 	printf("%d\t", line.array_size);
 	printf("%d\t", line.num_user_type_args);
+	printf("%d\t", line.mem_address);
 	
 	if(line.user_type != NULL)
 		print_user_type_list(line.user_type_args, line.num_user_type_args);
