@@ -1854,6 +1854,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+						
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_gt($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr '<' expr
 					{
@@ -1874,6 +1878,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_lt($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr TK_OC_AND expr
 					{
@@ -1928,6 +1936,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_le($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr TK_OC_NE expr
 					{
@@ -1948,6 +1960,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_ne($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr TK_OC_EQ expr
 					{
@@ -1968,6 +1984,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_eq($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| expr TK_OC_GE expr
 					{
@@ -1988,6 +2008,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+						add_op($$->code, cmp_ge($1->result_reg, $3->result_reg, $$->result_reg));
 					}
 				| un_op expr_vals
 					{
@@ -2018,9 +2042,7 @@ expr_vals		: TK_LIT_FLOAT
 						$$->is_literal = TRUE;
 
 						$$->result_reg = new_reg();
-						add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));
-						//print_code($$->code);
-						//printf("\nREG = %s", $$->result_reg);
+						add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));						
 					}
 				| id_for_expr id_seq 
 					{
@@ -2118,6 +2140,10 @@ expr_vals		: TK_LIT_FLOAT
 
 						$$->type = $2->type;
 						$$->user_type = $2->user_type;
+
+						$$->result_reg = $2->result_reg;
+						$$->code = $2->code;
+						//add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));	
 					}
 				| bool
 					{

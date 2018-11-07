@@ -140,6 +140,29 @@ iloc_operation* div_op(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(DIV, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* cmp_gt(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_GT, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* cmp_lt(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_LT, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* cmp_le(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_LE, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* cmp_ge(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_GE, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* cmp_eq(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_EQ, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(CMP_NE, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
+}
 
 /* Free + Print functions */
 

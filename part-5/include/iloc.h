@@ -67,5 +67,17 @@ iloc_operation* mult(char* regop1, char* regop2, char* regdst);
 
 iloc_operation* div_op(char* regop1, char* regop2, char* regdst);
 
+iloc_operation* cmp_gt(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cmp_lt(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cmp_le(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cmp_ge(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cmp_eq(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst);
+
 #endif
 
