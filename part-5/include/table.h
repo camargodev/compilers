@@ -74,6 +74,7 @@ typedef struct line {
 	int token_size;
 	int category;
 	char *user_type;
+	int is_global_var;
 	int is_static;
 	int is_const;
 	int array_size;
@@ -147,4 +148,4 @@ int get_param_type(char* field, int num_params, func_args* params);
 int get_size(table_stack* stack, Lexeme* token);
 void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data);
 int get_mem_address(table_stack* stack, Lexeme* token);
-
+int is_global_var(table_stack* stack, char* var);

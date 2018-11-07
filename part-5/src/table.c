@@ -6,6 +6,7 @@
 #include <string.h>
 
 extern int displacement_rfp;
+extern int displacement_rbss;
 
 table_line* get_line(table_stack * stack, char* token);
 void free_line(table_line line);
@@ -174,6 +175,7 @@ table_line inicialize_line(Lexeme * token) {
 
 	line.is_static = FALSE;
 	line.is_const = FALSE;
+	line.is_global_var = FALSE;
 
 	line.lexeme = token;
 
@@ -204,7 +206,8 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 		line.token_name = strdup(globalvar_args.name);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = displacement_rfp;
+		line.mem_address = displacement_rbss;
+		line.is_global_var = TRUE;
 
 		if (globalvar_args.is_array) {
 			line.category = ARRAY;
@@ -515,3 +518,6 @@ int get_mem_address(table_stack* stack, Lexeme* token) {
 	return get_line(stack, token->value.v_string)->mem_address;
 }
 
+int is_global_var(table_stack* stack, char* var) {
+	return get_line(stack, var)->is_global_var;
+}

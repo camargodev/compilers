@@ -46,6 +46,7 @@
 	int infer_not_expr(int type_a, int type_b);
 
 	int displacement_rfp = 0;
+	int displacement_rbss = 0;
 %}
 
 %verbose
@@ -491,7 +492,8 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 						} 
 						
 						if(global_var.type == INT)
-							displacement_rfp = displacement_rfp + 4;
+							displacement_rbss = displacement_rbss + 4;
+
 
 						global_var.name = $1->value.v_string;
 						add_global_var(stack, global_var, $1);
@@ -2174,9 +2176,10 @@ id_for_expr		: TK_IDENTIFICADOR
 						}	
 
 						$$->result_reg = new_reg();
+						char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
 						//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
 						//printf("Result_Reg [%s]\n", $$->result_reg);
-						add_op($$->code, loadai("rfp", get_mem_address(stack, $$->token), $$->result_reg));							
+						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));							
 					}
 
 /*piped 			: %empty
