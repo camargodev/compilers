@@ -73,6 +73,8 @@ char* get_instruction_name(int code) {
 		case XOR: return "XOR";
 		case XORI: return "XORI";
 
+		case LABEL_INST: return "LABEL_INST";
+
 		default: return "NOP";
 	}
 }
@@ -146,6 +148,8 @@ int get_instruction_type(int code) {
 		case ORI:  return TWO_IN_ONE_OUT;
 		case XOR:  return TWO_IN_ONE_OUT;
 		case XORI: return TWO_IN_ONE_OUT;
+
+		case LABEL_INST: return LBL;
 	}
 }
 

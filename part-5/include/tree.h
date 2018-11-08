@@ -2,6 +2,10 @@
 // Marcellus Farias
 #include "iloc.h"
 
+typedef struct list_label {
+	int num_labels;
+	char** list;
+} lbl_list;
 
 typedef struct node {
 	struct 	Lexeme* token;
@@ -18,6 +22,10 @@ typedef struct node {
 	
 	int 	children_num;
 	struct 	node **children;
+
+	//used for code
+	lbl_list false_list;
+	lbl_list true_list;
 } Node;
 
 Node* new_node(struct Lexeme* token);
@@ -29,6 +37,8 @@ void set_node_conversion(Node* token, int conversion);
 void add_node(Node *root, Node *child);
 
 void print_token(struct Lexeme* lex_val);
+
+void add_list(Node* node, char* label, int bool);
 
 /*
 	The following functions may have

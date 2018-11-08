@@ -111,6 +111,13 @@ char* new_reg() {
 	return reg;
 }
 
+char* new_lbl() {
+	char* lbl = (char*) malloc(32);
+	sprintf(lbl, "%s%d", "L", lbl_count);
+	lbl_count++;
+	return lbl;
+}
+
 /* Instructions */
 iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
@@ -164,6 +171,14 @@ iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(CMP_NE, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* cbr(char* regop1, char* lbl_true, char* lbl_false) {
+	return new_3arg_op(CBR, new_arg(REGISTER, regop1), new_arg(LABEL, lbl_true), new_arg(LABEL, lbl_false));
+}
+
+iloc_operation* label(char* label_name) {
+	return new_1arg_op(LABEL_INST, new_arg(LABEL, label_name));
+}
+
 /* Free + Print functions */
 
 void add_to_freed_args(iloc_arg* arg) {
@@ -195,7 +210,9 @@ void reag_arg(iloc_arg* arg) {
 }
 
 void read_op(iloc_operation* op) {
-	printf("%s ", get_instruction_name(op->op_code));
+	
+	if(get_instruction_type(op->op_code) != LBL)
+		printf("%s ", get_instruction_name(op->op_code));
 	if (op->op_code != NOP) {
 		switch(get_instruction_type(op->op_code)) {
 			
@@ -226,6 +243,10 @@ void read_op(iloc_operation* op) {
 				reag_arg(op->args[0]);
 				break;
 
+			case LBL:
+				reag_arg(op->args[0]);
+				printf(":");
+				break;
 			default: break;
 
 		}

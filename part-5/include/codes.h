@@ -6,6 +6,7 @@
 #define ONE_IN_TWO_OUT 1020
 #define TWO_IN_ONE_OUT 2010
 #define ONE_OUT        0010
+#define LBL		   	   1000
 
 /* Instructions */
 #define NOP  0
@@ -77,6 +78,9 @@
 #define ORI  44
 #define XOR  45
 #define XORI 46
+
+/* Label */
+#define LABEL_INST 47
 
 char* get_instruction_name(int code);
 int   get_instruction_type(int code);

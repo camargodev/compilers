@@ -11,6 +11,7 @@
 
 /* To generate new unique regs */
 static int reg_count = 0;
+static int lbl_count = 0;
 
 /*  Just integer constants and
 	identifiers will be used for now */
@@ -78,6 +79,15 @@ iloc_operation* cmp_ge(char* regop1, char* regop2, char* regdst);
 iloc_operation* cmp_eq(char* regop1, char* regop2, char* regdst);
 
 iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst);
+
+iloc_operation* cbr(char* regop1, char* lbl_true, char* lbl_false);
+
+iloc_operation* label(char* label_name);
+
+char* new_lbl();
+
+//TODO:
+//Node* add_short_circuit(Node* node, char* reg_result, char* label_true, char* label_false);
 
 #endif
 

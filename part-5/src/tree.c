@@ -179,3 +179,22 @@ void print_float(float f) {
 void print_bool(int b) {
 	printf("%s ", b == FALSE ? "false" : "true");
 }
+
+void add_list(Node* node, char* label, int bool) {
+	if(bool) {
+		if(node->true_list.list == NULL) 
+			node->true_list.list = malloc(sizeof(char*));			
+		
+		node->true_list.num_labels++;
+		node->true_list.list[node->true_list.num_labels] = label;
+	}
+	else {
+		if(node->false_list.list == NULL) 
+			node->false_list.list = malloc(sizeof(char*));			
+		
+		node->false_list.num_labels++;
+		node->false_list.list[node->true_list.num_labels] = label;
+	}
+
+	return;
+}
