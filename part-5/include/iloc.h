@@ -57,6 +57,8 @@ char* new_reg();
 
 void free_op_list(iloc_op_list* list);
 
+void free_label_list(lbl_list* list);
+
 void print_code(iloc_op_list* list);
 
 iloc_operation* loadi(int value, char* reg);
@@ -92,6 +94,8 @@ iloc_operation* label(char* label_name);
 void patch_list(iloc_op_list* code,  lbl_list* list, char* real_label);
 
 void add_label_to_list(lbl_list* list, char* label);
+
+lbl_list* new_label_list();
 
 char* new_lbl();
 

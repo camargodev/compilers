@@ -118,6 +118,15 @@ char* new_lbl() {
 	return lbl;
 }
 
+
+lbl_list* new_label_list() {
+	lbl_list* list = (lbl_list*) malloc(sizeof(lbl_list));
+	list->num_labels = 0;
+	list->list = NULL;
+	return list;
+}
+
+
 void patch_arg(iloc_arg* arg, char* temp_label, char* real_label) {
 	if (arg->type == LABEL) {
 		if (strcmp(arg->arg.str_var, temp_label) == 0) {
@@ -145,9 +154,9 @@ void patch_list(iloc_op_list* code, lbl_list* list, char* real_label) {
 
 void add_label_to_list(lbl_list* list, char* label) {
 	if (list->num_labels == 0) {
-		list->list = (char**) malloc(sizeof(lbl_list));
+		list->list = (char**) malloc(sizeof(char*));
 	} else {
-		list->list = (char**) realloc(list->list, (list->num_labels+1) * sizeof(lbl_list));
+		list->list = (char**) realloc(list->list, (list->num_labels+1) * sizeof(char*));
 	}
 	list->list[list->num_labels] = label;
 	list->num_labels++;
@@ -300,11 +309,22 @@ void print_code(iloc_op_list* list) {
 	printf("\n");
 }
 
+void free_label_list(lbl_list* list) {
+	int index;
+	for (index = 0; index < list->num_labels; index++) {
+		free(list->list[index]);
+		list->list[index] = NULL;
+	}
+	free(list);
+	list = NULL;
+}
+
 void free_register_list() {
 	int index;
 	for (index = 0; index < num_freed_registers; index++) {
-		if (freed_registers[index]->type != CONSTANT)
+		if (freed_registers[index]->type == REGISTER) {
 			free(freed_registers[index]->arg.str_var);
+		}
 		free(freed_registers[index]);
 	}
 	free(freed_registers);
@@ -339,9 +359,10 @@ void free_op(iloc_operation* op) {
 	}
 }
 
+
 void set_arg_to_freedom(iloc_arg* argum) {
 	if (argum != NULL) {
-		if (argum->type != CONSTANT) {
+		if (argum->type == REGISTER) {
 			if (!is_arg_freed(argum)) {
 				add_to_freed_args(argum);
 			}

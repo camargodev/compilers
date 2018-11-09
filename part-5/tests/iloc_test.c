@@ -6,7 +6,7 @@
 int main() {
 	iloc_op_list* list = new_op_list();
 	iloc_op_list* list2 = new_op_list();
-	lbl_list* true_list = (lbl_list*) malloc(sizeof(lbl_list));
+	lbl_list* true_list = new_label_list();
 	int fourteen = 14;
 	int sixhun = 600;
 
@@ -59,9 +59,9 @@ int main() {
 	iloc_op_list* final = concat_code(list, list2);
 
 	print_code(final);
-
 	patch_list(final, true_list, "lreal");
-
 	print_code(final);
-	//free_op_list(final);
+
+	free_op_list(final);
+	free_label_list(true_list);
 }
