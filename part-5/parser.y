@@ -1952,6 +1952,39 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
+
+						char* lbl_true = new_lbl();
+						char* lbl_false = new_lbl();
+						char* lbl_next = new_lbl();
+
+						add_label_to_list($$->true_list, lbl_true);
+						add_label_to_list($$->true_list, lbl_next);
+						add_label_to_list($$->false_list, lbl_false);
+
+						//compares if first expr > 0; if not, short-circuits; if true, compares the second expr
+						char* zero = new_reg();
+						char* result = new_reg();
+						add_op($$->code, loadi(0, zero));
+						add_op($$->code, cmp_ne($1->result_reg, zero, result));
+
+						//expr > 0
+						add_op($$->code, cbr(result, lbl_true, lbl_next));
+						
+							//false -> ve se o proximo é falso
+						add_op($$->code, label(lbl_next));
+						add_op($$->code, cmp_ne($3->result_reg, zero, result));
+						add_op($$->code, cbr(result, lbl_true, lbl_false));
+
+							//os dois falso
+						add_op($$->code, label(lbl_false));
+						add_op($$->code, loadi(0, $$->result_reg));
+
+							//true -> acaba e salva como 1
+						add_op($$->code, label(lbl_true));
+						add_op($$->code, loadi(1, $$->result_reg));	
 					}
 				| expr TK_OC_LE expr
 					{
