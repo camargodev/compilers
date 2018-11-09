@@ -153,4 +153,25 @@ int get_instruction_type(int code) {
 	}
 }
 
+char* get_instruction_syntax(int code) {
+	switch (code) {
+				
+		/*( Flow )*/
+		case CMP_LT: 
+		case CMP_LE: 
+		case CMP_EQ: 
+		case CMP_GE: 
+		case CMP_GT: 
+		case CMP_NE: 
+		case CBR:    return "->";
+
+		
+		/*( Jumps )*/
+		case JUMPI: 
+		case JUMP:  return "->";
+
+		default:	return "=>";
+	}
+}
+
 

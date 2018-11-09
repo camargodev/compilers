@@ -84,3 +84,4 @@
 
 char* get_instruction_name(int code);
 int   get_instruction_type(int code);
+char* get_instruction_syntax(int code);

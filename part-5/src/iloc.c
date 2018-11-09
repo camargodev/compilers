@@ -263,13 +263,13 @@ void read_op(iloc_operation* op) {
 			
 			case ONE_IN_ONE_OUT:
 				reag_arg(op->args[0]);
-				printf(" => ");
+				printf(" %s ", get_instruction_syntax(op->op_code));
 				reag_arg(op->args[1]);
 				break;
 			
 			case ONE_IN_TWO_OUT:
 				reag_arg(op->args[0]);
-				printf(" => ");
+				printf(" %s ", get_instruction_syntax(op->op_code));
 				reag_arg(op->args[1]);
 				printf(", ");
 				reag_arg(op->args[2]);
@@ -279,12 +279,12 @@ void read_op(iloc_operation* op) {
 				reag_arg(op->args[0]);
 				printf(", ");
 				reag_arg(op->args[1]);
-				printf(" => ");
+				printf(" %s ", get_instruction_syntax(op->op_code));
 				reag_arg(op->args[2]);
 				break;
 
 			case ONE_OUT:
-				printf("=> ");
+				printf("%s ", get_instruction_syntax(op->op_code));
 				reag_arg(op->args[0]);
 				break;
 
