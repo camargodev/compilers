@@ -118,6 +118,42 @@ char* new_lbl() {
 	return lbl;
 }
 
+void patch_arg(iloc_arg* arg, char* temp_label, char* real_label) {
+	if (arg->type == LABEL) {
+		if (strcmp(arg->arg.str_var, temp_label) == 0) {
+			arg->arg.str_var = real_label;
+		}
+	}
+}
+
+void patch_op(iloc_operation* op, lbl_list* list, char* real_label) {
+	int lbl_index;
+	int arg_index;
+	for (lbl_index = 0; lbl_index < list->num_labels; lbl_index++) {
+		for (arg_index = 0; arg_index < op->num_args; arg_index++) {
+			patch_arg(op->args[arg_index], list->list[lbl_index], real_label);
+		}
+	}
+}
+
+void patch_list(iloc_op_list* code, lbl_list* list, char* real_label) {
+	int op_index;
+	for (op_index = 0; op_index < code->num_ops; op_index++) {
+		patch_op(code->ops[op_index], list, real_label);
+	}
+}
+
+void add_label_to_list(lbl_list* list, char* label) {
+	if (list->num_labels == 0) {
+		list->list = (char**) malloc(sizeof(lbl_list));
+	} else {
+		list->list = (char**) realloc(list->list, (list->num_labels+1) * sizeof(lbl_list));
+	}
+	list->list[list->num_labels] = label;
+	list->num_labels++;
+}
+
+
 /* Instructions */
 iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));

@@ -36,6 +36,11 @@ typedef struct i_op_list {
 	iloc_operation** ops;
 } iloc_op_list;
 
+typedef struct label_list {
+	int num_labels;
+	char** list;
+} lbl_list;
+
 iloc_op_list* new_op_list();
 iloc_op_list* concat_code(iloc_op_list* list1, iloc_op_list* list2);
 
@@ -83,6 +88,10 @@ iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst);
 iloc_operation* cbr(char* regop1, char* lbl_true, char* lbl_false);
 
 iloc_operation* label(char* label_name);
+
+void patch_list(iloc_op_list* code,  lbl_list* list, char* real_label);
+
+void add_label_to_list(lbl_list* list, char* label);
 
 char* new_lbl();
 

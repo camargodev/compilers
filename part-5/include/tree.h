@@ -2,11 +2,6 @@
 // Marcellus Farias
 #include "iloc.h"
 
-typedef struct list_label {
-	int num_labels;
-	char** list;
-} lbl_list;
-
 typedef struct node {
 	struct 	Lexeme* token;
 	
