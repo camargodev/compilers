@@ -1906,9 +1906,9 @@ expr 			: expr '+' expr
 						char* lbl_false = new_lbl();
 						char* lbl_next = new_lbl();
 
-						add_list($$, lbl_true, TRUE);
-						add_list($$, lbl_next, TRUE);
-						add_list($$, lbl_false, FALSE);
+						add_label_to_list($$->true_list, lbl_true);
+						add_label_to_list($$->true_list, lbl_next);
+						add_label_to_list($$->false_list, lbl_false);
 
 						//compares if first expr > 0; if not, short-circuits; if true, compares the second expr
 						char* zero = new_reg();
