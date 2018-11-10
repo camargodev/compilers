@@ -59,6 +59,11 @@ iloc_arg* new_arg(int type, void* argum) {
 	return arg;
 }
 
+void new_code(iloc_op_list* list) {
+	list->ops = (iloc_operation**) malloc(sizeof(iloc_operation));
+	return;
+}
+
 void add_op(iloc_op_list* list, iloc_operation* op) {
 	if (list->ops == NULL) {
 		list->ops = (iloc_operation**) malloc(sizeof(iloc_operation));

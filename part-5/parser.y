@@ -581,7 +581,7 @@ func_begin      : func_type func_name '(' func_params
 						$$ = $1;
 						add_node($$, $2);
 						add_node($$, new_node($3));
-						add_node($$, $4);
+						add_node($$, $4);					
 						
 					}
 
@@ -591,6 +591,7 @@ func_begin      : func_type func_name '(' func_params
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
+						
 					}
 
 func_name_user_type	: TK_IDENTIFICADOR TK_IDENTIFICADOR
@@ -632,6 +633,8 @@ func_params     : ')' add_func func_body
 					{
 						$$ = new_node($1);
 						add_node($$, $3);
+
+						//$$->code = $3->code;
 					}
 				| var func_params_end
 					{
@@ -643,6 +646,8 @@ func_params_end : ')' add_func func_body
 					{
 						$$ = new_node($1);
 						add_node($$, $3);
+
+						//$$->code = $3->code;
 					}
 				| ',' var func_params_end
 					{
@@ -660,6 +665,10 @@ func_body       : '{' push_table cmd_block
 					{
 						$$ = new_node($1);
 						add_node($$, $3);
+
+						//printf("FUNCBODY\n");
+						//$$->code = $3->code;
+						//print_code($3->code);					
 					}
 
 push_table		: %empty
@@ -684,7 +693,12 @@ cmd_block	: '}' pop_table
 			| cmd cmd_block
 				{
 					$$ = $1;
-					add_node($$, $2);
+					add_node($$, $2);	
+
+					//printf("CMDBLOCK\n");
+					$$->code = $1->code;
+					$$->result_reg = $1->result_reg;
+					print_code($1->code);				
 				} 
 
 cmd_ident	: TK_IDENTIFICADOR
@@ -760,9 +774,9 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 
 						char* reg_temp = new_reg();
 						add_op($$->code, loadai("rfp", get_mem_address(stack, $1->token), reg_temp));
-						add_op($$->code, store($2->result_reg, reg_temp));	
+						add_op($$->code, store($2->result_reg, reg_temp));		
 
-						print_code($2->code);											
+						//print_code($$->code);													
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -865,16 +879,27 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
+
+						$$->code = $1->code;
+						$$->result_reg = new_reg();
 					}
 				| while ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
+
+						$$->code = $1->code;
+						$$->result_reg = new_reg();
+
+						//print_code($$->code);
 					}
 				| do_while ';'
 					{
 						$$ = $1;
 						add_node($$, new_node($2));
+
+						$$->code = $1->code;
+						$$->result_reg = new_reg();
 					}
 				| continue ';'
 					{
@@ -987,6 +1012,36 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					add_node($$, new_node($6));
 					add_node($$, $8);
 					add_node($$, $9);
+
+					new_code($$->code);
+					$$->result_reg = new_reg();
+					//generates labels
+					char* init_if = new_lbl();
+					char* init_else = new_lbl();
+					char* outside = new_lbl();
+					add_label_to_list($$->true_list, init_if);
+					add_label_to_list($$->false_list, init_else);
+
+					//expr ? true
+					char* zero = new_reg();
+					char* um = new_reg();
+					char* result = new_reg();
+					add_op($$->code, loadi(0, zero));
+					add_op($$->code, loadi(1, um));
+					add_op($$->code, cmp_ne($3->result_reg, zero, result));
+
+					//if true/false
+					add_op($$->code, cbr(result, init_if, init_else));
+
+					add_op($$->code, label(init_if));
+					
+					$$->code = concat_code($$->code, $8->code);	
+					add_op($$->code, cbr(um, outside, outside));
+
+					add_op($$->code, label(init_else));
+					$$->code = concat_code($$->code, $9->code);	
+
+					add_op($$->code, label(outside));
 				}
 
 bool_expr : expr 
@@ -1007,10 +1062,13 @@ else 		: TK_PR_ELSE '{' push_table cmd_block
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, $4);
+
+					$$->code = $4->code;
 				}
 			|  %empty
 				{
 					$$ = new_node(NULL);
+					new_code($$->code);
 				}
 
 while 		: TK_PR_WHILE '(' bool_expr ')'
@@ -1023,6 +1081,35 @@ while 		: TK_PR_WHILE '(' bool_expr ')'
 					add_node($$, new_node($5));
 					add_node($$, new_node($6));
 					add_node($$, $8);
+							
+					
+					//generates labels
+					char* init_while = new_lbl();
+					char* inside_while = new_lbl();
+					char* out_while = new_lbl();
+					add_label_to_list($$->true_list, inside_while);
+					add_label_to_list($$->false_list, out_while);
+
+					//first add init_label
+					new_code($$->code);
+					$$->result_reg = new_reg();
+					add_op($$->code, label(init_while));
+					
+					//expr ? true
+					char* zero = new_reg();
+					char* result = new_reg();
+					add_op($$->code, loadi(0, zero));
+					add_op($$->code, cmp_ne($3->result_reg, zero, result));
+
+					//if true/false
+					add_op($$->code, cbr(result, inside_while, out_while));
+
+					//true ->inside while
+					add_op($$->code, label(inside_while));
+					$$->code = concat_code($$->code, $8->code);	
+
+					//false ->out while
+					add_op($$->code, label(out_while));
 				}
 
 do_while 	: TK_PR_DO '{' push_table cmd_block
@@ -1035,6 +1122,31 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 					add_node($$, new_node($6));
 					add_node($$, $7);
 					add_node($$, new_node($8));
+
+					//generates labels
+					char* init_while = new_lbl();
+					char* out_while = new_lbl();
+					add_label_to_list($$->true_list, init_while);
+					add_label_to_list($$->false_list, out_while);
+
+					//first add init_label
+					new_code($$->code);
+					$$->result_reg = new_reg();
+					add_op($$->code, label(init_while));
+
+					$$->code = concat_code($$->code, $4->code);	
+					
+					//expr ? true
+					char* zero = new_reg();
+					char* result = new_reg();
+					add_op($$->code, loadi(0, zero));
+					add_op($$->code, cmp_ne($7->result_reg, zero, result));
+
+					//if true/false
+					add_op($$->code, cbr(result, init_while, out_while));
+
+					//false ->out while
+					add_op($$->code, label(out_while));
 				}
 
 continue 	: TK_PR_CONTINUE

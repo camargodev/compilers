@@ -3,8 +3,21 @@ z int;
 w int;
 
 int f(){
-	int x;
-	x = 1 || 2;
-	x = 0 || 1;
-	x = 0 || 0;
+	int x <= 1;
+
+	x = 3;
+	
+
+	do {
+		x = x + 1;
+	} while(x<10);
+
+	x = 2;
+
+	if(x)then {
+		x = x + 1;
+	}
+	else {
+		x = x + 2;
+	};
 }

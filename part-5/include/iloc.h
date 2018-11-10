@@ -99,6 +99,8 @@ lbl_list* new_label_list();
 
 char* new_lbl();
 
+void new_code(iloc_op_list* list);
+
 //TODO:
 //Node* add_short_circuit(Node* node, char* reg_result, char* label_true, char* label_false);
 
