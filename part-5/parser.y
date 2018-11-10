@@ -200,9 +200,7 @@
 		rule itself. Follow the pattern.
 */
 
-programa :  initializer set_tree destroyer
-			{
-			}
+programa :  initializer set_tree destroyer {}
 
 set_tree	: start 
 			{
@@ -235,19 +233,22 @@ start : new_type start
 			{ 
 				$$ = $1; 
 				add_node($$, $2); 
+				$$->code = $2->code;
 			}
 		| global_var start 
 			{ 
 				$$ = $1; 
 				add_node($$, $2); 
+				$$->code = $2->code; 
 			}
 		| func start 
 			{	$$ = $1; 
-				add_node($$, $2); 
+				add_node($$, $2);
 			}
 		| %empty 
 			{ 
 				$$ = new_node(NULL); 
+				$$->code = NULL; 
 			}
 
 type : TK_PR_INT
@@ -583,6 +584,7 @@ func_begin      : func_type func_name '(' func_params
 						add_node($$, new_node($3));
 						add_node($$, $4);					
 						
+						$$->code = $4->code;
 					}
 
 				| func_name_user_type '(' func_params
@@ -634,7 +636,7 @@ func_params     : ')' add_func func_body
 						$$ = new_node($1);
 						add_node($$, $3);
 
-						//$$->code = $3->code;
+						$$->code = $3->code;
 					}
 				| var func_params_end
 					{
@@ -667,8 +669,8 @@ func_body       : '{' push_table cmd_block
 						add_node($$, $3);
 
 						//printf("FUNCBODY\n");
-						//$$->code = $3->code;
-						//print_code($3->code);					
+						$$->code = $3->code;
+						//print_code($$->code);					
 					}
 
 push_table		: %empty
@@ -689,6 +691,7 @@ pop_table		: %empty
 cmd_block	: '}' pop_table
 				{
 					$$ = new_node($1);
+					$$->code = NULL;
 				}
 			| cmd cmd_block
 				{
@@ -696,9 +699,9 @@ cmd_block	: '}' pop_table
 					add_node($$, $2);	
 
 					//printf("CMDBLOCK\n");
-					$$->code = $1->code;
-					$$->result_reg = $1->result_reg;
-					print_code($1->code);				
+					if ($2->code != NULL) {
+						$$->code = concat_code($$->code, $2->code);
+					}				
 				} 
 
 cmd_ident	: TK_IDENTIFICADOR
@@ -773,7 +776,8 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						$$->result_reg = new_reg();
 
 						char* reg_temp = new_reg();
-						add_op($$->code, loadai("rfp", get_mem_address(stack, $1->token), reg_temp));
+						char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
+						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
 						add_op($$->code, store($2->result_reg, reg_temp));		
 
 						//print_code($$->code);													
@@ -1249,7 +1253,6 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						if($1->type == USER_TYPE && $2->type == STRING) {
 							update_string_size(stack, $1->token, $2->token);							
 						}
-						
 					}
 				| cmd_ident cmd_fix_call
 					{
@@ -1312,7 +1315,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
 							set_error(ERR_DECLARED);
 						}
-						else{
+						else {
 							if($1->type == INT)
 								displacement_rfp = displacement_rfp + 4;
 

@@ -7,6 +7,8 @@ Este arquivo não pode ser modificado.
 #include <stdlib.h>
 #include "../parser.tab.h" //arquivo gerado com bison -d parser.y
 #include "../include/table.h"
+#include "../include/iloc.h"
+#include "../include/tree.h"
 
 extern int yylex_destroy(void);
 
@@ -16,11 +18,9 @@ void libera (void *arvore);
 
 int main (int argc, char **argv)
 {
-//initializing stack
-
-
   int ret = yyparse(); 
   //descompila (arvore);
+  print_code(((Node*)arvore)->code);
   libera(arvore);
   arvore = NULL;
   yylex_destroy();

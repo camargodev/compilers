@@ -1,0 +1,6 @@
+int main() {
+	int w;
+	int x;
+	int y;
+	x = 3 + 3;
+}
