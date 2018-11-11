@@ -2047,38 +2047,20 @@ expr 			: expr '+' expr
 							$$->type = type;
 						}
 
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
+						char* new_label = new_lbl();
+						char* res_reg   = new_reg();
+						$$->result_reg  = res_reg;
 
-						char* lbl_true = new_lbl();
-						char* lbl_false = new_lbl();
-						char* lbl_next = new_lbl();
+						patch_list($1->code, $1->true_list, new_label);
+						$$->true_list = $3->true_list;
+						$$->false_list = concat_labels($1->false_list, $3->false_list);
 
-						add_label_to_list($$->true_list, lbl_true);
-						add_label_to_list($$->true_list, lbl_next);
-						add_label_to_list($$->false_list, lbl_false);
-
-						//compares if first expr > 0; if not, short-circuits; if true, compares the second expr
-						char* zero = new_reg();
-						char* result = new_reg();
-						add_op($$->code, loadi(0, zero));
-						add_op($$->code, cmp_ne($1->result_reg, zero, result));
-
-						//expr > 0
-						add_op($$->code, cbr(result, lbl_next, lbl_false));
+						$$->code = new_op_list();
+						add_op($$->code, label(new_label));
+						//print_code($1->code);
+						$$->code = concat_code($1->code, $$->code);
+						$$->code = concat_code($$->code, $3->code);
 						
-							//true -> ve se o proximo é true
-						add_op($$->code, label(lbl_next));
-						add_op($$->code, cmp_ne($3->result_reg, zero, result));
-						add_op($$->code, cbr(result, lbl_true, lbl_false));
-
-							//false -> não faz o resto e salva o resultado como zero
-						add_op($$->code, label(lbl_false));
-						add_op($$->code, loadi(0, $$->result_reg));
-
-							//os dois true
-						add_op($$->code, label(lbl_true));
-						add_op($$->code, loadi(1, $$->result_reg));
 
 					}
 				| expr TK_OC_OR expr
