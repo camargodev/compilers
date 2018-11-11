@@ -1,14 +1,8 @@
-y int;
 z int;
 w int;
 
 int f(){
-	int x;
-
-	x = 3;
-	
-	do {
-		x = x + 1;
-	} while (x < 10);
-
+	int y <= 0;
+	int x <= y;
+	x = 1;
 }

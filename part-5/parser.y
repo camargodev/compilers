@@ -877,7 +877,17 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 								}
 						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
 							update_string_size(stack, $2, $3->token);
-						}							
+						}	
+
+						if($3->code != NULL) {
+							$$->code = $3->code;
+						
+							char* reg_temp = new_reg();
+							char* displacement_reg = (is_global_var(stack, $2->value.v_string)) ? "rbss" : "rfp";
+						
+							add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $2), reg_temp));
+							add_op($$->code, store($3->result_reg, reg_temp));		
+						}											
 					}
 				| if_then ';'
 					{
@@ -1574,6 +1584,9 @@ var_end 	: TK_OC_LE var_lit
 					$$->user_type = $2->user_type;
 
 					$$->token = copy_lexeme($2->token);
+
+					$$->code = $2->code;
+					$$->result_reg = $2->result_reg;
 				}
 			| %empty
 				{
@@ -1588,12 +1601,24 @@ var_lit		: TK_IDENTIFICADOR
 					$$->type = USER_TYPE;
 					$$->user_type = $1->value.v_string;
 					$$->token = $1;
+
+					$$->code = new_op_list();
+					$$->result_reg = new_reg();
+					char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
+					//printf("Result_Reg [%s]\n", $$->result_reg);
+					//printf("Displacement_reg [%s]\n", displacement_reg);
+					//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
+					add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
 				}
 			| TK_LIT_INT
 				{
 					$$ = new_node($1);
 					$$->type = INT;
 					$$->user_type = NULL;
+
+					$$->result_reg = new_reg();
+					$$->code = new_op_list();
+					add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));					
 				}
 			| TK_LIT_FLOAT
 				{
