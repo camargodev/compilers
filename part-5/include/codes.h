@@ -79,6 +79,8 @@
 #define XOR  45
 #define XORI 46
 
+#define HALT 50
+
 /* Label */
 #define LABEL_INST 47
 

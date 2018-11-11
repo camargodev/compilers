@@ -1,23 +1,12 @@
-loadI 0 => r0
-loadI 0 => r1
-loadI 0 => r3
-cmp_NE r0, r3 -> r4
-cbr r4 -> L0, L2
-L2: cmp_NE r1, r3 -> r5
-cbr r5 -> L0, L1
-L1: loadI 0 => r2
+loadI 1 => r0
+loadI 1 => r1
+cmp_EQ r0, r1 -> r2
+cbr r2 -> L2, L4
+L2: loadI 1 => r3
+loadAI rfp, 4 => r4
+store r3 => r4
 jumpI -> L3
-L0: loadI 1 => r2
-jumpI -> L3
-loadI 1 => r6
-loadI 0 => r8
-cmp_NE r2, r8 -> r9
-cbr r9 -> L4, L6
-L6: cmp_NE r6, r8 -> r10
-cbr r10 -> L4, L5
-L5: loadI 0 => r7
-jumpI -> L8
-L4: loadI 1 => r7
-jumpI -> L8
-L8: loadAI rfp, 4 => r12
-store r7 => r12
+L4: loadI 165 => r5
+loadAI rfp, 4 => r6
+store r5 => r6
+L3: halt 

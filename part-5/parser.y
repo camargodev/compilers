@@ -205,6 +205,8 @@ programa :  initializer set_tree destroyer {}
 set_tree	: start 
 			{
 				$$ = $1;
+				if ($$->code != NULL)
+					add_op($$->code, halt());
 				arvore = $1;
 			}
 

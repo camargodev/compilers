@@ -186,6 +186,11 @@ void add_label_to_list(lbl_list* list, char* label) {
 
 
 /* Instructions */
+
+iloc_operation* halt() {
+	return new_op(HALT);
+}
+
 iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
 }

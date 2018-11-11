@@ -61,6 +61,8 @@ void free_label_list(lbl_list* list);
 
 void print_code(iloc_op_list* list);
 
+iloc_operation* halt();
+
 iloc_operation* loadi(int value, char* reg);
 
 iloc_operation* loadai(char* regop1, int value, char* regdst);

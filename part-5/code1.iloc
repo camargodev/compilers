@@ -1,0 +1,13 @@
+loadI 0 => r0
+loadI 0 => r1
+loadI 0 => r3
+cmp_NE r0, r3 -> r4
+cbr r4 -> L0, L2
+L2: cmp_NE r1, r3 -> r5
+cbr r5 -> L0, L1
+L1: loadI 0 => r2
+jumpI -> L4
+L0: loadI 1 => r2
+jumpI -> L4
+L4: loadAI rfp, 4 => r7
+store r2 => r7

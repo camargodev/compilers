@@ -5,6 +5,8 @@
 
 char* get_instruction_name(int code) {
 	switch (code) {
+
+		case HALT:	return "halt";
 		
 		/*( Arithmetical expressions )*/
 		case ADD:   return "add";
