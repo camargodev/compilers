@@ -74,6 +74,10 @@ CDRES	= ${CDCASES}/results
 RESULTS = ${TST}/results.txt
 TMPRES  = ${TST}/tempresults.txt
 
+PYTHON  = python3
+ILOCSIM = ilocsim.py
+ILCFLGS =  -s -t -m --data 120 --stack 1000 
+
 OUTPUT  = ${PSR}.output
 LKTMP   = tmplk.txt
 
@@ -137,6 +141,9 @@ codes: ${CDSFONT}
 
 mainiloc: ${ITSTFONT}
 	${CC} ${FLAGS} ${ITSTFONT}	
+
+simulate: ${ILOCSIM}
+	${PYTHON} ${ILOCSIM} ${ILCFLGS}
 
 clean:
 	rm -f ${EXEC}

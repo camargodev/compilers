@@ -771,10 +771,17 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						}
 
 						$$->code = $2->code;
+						$$->true_list = $2->true_list;
+						$$->false_list = $2->false_list;
 						$$->result_reg = new_reg();
 
+						char* new_label = new_lbl();
 						char* reg_temp = new_reg();
 						char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
+						
+						patch_list($$->code, $$->true_list, new_label);
+						patch_list($$->code, $$->false_list, new_label);
+						add_op($$->code, label(new_label));
 						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
 						add_op($$->code, store($2->result_reg, reg_temp));															
 					}
@@ -1026,6 +1033,8 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					char* zero = new_reg();
 					char* um = new_reg();
 					char* result = new_reg();
+
+					$$->code = new_op_list();
 					add_op($$->code, loadi(0, zero));
 					add_op($$->code, loadi(1, um));
 					add_op($$->code, cmp_ne($3->result_reg, zero, result));
@@ -1035,7 +1044,7 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 
 					add_op($$->code, label(init_if));
 					
-					$$->code = $8->code;	
+					$$->code = concat_code($$->code, $8->code);	
 					add_op($$->code, cbr(um, outside, outside));
 
 					add_op($$->code, label(init_else));
@@ -1068,7 +1077,6 @@ else 		: TK_PR_ELSE '{' push_table cmd_block
 			|  %empty
 				{
 					$$ = new_node(NULL);
-					new_code($$->code);
 				}
 
 while 		: TK_PR_WHILE '(' bool_expr ')'
@@ -1091,7 +1099,7 @@ while 		: TK_PR_WHILE '(' bool_expr ')'
 					add_label_to_list($$->false_list, out_while);
 
 					//first add init_label
-					new_code($$->code);
+					$$->code = new_op_list();
 					$$->result_reg = new_reg();
 					add_op($$->code, label(init_while));
 					
@@ -1130,7 +1138,7 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 					add_label_to_list($$->false_list, out_while);
 
 					//first add init_label
-					new_code($$->code);
+					$$->code = new_op_list();
 					$$->result_reg = new_reg();
 					add_op($$->code, label(init_while));
 
@@ -1550,8 +1558,11 @@ cmd_fix_attr		: id_seq_simple attr
 
 					$$->token = copy_lexeme($2->token);	
 					$$->user_type = $1->user_type;	
+
 					$$->result_reg = $2->result_reg;
-					$$->code = $2->code;			
+					$$->code = $2->code;
+					$$->true_list = $2->true_list;	
+					$$->false_list = $2->false_list;				
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
 				{
@@ -1655,7 +1666,9 @@ attr 		: '=' expr
 
 					$$->token = copy_lexeme($2->token);
 					$$->result_reg = $2->result_reg;
-					$$->code = $2->code;								
+					$$->code = $2->code;		
+					$$->true_list = $2->true_list;	
+					$$->false_list = $2->false_list;							
 				}
 			| TK_OC_SL expr 
 				{
@@ -2064,38 +2077,19 @@ expr 			: expr '+' expr
 							}
 						}
 
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
+						char* new_label = new_lbl();
+						char* res_reg   = new_reg();
+						$$->result_reg  = res_reg;
 
-						char* lbl_true = new_lbl();
-						char* lbl_false = new_lbl();
-						char* lbl_next = new_lbl();
+						patch_list($1->code, $1->false_list, new_label);
+						$$->false_list = $3->false_list;
+						$$->true_list = concat_labels($1->true_list, $3->true_list);
 
-						add_label_to_list($$->true_list, lbl_true);
-						add_label_to_list($$->true_list, lbl_next);
-						add_label_to_list($$->false_list, lbl_false);
-
-						//compares if first expr > 0; if not, short-circuits; if true, compares the second expr
-						char* zero = new_reg();
-						char* result = new_reg();
-						add_op($$->code, loadi(0, zero));
-						add_op($$->code, cmp_ne($1->result_reg, zero, result));
-
-						//expr > 0
-						add_op($$->code, cbr(result, lbl_true, lbl_next));
-						
-							//false -> ve se o proximo é falso
-						add_op($$->code, label(lbl_next));
-						add_op($$->code, cmp_ne($3->result_reg, zero, result));
-						add_op($$->code, cbr(result, lbl_true, lbl_false));
-
-							//os dois falso
-						add_op($$->code, label(lbl_false));
-						add_op($$->code, loadi(0, $$->result_reg));
-
-							//true -> acaba e salva como 1
-						add_op($$->code, label(lbl_true));
-						add_op($$->code, loadi(1, $$->result_reg));	
+						$$->code = new_op_list();
+						add_op($$->code, label(new_label));
+						//print_code($1->code);
+						$$->code = concat_code($1->code, $$->code);
+						$$->code = concat_code($$->code, $3->code);
 					}
 				| expr TK_OC_LE expr
 					{
@@ -2165,9 +2159,16 @@ expr 			: expr '+' expr
 							}
 						}
 
-						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
+
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+						
+						$$->code = concat_code($1->code, $3->code);
 						add_op($$->code, cmp_eq($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| expr TK_OC_GE expr
 					{

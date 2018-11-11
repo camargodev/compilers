@@ -65,7 +65,11 @@ iloc_operation* loadi(int value, char* reg);
 
 iloc_operation* loadai(char* regop1, int value, char* regdst);
 
+iloc_operation* jumpi(char* label);
+
 iloc_operation* store(char* regop1, char* regdst);
+
+iloc_operation* and_op(char* regop, char* regop2, char* regdst);
 
 iloc_operation* add(char* regop, char* regop2, char* regdst);
 
@@ -97,9 +101,9 @@ void add_label_to_list(lbl_list* list, char* label);
 
 lbl_list* new_label_list();
 
-char* new_lbl();
+lbl_list* concat_labels(lbl_list* list1, lbl_list* list2);
 
-void new_code(iloc_op_list* list);
+char* new_lbl();
 
 //TODO:
 //Node* add_short_circuit(Node* node, char* reg_result, char* label_true, char* label_false);
