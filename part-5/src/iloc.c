@@ -14,6 +14,7 @@ void free_list_and_ops(iloc_op_list* list);
 int op_counter = 0;
 int num_freed_registers = 0;
 iloc_arg** freed_registers = NULL;
+int came_from_label = 0;
 
 iloc_op_list* new_op_list() {
 	iloc_op_list *list = (iloc_op_list*) malloc(sizeof(iloc_op_list));
@@ -41,6 +42,18 @@ iloc_op_list* concat_code(iloc_op_list* list1, iloc_op_list* list2) {
 	free_list_and_ops(list2);
 	list2 = NULL;
 
+	return mixed_list;
+}
+
+lbl_list* concat_labels(lbl_list* list1, lbl_list* list2) {
+	lbl_list* mixed_list = new_label_list();
+	int lbl_index;
+	for (lbl_index = 0; lbl_index < list1->num_labels; lbl_index++) {
+		add_label_to_list(mixed_list, list1->list[lbl_index]);
+	}
+	for (lbl_index = 0; lbl_index < list2->num_labels; lbl_index++) {
+		add_label_to_list(mixed_list, list2->list[lbl_index]);
+	}
 	return mixed_list;
 }
 
@@ -173,6 +186,11 @@ void add_label_to_list(lbl_list* list, char* label) {
 
 
 /* Instructions */
+
+iloc_operation* halt() {
+	return new_op(HALT);
+}
+
 iloc_operation* loadi(int value, char* reg) {
 	return new_2arg_op(LOADI, new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, reg));
 }
@@ -181,8 +199,16 @@ iloc_operation* loadai(char* regop1, int value, char* regdst) {
 	return new_3arg_op(LOADAI, new_arg(REGISTER, regop1), new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* jumpi(char* label) {
+	return new_1arg_op(JUMPI, new_arg(LABEL, label));
+}
+
 iloc_operation* store(char* regop1, char* regdst) {
 	return new_2arg_op(STORE, new_arg(REGISTER, regop1), new_arg(REGISTER, regdst));
+}
+
+iloc_operation* and_op(char* regop1, char* regop2, char* regdst) {
+	return new_3arg_op(AND, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
 
 iloc_operation* add(char* regop1, char* regop2, char* regdst) {
@@ -255,7 +281,7 @@ int is_arg_freed(iloc_arg* arg) {
 	return 0;
 }
 
-void reag_arg(iloc_arg* arg) {
+void read_arg(iloc_arg* arg) {
 	if (arg->type == CONSTANT) {
 		printf("%i", arg->arg.int_const);
 	} else {
@@ -264,10 +290,11 @@ void reag_arg(iloc_arg* arg) {
 }
 
 void print_line_break() {
-	if (op_counter > 0) {
+	if (op_counter > 0 && !came_from_label) {
 		printf("\n");
 	}
 	op_counter++;
+	came_from_label = 0;
 }
 
 void read_op(iloc_operation* op) {
@@ -278,35 +305,36 @@ void read_op(iloc_operation* op) {
 		switch(get_instruction_type(op->op_code)) {
 			
 			case ONE_IN_ONE_OUT:
-				reag_arg(op->args[0]);
+				read_arg(op->args[0]);
 				printf(" %s ", get_instruction_syntax(op->op_code));
-				reag_arg(op->args[1]);
+				read_arg(op->args[1]);
 				break;
 			
 			case ONE_IN_TWO_OUT:
-				reag_arg(op->args[0]);
+				read_arg(op->args[0]);
 				printf(" %s ", get_instruction_syntax(op->op_code));
-				reag_arg(op->args[1]);
+				read_arg(op->args[1]);
 				printf(", ");
-				reag_arg(op->args[2]);
+				read_arg(op->args[2]);
 				break;
 			
 			case TWO_IN_ONE_OUT:
-				reag_arg(op->args[0]);
+				read_arg(op->args[0]);
 				printf(", ");
-				reag_arg(op->args[1]);
+				read_arg(op->args[1]);
 				printf(" %s ", get_instruction_syntax(op->op_code));
-				reag_arg(op->args[2]);
+				read_arg(op->args[2]);
 				break;
 
 			case ONE_OUT:
 				printf("%s ", get_instruction_syntax(op->op_code));
-				reag_arg(op->args[0]);
+				read_arg(op->args[0]);
 				break;
 
 			case LBL:
-				reag_arg(op->args[0]);
-				printf(":");
+				read_arg(op->args[0]);
+				printf(": ");
+				came_from_label = 1;
 				break;
 			default: break;
 

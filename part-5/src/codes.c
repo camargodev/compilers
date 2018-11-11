@@ -5,73 +5,75 @@
 
 char* get_instruction_name(int code) {
 	switch (code) {
+
+		case HALT:	return "halt";
 		
 		/*( Arithmetical expressions )*/
-		case ADD:   return "ADD";
-		case SUB:   return "SUB";
-		case MULT:  return "MULT";
-		case DIV:   return "DIV";
-		case ADDI:  return "ADDI";
-		case SUBI:  return "SUBI";
-		case RSUBI: return "RSUBI";
-		case MULTI: return "MULTI";
-		case DIVI:  return "DIVI";
-		case RDIVI: return "RDIVI";
+		case ADD:   return "add";
+		case SUB:   return "sub";
+		case MULT:  return "mul";
+		case DIV:   return "div";
+		case ADDI:  return "addI";
+		case SUBI:  return "subI";
+		case RSUBI: return "rsubI";
+		case MULTI: return "multI";
+		case DIVI:  return "divI";
+		case RDIVI: return "rdivI";
 
 		
 		/*( Shifts )*/
-		case LSHIFT:  return "LSHIFT";
-		case LSHIFTI: return "LSHIFTI";
-		case RSHIFT:  return "RSHIFT";
-		case RSHIFTI: return "RSHIFTI";
+		case LSHIFT:  return "lshift";
+		case LSHIFTI: return "lshiftI";
+		case RSHIFT:  return "rshift";
+		case RSHIFTI: return "rshiftI";
 
 		
 		/*( Memory operations )*/
-		case LOAD:    return "LOAD";
-		case LOADI:   return "LOADI";
-		case LOADAI:  return "LOADAI";
-		case LOADA0:  return "LOADA0";
-		case CLOAD:   return "CLOAD";
-		case CLOADAI: return "CLOADAI";
-		case CLOADA0: return "CLOADA0";
+		case LOAD:    return "load";
+		case LOADI:   return "loadI";
+		case LOADAI:  return "loadAI";
+		case LOADA0:  return "loadA0";
+		case CLOAD:   return "cload";
+		case CLOADAI: return "cloadAI";
+		case CLOADA0: return "cloadA0";
 
-		case STORE:    return "STORE";
-		case STOREAI:  return "STOREAI";
-		case STOREA0:  return "STOREA0";
-		case CSTORE:   return "CSTORE";
-		case CSTOREAI: return "CSTOREAI";
-		case CSTOREA0: return "CSTOREA0";
+		case STORE:    return "store";
+		case STOREAI:  return "storeAI";
+		case STOREA0:  return "storeA0";
+		case CSTORE:   return "cstore";
+		case CSTOREAI: return "cstoreAI";
+		case CSTOREA0: return "cstoreA0";
 
 		
 		/*( Register copy operations )*/
-		case I2I: return "I2I";
-		case C2C: return "C2C";
-		case C2I: return "C2I";
-		case I2C: return "I2C";
+		case I2I: return "i2i";
+		case C2C: return "c2c";
+		case C2I: return "c2i";
+		case I2C: return "i2c";
 
 		
 		/*( Flow )*/
-		case CMP_LT: return "CMP_LT";
-		case CMP_LE: return "CMP_LE";
-		case CMP_EQ: return "CMP_EQ";
-		case CMP_GE: return "CMP_GE";
-		case CMP_GT: return "CMP_GT";
-		case CMP_NE: return "CMP_NE";
-		case CBR:    return "CBR";
+		case CMP_LT: return "cmp_LT";
+		case CMP_LE: return "cmp_LE";
+		case CMP_EQ: return "cmp_EQ";
+		case CMP_GE: return "cmp_GE";
+		case CMP_GT: return "cmp_GT";
+		case CMP_NE: return "cmp_NE";
+		case CBR:    return "cbr";
 
 		
 			/*( Jumps )*/
-		case JUMPI: return "JUMPI";
-		case JUMP:  return "JUMP";
+		case JUMPI: return "jumpI";
+		case JUMP:  return "jump";
 
 		
 			/*( Logical )*/
-		case AND: return "AND";
-		case ANDI: return "ANDI";
-		case OR: return "OR";
-		case ORI: return "ORI";
-		case XOR: return "XOR";
-		case XORI: return "XORI";
+		case AND: 	return "and";
+		case ANDI: 	return "andI";
+		case OR: 	return "or";
+		case ORI: 	return "orI";
+		case XOR: 	return "xor";
+		case XORI: 	return "xorI";
 
 		case LABEL_INST: return "LABEL_INST";
 

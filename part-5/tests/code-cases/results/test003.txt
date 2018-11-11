@@ -1,10 +1,11 @@
-LOADI 1 => r0
-LOADI 2 => r1
-ADD r0, r1 => r2
-LOADAI rfp, 4 => r4
-STORE r2 => r4
-LOADI 3 => r5
-LOADI 4 => r6
-DIV r5, r6 => r7
-LOADAI rbss, 8 => r9
-STORE r7 => r9
+loadI 1 => r0
+loadI 2 => r1
+add r0, r1 => r2
+loadAI rfp, 4 => r3
+store r2 => r3
+loadI 3 => r4
+loadI 4 => r5
+div r4, r5 => r6
+loadAI rbss, 8 => r7
+store r6 => r7
+halt 
