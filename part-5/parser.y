@@ -771,17 +771,10 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						}
 
 						$$->code = $2->code;
-						$$->true_list = $2->true_list;
-						$$->false_list = $2->false_list;
-						$$->result_reg = new_reg();
-
-						char* new_label = new_lbl();
+						
 						char* reg_temp = new_reg();
 						char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
 						
-						patch_list($$->code, $$->true_list, new_label);
-						patch_list($$->code, $$->false_list, new_label);
-						add_op($$->code, label(new_label));
 						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
 						add_op($$->code, store($2->result_reg, reg_temp));															
 					}
@@ -1020,37 +1013,44 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					add_node($$, $8);
 					add_node($$, $9);
 
-					//new_code($$->code);
-					$$->result_reg = new_reg();
-					//generates labels
-					char* init_if = new_lbl();
-					char* init_else = new_lbl();
-					char* outside = new_lbl();
-					add_label_to_list($$->true_list, init_if);
-					add_label_to_list($$->false_list, init_else);
+					char* lbl_true = new_lbl();
+					patch_list($3->code, $3->true_list, lbl_true);
+					iloc_op_list* true_code = new_op_list();
+					add_op(true_code, label(lbl_true));
 
-					//expr ? true
-					char* zero = new_reg();
-					char* um = new_reg();
-					char* result = new_reg();
+					char* lbl_next = new_lbl();
+					iloc_op_list* next_code = new_op_list();
+					add_op(next_code, label(lbl_next));
 
-					$$->code = new_op_list();
-					add_op($$->code, loadi(0, zero));
-					add_op($$->code, loadi(1, um));
-					add_op($$->code, cmp_ne($3->result_reg, zero, result));
+					iloc_op_list* ignore_code = new_op_list();
+					add_op(ignore_code, jumpi(lbl_next));
 
-					//if true/false
-					add_op($$->code, cbr(result, init_if, init_else));
+					char* lbl_false = new_lbl();
+					patch_list($3->code, $3->false_list, lbl_false);
+					iloc_op_list* false_code = new_op_list();
+					add_op(false_code, label(lbl_false));
 
-					add_op($$->code, label(init_if));
-					
-					$$->code = concat_code($$->code, $8->code);	
-					add_op($$->code, cbr(um, outside, outside));
+					/*printf("\n$3 CODE:\n");
+					print_code($3->code);
+					printf("\nTRUE CODE:\n");
+					print_code(true_code);
+					printf("\n$8 CODE:\n");
+					print_code($8->code);
+					printf("\nIGNORE CODE:\n");
+					print_code(ignore_code);
+					printf("\nFALSE CODE:\n");
+					print_code(false_code);
+					printf("\n$9 CODE:\n");
+					print_code($9->code);
+					printf("\nNEXT CODE:\n");
+					print_code(next_code);*/
 
-					add_op($$->code, label(init_else));
-					$$->code = concat_code($$->code, $9->code);	
-
-					add_op($$->code, label(outside));
+					$$->code = concat_code($3->code, true_code);
+					$$->code = concat_code($$->code, $8->code);
+					$$->code = concat_code($$->code, ignore_code);
+					$$->code = concat_code($$->code, false_code);
+					$$->code = concat_code($$->code, $9->code);
+					$$->code = concat_code($$->code, next_code);
 				}
 
 bool_expr : expr 
@@ -1805,9 +1805,11 @@ expr 			: expr '+' expr
 							}
 						}
 
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
-						add_op($$->code, add($1->result_reg, $3->result_reg, $$->result_reg));
+						if ($1->code != NULL && $3->code != NULL) {
+							$$->code = concat_code($1->code, $3->code);
+							$$->result_reg = new_reg();
+							add_op($$->code, add($1->result_reg, $3->result_reg, $$->result_reg));
+						}
 					}
 				| expr '-' expr
 					{
@@ -1829,9 +1831,11 @@ expr 			: expr '+' expr
 							}
 						}
 
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
-						add_op($$->code, sub($1->result_reg, $3->result_reg, $$->result_reg));
+						if ($1->code != NULL && $3->code != NULL) {
+							$$->code = concat_code($1->code, $3->code);
+							$$->result_reg = new_reg();
+							add_op($$->code, sub($1->result_reg, $3->result_reg, $$->result_reg));
+						}
 					}
 				| expr '*' expr
 					{
@@ -1852,10 +1856,12 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
-						add_op($$->code, mult($1->result_reg, $3->result_reg, $$->result_reg));
+						
+						if ($1->code != NULL && $3->code != NULL) {
+							$$->code = concat_code($1->code, $3->code);
+							$$->result_reg = new_reg();
+							add_op($$->code, mult($1->result_reg, $3->result_reg, $$->result_reg));
+						}
 					}
 				| expr '/' expr
 					{
@@ -1877,9 +1883,11 @@ expr 			: expr '+' expr
 							}
 						}
 
-						$$->code = concat_code($1->code, $3->code);
-						$$->result_reg = new_reg();
-						add_op($$->code, div_op($1->result_reg, $3->result_reg, $$->result_reg));
+						if ($1->code != NULL && $3->code != NULL) {
+							$$->code = concat_code($1->code, $3->code);
+							$$->result_reg = new_reg();
+							add_op($$->code, div_op($1->result_reg, $3->result_reg, $$->result_reg));
+						}
 					}
 				| expr '%' expr
 					{
@@ -1980,10 +1988,16 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-						
+
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+												
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, cmp_gt($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| expr '<' expr
 					{
@@ -2004,10 +2018,16 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
+						
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+												
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, cmp_lt($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| expr TK_OC_AND expr
 					{
@@ -2110,10 +2130,16 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
+						
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+						
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, cmp_le($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| expr TK_OC_NE expr
 					{
@@ -2134,10 +2160,15 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+						
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, cmp_ne($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| expr TK_OC_EQ expr
 					{
@@ -2158,15 +2189,14 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
-						$$->result_reg = new_reg();
-
+						
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
 						char* lbl_true = new_lbl();
 						add_label_to_list($$->true_list, lbl_true);
 						
 						$$->code = concat_code($1->code, $3->code);
+						$$->result_reg = new_reg();
 						add_op($$->code, cmp_eq($1->result_reg, $3->result_reg, $$->result_reg));
 						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
@@ -2189,10 +2219,16 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
-
+						
+						char* lbl_false = new_lbl();
+						add_label_to_list($$->false_list, lbl_false);
+						char* lbl_true = new_lbl();
+						add_label_to_list($$->true_list, lbl_true);
+						
 						$$->code = concat_code($1->code, $3->code);
 						$$->result_reg = new_reg();
 						add_op($$->code, cmp_ge($1->result_reg, $3->result_reg, $$->result_reg));
+						add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
 					}
 				| un_op expr_vals
 					{

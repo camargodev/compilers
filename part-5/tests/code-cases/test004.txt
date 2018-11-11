@@ -1,0 +1,9 @@
+int main() {
+	int x;
+	if (1 == 2) then {
+		x = 1;
+	} else {
+		x = 165;
+	};
+	
+}
