@@ -25,12 +25,15 @@ iloc_op_list* new_op_list() {
 iloc_op_list* concat_code(iloc_op_list* list1, iloc_op_list* list2) {
 	iloc_op_list *mixed_list = new_op_list();
 	int index;
-	
-	for (index = 0; index < list1->num_ops; index++) {
-		add_op(mixed_list, list1->ops[index]);
+	if (list1 != NULL) {
+		for (index = 0; index < list1->num_ops; index++) {
+			add_op(mixed_list, list1->ops[index]);
+		}
 	}
-	for (index = 0; index < list2->num_ops; index++) {
-		add_op(mixed_list, list2->ops[index]);
+	if (list2 != NULL) {
+		for (index = 0; index < list2->num_ops; index++) {
+			add_op(mixed_list, list2->ops[index]);
+		}
 	}
 	
 	free_list_and_ops(list1);
@@ -319,7 +322,7 @@ void print_code(iloc_op_list* list) {
 				read_op(list->ops[op_index]);	
 			}
 		}
-	}
+	} 
 }
 
 void free_label_list(lbl_list* list) {

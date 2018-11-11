@@ -697,10 +697,8 @@ cmd_block	: '}' pop_table
 				{
 					$$ = $1;
 					add_node($$, $2);	
-
-					//printf("CMDBLOCK\n");
 					if ($2->code != NULL) {
-						$$->code = concat_code($$->code, $2->code);
+						$$->code = concat_code($1->code, $2->code);
 					}				
 				} 
 
@@ -778,9 +776,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						char* reg_temp = new_reg();
 						char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
 						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
-						add_op($$->code, store($2->result_reg, reg_temp));		
-
-						//print_code($$->code);													
+						add_op($$->code, store($2->result_reg, reg_temp));															
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -1017,7 +1013,7 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					add_node($$, $8);
 					add_node($$, $9);
 
-					new_code($$->code);
+					//new_code($$->code);
 					$$->result_reg = new_reg();
 					//generates labels
 					char* init_if = new_lbl();
@@ -1039,7 +1035,7 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 
 					add_op($$->code, label(init_if));
 					
-					$$->code = concat_code($$->code, $8->code);	
+					$$->code = $8->code;	
 					add_op($$->code, cbr(um, outside, outside));
 
 					add_op($$->code, label(init_else));
@@ -2226,7 +2222,8 @@ expr_vals		: TK_LIT_FLOAT
 						$$->is_literal = TRUE;
 
 						$$->result_reg = new_reg();
-						add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));						
+						$$->code = new_op_list();
+						add_op($$->code, loadi($$->token->value.v_int, $$->result_reg));	
 					}
 				| id_for_expr id_seq 
 					{
