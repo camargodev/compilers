@@ -860,15 +860,15 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						else{
 							if($1->type == INT)
 								displacement_rfp = displacement_rfp + 4;
-
 							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
 						}
 
 						if ($3->type != NOT_DECLARED) 
 							if ($1->type == $3->type) {
 								if ($1->type == USER_TYPE)
-									if (strcmp($1->user_type, $3->user_type) != 0)
+									if (strcmp($1->user_type, $3->user_type) != 0){
 										set_error(ERR_WRONG_TYPE);		
+									}
 							} else 
 								if (can_convert($1->type, $3->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
@@ -1597,8 +1597,9 @@ var_end 	: TK_OC_LE var_lit
 
 var_lit		: TK_IDENTIFICADOR
 				{
+					char** trash = malloc(sizeof(char**));
 					$$ = new_node($1);
-					$$->type = USER_TYPE;
+					$$->type = get_id_type(stack, $1->value.v_string, trash);
 					$$->user_type = $1->value.v_string;
 					$$->token = $1;
 
