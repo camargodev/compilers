@@ -1017,44 +1017,29 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					add_node($$, $8);
 					add_node($$, $9);
 
+					$$->code = $3->code;
+
 					char* lbl_true = new_lbl();
-					patch_list($3->code, $3->true_list, lbl_true);
-					iloc_op_list* true_code = new_op_list();
-					add_op(true_code, label(lbl_true));
-
 					char* lbl_next = new_lbl();
-					iloc_op_list* next_code = new_op_list();
-					add_op(next_code, label(lbl_next));
-
-					iloc_op_list* ignore_code = new_op_list();
-					add_op(ignore_code, jumpi(lbl_next));
-
 					char* lbl_false = new_lbl();
+
+					// $3->code = bool expression
+					// Here we patch with new generated labels
+					patch_list($3->code, $3->true_list, lbl_true);
 					patch_list($3->code, $3->false_list, lbl_false);
-					iloc_op_list* false_code = new_op_list();
-					add_op(false_code, label(lbl_false));
-
-					/*printf("\n$3 CODE:\n");
-					print_code($3->code);
-					printf("\nTRUE CODE:\n");
-					print_code(true_code);
-					printf("\n$8 CODE:\n");
-					print_code($8->code);
-					printf("\nIGNORE CODE:\n");
-					print_code(ignore_code);
-					printf("\nFALSE CODE:\n");
-					print_code(false_code);
-					printf("\n$9 CODE:\n");
-					print_code($9->code);
-					printf("\nNEXT CODE:\n");
-					print_code(next_code);*/
-
-					$$->code = concat_code($3->code, true_code);
+					
+					// We concat the created true-label, the code inside if block
+					// 	and a jump to ignore else block 
+					add_op($$->code, label(lbl_true));
 					$$->code = concat_code($$->code, $8->code);
-					$$->code = concat_code($$->code, ignore_code);
-					$$->code = concat_code($$->code, false_code);
+					add_op($$->code, jumpi(lbl_next));
+
+					// We concat the created false-label and the code inside else block
+					add_op($$->code, label(lbl_false));
 					$$->code = concat_code($$->code, $9->code);
-					$$->code = concat_code($$->code, next_code);
+					
+					// Add a label that represents the next op
+					add_op($$->code, label(lbl_next));
 				}
 
 bool_expr : expr 
