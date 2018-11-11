@@ -886,6 +886,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 
 						$$->code = $1->code;
 						$$->result_reg = new_reg();
+						
 					}
 				| while ';'
 					{
@@ -1007,7 +1008,6 @@ output_vals : ';'
 if_then 	: TK_PR_IF '(' bool_expr ')'
 				TK_PR_THEN '{' push_table cmd_block else
 				{
-
 					$$ = new_node($1);
 					add_node($$, new_node($2));
 					add_node($$, $3);
@@ -1079,32 +1079,23 @@ while 		: TK_PR_WHILE '(' bool_expr ')'
 					add_node($$, new_node($6));
 					add_node($$, $8);
 							
-					
-					//generates labels
+					//generates labels	
 					char* init_while = new_lbl();
 					char* inside_while = new_lbl();
 					char* out_while = new_lbl();
-					add_label_to_list($$->true_list, inside_while);
-					add_label_to_list($$->false_list, out_while);
-
-					//first add init_label
-					$$->code = new_op_list();
-					$$->result_reg = new_reg();
-					add_op($$->code, label(init_while));
 					
-					//expr ? true
-					char* zero = new_reg();
-					char* result = new_reg();
-					add_op($$->code, loadi(0, zero));
-					add_op($$->code, cmp_ne($3->result_reg, zero, result));
+					iloc_op_list* temp = new_op_list();
+					add_op(temp, label(init_while));
+					$3->code = concat_code(temp, $3->code);
+					$$->code = $3->code;					
 
-					//if true/false
-					add_op($$->code, cbr(result, inside_while, out_while));
+					patch_list($3->code, $3->true_list, inside_while);
+					patch_list($3->code, $3->false_list, out_while);
 
-					//true ->inside while
 					add_op($$->code, label(inside_while));
-					$$->code = concat_code($$->code, $8->code);	
-
+					$$->code = concat_code($$->code, $8->code);
+					add_op($$->code, jumpi(init_while));
+										
 					//false ->out while
 					add_op($$->code, label(out_while));
 				}
@@ -1123,27 +1114,17 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 					//generates labels
 					char* init_while = new_lbl();
 					char* out_while = new_lbl();
-					add_label_to_list($$->true_list, init_while);
-					add_label_to_list($$->false_list, out_while);
-
-					//first add init_label
-					$$->code = new_op_list();
-					$$->result_reg = new_reg();
-					add_op($$->code, label(init_while));
-
-					$$->code = concat_code($$->code, $4->code);	
 					
-					//expr ? true
-					char* zero = new_reg();
-					char* result = new_reg();
-					add_op($$->code, loadi(0, zero));
-					add_op($$->code, cmp_ne($7->result_reg, zero, result));
+					$$->code = new_op_list();
+					add_op($$->code, label(init_while));
+					$$->code = concat_code($$->code, $4->code);	
 
-					//if true/false
-					add_op($$->code, cbr(result, init_while, out_while));
-
+					patch_list($7->code, $7->true_list, init_while);
+					patch_list($7->code, $7->false_list, out_while);
+					$$->code = concat_code($$->code, $7->code);
+					
 					//false ->out while
-					add_op($$->code, label(out_while));
+					add_op($$->code, label(out_while));				
 				}
 
 continue 	: TK_PR_CONTINUE
@@ -2225,6 +2206,7 @@ expr_vals		: TK_LIT_FLOAT
 					}
 				| TK_LIT_INT
 					{
+
 						$$ = new_node($1);
 						set_node_type($$, INT);
 						$$->is_literal = TRUE;
@@ -2343,6 +2325,7 @@ expr_vals		: TK_LIT_FLOAT
 
 id_for_expr		: TK_IDENTIFICADOR
 					{
+
 						$$ = new_node($1);
 
 						id_category = VARIABLE;
@@ -2361,12 +2344,15 @@ id_for_expr		: TK_IDENTIFICADOR
 						} else {
 							$$->type = param_type;
 						}	
+						$$->code = new_op_list();
 
 						$$->result_reg = new_reg();
 						char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
-						//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
 						//printf("Result_Reg [%s]\n", $$->result_reg);
-						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));							
+						//printf("Displacement_reg [%s]\n", displacement_reg);
+						//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
+
+						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
 					}
 
 /*piped 			: %empty

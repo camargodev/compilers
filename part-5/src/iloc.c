@@ -82,7 +82,7 @@ void new_code(iloc_op_list* list) {
 }
 
 void add_op(iloc_op_list* list, iloc_operation* op) {
-	if (list->ops == NULL) {
+	if (list->ops == NULL) {		
 		list->ops = (iloc_operation**) malloc(sizeof(iloc_operation));
 	} else {
 		list->ops = (iloc_operation**) realloc(list->ops, (list->num_ops+1) * sizeof(iloc_operation));
