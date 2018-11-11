@@ -1,10 +1,10 @@
 loadI 1 => r0
 loadI 2 => r1
 add r0, r1 => r2
-L0: loadAI rfp, 4 => r4
-store r2 => r4
-loadI 3 => r5
-loadI 4 => r6
-div r5, r6 => r7
-L1: loadAI rbss, 8 => r9
-store r7 => r9
+loadAI rfp, 4 => r3
+store r2 => r3
+loadI 3 => r4
+loadI 4 => r5
+div r4, r5 => r6
+loadAI rbss, 8 => r7
+store r6 => r7
