@@ -11,6 +11,7 @@ void set_arg_to_freedom(iloc_arg* arg);
 void free_op(iloc_operation* op);
 void free_list_and_ops(iloc_op_list* list);
 
+int op_counter = 0;
 int num_freed_registers = 0;
 iloc_arg** freed_registers = NULL;
 
@@ -259,8 +260,15 @@ void reag_arg(iloc_arg* arg) {
 	}
 }
 
+void print_line_break() {
+	if (op_counter > 0) {
+		printf("\n");
+	}
+	op_counter++;
+}
+
 void read_op(iloc_operation* op) {
-	
+	print_line_break();
 	if(get_instruction_type(op->op_code) != LBL)
 		printf("%s ", get_instruction_name(op->op_code));
 	if (op->op_code != NOP) {
@@ -301,17 +309,17 @@ void read_op(iloc_operation* op) {
 
 		}
 	}
-	printf("\n");
 }
 
 void print_code(iloc_op_list* list) {
-	int op_index;
-	for (op_index = 0; op_index < list->num_ops; op_index++) {
-		if (list->ops[op_index] != NULL) {
-			read_op(list->ops[op_index]);	
+	if (list != NULL) {
+		int op_index;
+		for (op_index = 0; op_index < list->num_ops; op_index++) {
+			if (list->ops[op_index] != NULL) {
+				read_op(list->ops[op_index]);	
+			}
 		}
 	}
-	printf("\n");
 }
 
 void free_label_list(lbl_list* list) {

@@ -68,6 +68,9 @@ DEBLIB	= ${LIB}/${DEB}.h
 
 SEMTST  = ${SCP}/sem_test.sh
 LKTST   = ${SCP}/leak_test.sh
+CDTST   = ${SCP}/code_test.sh
+CDCASES = ${TST}/code-cases
+CDRES	= ${CDCASES}/results
 RESULTS = ${TST}/results.txt
 TMPRES  = ${TST}/tempresults.txt
 
@@ -116,6 +119,9 @@ syntest: ${EXEC} ${SYNTEST}
 	diff r.txt s.txt
 	rm -f r.txt
 	rm -f s.txt
+
+codetest: ${EXEC} ${CDTST} ${CDCASES}
+	${CDTST}
 
 lktst: ${EXEC} ${LKTST}
 	${LKTST}
