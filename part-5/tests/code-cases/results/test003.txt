@@ -8,3 +8,4 @@ loadI 4 => r5
 div r4, r5 => r6
 loadAI rbss, 8 => r7
 store r6 => r7
+halt 
