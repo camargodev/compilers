@@ -173,6 +173,7 @@
 %type <node> func_call_params
 %type <node> func_call_params_body
 %type <node> func_call_params_end
+%type <node> opt_prefixes
 
 %left TK_OC_OR
 %left TK_OC_AND
@@ -225,6 +226,7 @@ destroyer : %empty
 					printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
 					
 					free(error);
+ 					free_op_list(((Node*)arvore)->code);
 				  	libera(arvore);
 				  	arvore = NULL;
 				  	yylex_destroy();
@@ -833,62 +835,50 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						func_call_param_counter = 0;
 
 					}
-				| TK_PR_STATIC static_var ';'
-					{
-						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
-					}
-				| TK_PR_CONST const_var ';'
-					{
-						$$ = new_node($1);
-						add_node($$, $2);
-						add_node($$, new_node($3));
-					}
-				| type TK_IDENTIFICADOR var_end ';'
+				| opt_prefixes type TK_IDENTIFICADOR var_end ';'
 					{	
 
 						$$ = $1;
-						add_node($$, new_node($2));
-						add_node($$, $3);
-						add_node($$, new_node($4));
+						add_node($$, $2);
+						add_node($$, new_node($3));
+						add_node($$, $4);
+						add_node($$, new_node($5));
 
-						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
-						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
+						int declaration_line = is_declared_on_current_table(stack, $3->value.v_string);
+						int param_type = get_param_type($3->value.v_string, function.args_counter, function.function_args);
 						
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
 							set_error(ERR_DECLARED);
 						}
-						else{
-							if($1->type == INT)
+						else {
+							if($2->type == INT)
 								displacement_rfp = displacement_rfp + 4;
-							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+							add_local_var(stack, $2->type, NULL, FALSE, FALSE, $3);
 						}
 
-						if ($3->type != NOT_DECLARED) 
-							if ($1->type == $3->type) {
-								if ($1->type == USER_TYPE)
-									if (strcmp($1->user_type, $3->user_type) != 0){
+						if ($4->type != NOT_DECLARED) 
+							if ($2->type == $4->type) {
+								if ($2->type == USER_TYPE)
+									if (strcmp($2->user_type, $4->user_type) != 0){
 										set_error(ERR_WRONG_TYPE);		
 									}
 							} else 
-								if (can_convert($1->type, $3->type) == FALSE) {
+								if (can_convert($2->type, $4->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
 								} else {
-									$3->conversion = get_conversion($1->type, $3->type);
+									$4->conversion = get_conversion($2->type, $4->type);
 								}
-						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
-							update_string_size(stack, $2, $3->token);
+						if($4->token != NULL && $2->type == STRING && $4->type == STRING) {
+							update_string_size(stack, $3, $4->token);
 						}	
 
-						if($3->code != NULL) {
-							$$->code = $3->code;
+						if($4->code != NULL) {
+							$$->code = $4->code;
 						
-							char* displacement_reg = (is_global_var(stack, $2->value.v_string)) ? "rbss" : "rfp";					
+							char* displacement_reg = (is_global_var(stack, $3->value.v_string)) ? "rbss" : "rfp";					
 
-							int value = get_mem_address(stack, $2);
-							//add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
-							add_op($$->code, storeai($3->result_reg, value, displacement_reg));								
+							int value = get_mem_address(stack, $3);
+							add_op($$->code, storeai($4->result_reg, value, displacement_reg));								
 						}											
 					}
 				| if_then ';'
@@ -967,6 +957,20 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 					{
 						$$ = $1;
 					}
+
+opt_prefixes: TK_PR_STATIC {
+				$$ = new_node($1);
+				}
+			| TK_PR_CONST {
+				$$ = new_node($1);
+				}
+			| TK_PR_STATIC TK_PR_CONST {
+				$$ = new_node($1);
+				add_node($$, new_node($2));
+				}
+			| %empty {
+				$$ = new_node(NULL);
+			}
 						
 input 		: TK_PR_INPUT expr
 				{
@@ -1565,6 +1569,8 @@ static_var	: TK_PR_CONST const_var
 				{
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					$$->code = $2->code;
 				}
 			| const_var 
 				{
@@ -1576,6 +1582,8 @@ const_var	: type TK_IDENTIFICADOR var_end
 					$$ = $1;
 					add_node($$, new_node($2));
 					add_node($$, $3);
+
+					$$->code = $3->code;
 				}
 			| TK_IDENTIFICADOR TK_IDENTIFICADOR
 				{
@@ -2417,7 +2425,7 @@ id_for_expr		: TK_IDENTIFICADOR
 
 						id_category = VARIABLE;
 
-						int is_id_declared;
+						int is_id_declared, type;
 
 						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
 						if (param_type == NOT_DECLARED) {
@@ -2427,14 +2435,14 @@ id_for_expr		: TK_IDENTIFICADOR
 								set_error(ERR_UNDECLARED);
 
 							char* type_name;
-							int type = get_id_type(stack, $1->value.v_string, &type_name);
+							type = get_id_type(stack, $1->value.v_string, &type_name);
 
 							$$->type = type;
 							$$->user_type = type_name;
 						} else {
 							$$->type = param_type;
 						}	
-						if (is_id_declared != NOT_DECLARED) {
+						if (is_id_declared != NOT_DECLARED && type == INT) {
 							$$->code = new_op_list();
 
 							$$->result_reg = new_reg();
