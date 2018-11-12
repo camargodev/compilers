@@ -395,6 +395,8 @@ void free_label_list(lbl_list* list) {
 		free(list->list[index]);
 		list->list[index] = NULL;
 	}
+	free(list->list);
+	list->list = NULL;
 	free(list);
 	list = NULL;
 }
