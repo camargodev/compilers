@@ -15,6 +15,7 @@ int main() {
 	add_label_to_list(true_list, new_lbl());
 	add_label_to_list(true_list, new_lbl());
 	iloc_arg* r0 = new_arg(REGISTER, new_reg());
+	iloc_arg* r0c = new_arg(REGISTER, "r0");
 	iloc_arg* r1 = new_arg(REGISTER, new_reg());
 	iloc_arg* r2 = new_arg(REGISTER, new_reg());
 	iloc_arg* r3 = new_arg(REGISTER, new_reg());
@@ -30,7 +31,7 @@ int main() {
 	iloc_arg* i2 = new_arg(CONSTANT, (void*) &sixhun);
 
 	iloc_operation* add1 = new_3arg_op(ADD, r0, r1, r2);
-	iloc_operation* add2 = new_3arg_op(ADD, r0, r2, r3);
+	iloc_operation* add2 = new_3arg_op(ADD, r0c, r2, r3);
 	iloc_operation* sub1 = new_3arg_op(SUB, r3, l0, r4);
 	iloc_operation* sub2 = new_3arg_op(SUB, r3, r2, r4);
 	iloc_operation* add3 = new_3arg_op(ADDI, r0, i2, l1);
@@ -49,7 +50,6 @@ int main() {
 	add_op(list, add3);
 	add_op(list, sub3);
 	add_op(list, nop1);
-	add_op(list, add("r2", "r4", "r6"));
 	
 	add_op(list2, jmp1);
 	add_op(list2, mult);
@@ -59,9 +59,9 @@ int main() {
 
 	iloc_op_list* final = concat_code(list, list2);
 
-	//print_code(final);
+	print_code(final);
 	patch_list(final, true_list, "lreal");
-	//print_code(final);
+	print_code(final);
 
 	free_op_list(final);
 	free_label_list(true_list);

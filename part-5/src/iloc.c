@@ -13,7 +13,9 @@ void free_list_and_ops(iloc_op_list* list);
 
 int op_counter = 0;
 int num_freed_registers = 0;
+int num_on_reg_list = 0;
 iloc_arg** freed_registers = NULL;
+iloc_arg** reg_list = NULL;
 int came_from_label = 0;
 
 iloc_op_list* new_op_list() {
@@ -65,11 +67,43 @@ iloc_operation* new_op(int op_code) {
 	return op;
 }
 
+void add_to_reg_list(iloc_arg* arg) {
+	if (num_on_reg_list == 0) {
+		reg_list = (iloc_arg**) malloc(sizeof(iloc_arg));
+	} else {
+		reg_list = (iloc_arg**) realloc(reg_list, (num_on_reg_list+1) * sizeof(iloc_arg));
+	}
+	reg_list[num_on_reg_list] = arg;
+	num_on_reg_list++;
+}
+
+iloc_arg* get_from_reg_list(char* arg_name) {
+	int index;
+	for (index = 0; index < num_on_reg_list; index++) {
+		if (reg_list[index]->arg.str_var != NULL) {
+			if (strcmp(reg_list[index]->arg.str_var, arg_name) == 0) {
+				return reg_list[index];
+			}
+		}
+	}
+	return NULL;
+}
+
 iloc_arg* new_arg(int type, void* argum) {
-	iloc_arg *arg = (iloc_arg*) malloc(sizeof(iloc_arg));
+	iloc_arg *arg;
+	if (type == REGISTER) {
+		arg = get_from_reg_list((char*) argum);
+		if (arg != NULL)
+			return arg;
+	}
+
+	arg = (iloc_arg*) malloc(sizeof(iloc_arg));
 	arg->type = type;
 	if (type == CONSTANT) {
 		arg->arg.int_const = *((int*) argum);
+	} else if (type == REGISTER) {
+		arg->arg.str_var = (char*) argum;
+		add_to_reg_list(arg);
 	} else {
 		arg->arg.str_var = (char*) argum;
 	}
@@ -401,17 +435,27 @@ void free_label_list(lbl_list* list) {
 	list = NULL;
 }
 
-void free_register_list() {
+void free_reg_list() {
 	int index;
-	for (index = 0; index < num_freed_registers; index++) {
-		if (freed_registers[index]->type == REGISTER) {
-			if (freed_registers[index]->arg.str_var != NULL) {
-				free(freed_registers[index]->arg.str_var);
-				freed_registers[index]->arg.str_var = NULL;
+	for (index = 0; index < num_on_reg_list; index++) {
+		if (reg_list[index]->type == REGISTER) {
+			if (reg_list[index]->arg.str_var != NULL) {
+				if (is_supposed_to_free(reg_list[index]->arg.str_var)) {
+					free(reg_list[index]->arg.str_var);
+					reg_list[index]->arg.str_var = NULL;
+				}
 			}
 		}
-		free(freed_registers[index]);
+		free(reg_list[index]);
 	}
+	
+	free(reg_list);
+	reg_list = NULL;
+	num_on_reg_list = 0;
+
+}
+
+void free_freed_registers() {
 	free(freed_registers);
 	freed_registers = NULL;
 	num_freed_registers = 0;
@@ -428,7 +472,9 @@ void free_op_list(iloc_op_list* list) {
 		free(list);
 		list = NULL;
 	}
-	free_register_list();
+
+	free_freed_registers();
+	free_reg_list();
 }
 
 void free_op(iloc_operation* op) {
