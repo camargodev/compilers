@@ -83,8 +83,8 @@ ILCFLGS =  -s -t -m --data 120 --stack 1000
 OUTPUT  = ${PSR}.output
 LKTMP   = tmplk.txt
 
-all: parser scanner main lexeme tree table error conversions debug ciloc codes
-	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} ${DEBGEN} ${ILOCGEN} ${CDSGEN} -lfl
+all: parser scanner main lexeme tree table error conversions ciloc codes
+	${CC} ${LFLAGS} ${PART} ${PSRGEN} ${SCNGEN} ${MAINGEN} ${LXMGEN} ${TREEGEN} ${TBLGEN} ${ERRGEN} ${CNVGEN} ${ILOCGEN} ${CDSGEN} -lfl
 
 parser: ${PSRFONT}
 	bison ${BFLAGS} ${PSRFONT}
