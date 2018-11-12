@@ -13,7 +13,7 @@ cbr r9 -> L8, L10
 L8: loadI 1 => r11
 storeAI r11 => rfp, 4
 jumpI -> L9
-L10: loadI 165 => r13
-storeAI r13 => rfp, 4
+L10: loadI 165 => r12
+storeAI r12 => rfp, 4
 L9: nop 
 halt 

@@ -777,7 +777,6 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						if ($2->code != NULL){
 							$$->code = $2->code;
 						
-							char* reg_temp = new_reg();
 							char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
 							int value = get_mem_address(stack, $1->token);
 							//add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
@@ -885,7 +884,6 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						if($3->code != NULL) {
 							$$->code = $3->code;
 						
-							char* reg_temp = new_reg();
 							char* displacement_reg = (is_global_var(stack, $2->value.v_string)) ? "rbss" : "rfp";					
 
 							int value = get_mem_address(stack, $2);
@@ -1995,6 +1993,9 @@ expr 			: expr '+' expr
 							}
 						}
 
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
+
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
 						char* lbl_true = new_lbl();
@@ -2025,6 +2026,9 @@ expr 			: expr '+' expr
 							}
 						}
 						
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
+
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
 						char* lbl_true = new_lbl();
@@ -2119,6 +2123,9 @@ expr 			: expr '+' expr
 							}
 						}
 						
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
+
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
 						char* lbl_true = new_lbl();
@@ -2148,6 +2155,10 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
+
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
 						char* lbl_true = new_lbl();
@@ -2177,6 +2188,9 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
 						
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);
@@ -2207,6 +2221,9 @@ expr 			: expr '+' expr
 								$1->conversion = get_conversion(type, $1->type);
 							}
 						}
+						
+						$$->false_list = new_label_list();
+						$$->true_list = new_label_list();
 						
 						char* lbl_false = new_lbl();
 						add_label_to_list($$->false_list, lbl_false);

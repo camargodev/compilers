@@ -49,6 +49,7 @@ int main() {
 	add_op(list, add3);
 	add_op(list, sub3);
 	add_op(list, nop1);
+	add_op(list, add("r2", "r4", "r6"));
 	
 	add_op(list2, jmp1);
 	add_op(list2, mult);
@@ -58,9 +59,9 @@ int main() {
 
 	iloc_op_list* final = concat_code(list, list2);
 
-	print_code(final);
+	//print_code(final);
 	patch_list(final, true_list, "lreal");
-	print_code(final);
+	//print_code(final);
 
 	free_op_list(final);
 	free_label_list(true_list);

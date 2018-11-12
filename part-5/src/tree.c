@@ -27,12 +27,13 @@ Node* new_node(struct Lexeme* token) {
 	node->type = UNDECLARED_TYPE;
 	node->user_type = NULL;
 	node->code = NULL;
+	node->result_reg = NULL;
 	node->conversion = NO_CONVERSION;
 	node->point = -1;
 	node->is_literal = FALSE;
 	node->children = (Node**) malloc(sizeof(Node**));
-	node->true_list = new_label_list();
-	node->false_list = new_label_list();
+	node->true_list = NULL;
+	node->false_list = NULL;
 
 	return node;
 }
@@ -141,6 +142,10 @@ void libera(void *node) {
 		if (tree_node->false_list != NULL) {
 			free_label_list(tree_node->false_list);
 			tree_node->false_list = NULL;
+		}
+
+		if (tree_node->result_reg != NULL) {
+			tree_node->result_reg = NULL;
 		}
 
 		free(tree_node->children);
