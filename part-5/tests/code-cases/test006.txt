@@ -1,0 +1,12 @@
+
+
+int main(){
+	int x;
+	x = 0;
+	int y <= 0;
+
+	while (x != 6) do {
+		x = x + 2;
+		y = y + 3;
+	};
+}

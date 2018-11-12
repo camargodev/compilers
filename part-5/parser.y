@@ -774,13 +774,15 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							update_string_size(stack, $1->token, $2->token);							
 						}
 
-						$$->code = $2->code;
+						if($2->code != NULL){
+							$$->code = $2->code;
 						
-						char* reg_temp = new_reg();
-						char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
-						
-						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
-						add_op($$->code, store($2->result_reg, reg_temp));															
+							char* reg_temp = new_reg();
+							char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
+							int value = get_mem_address(stack, $1->token);
+							//add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
+							add_op($$->code, storeai($2->result_reg, value, displacement_reg));	
+						}																				
 					}
 				| cmd_ident cmd_fix_call ';'
 					{
@@ -845,7 +847,8 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($3));
 					}
 				| type TK_IDENTIFICADOR var_end ';'
-					{
+					{	
+
 						$$ = $1;
 						add_node($$, new_node($2));
 						add_node($$, $3);
@@ -883,10 +886,11 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							$$->code = $3->code;
 						
 							char* reg_temp = new_reg();
-							char* displacement_reg = (is_global_var(stack, $2->value.v_string)) ? "rbss" : "rfp";
-						
-							add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $2), reg_temp));
-							add_op($$->code, store($3->result_reg, reg_temp));		
+							char* displacement_reg = (is_global_var(stack, $2->value.v_string)) ? "rbss" : "rfp";					
+
+							int value = get_mem_address(stack, $2);
+							//add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
+							add_op($$->code, storeai($3->result_reg, value, displacement_reg));								
 						}											
 					}
 				| if_then ';'
@@ -1050,6 +1054,7 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					
 					// Add a label that represents the next op
 					add_op($$->code, label(lbl_next));
+					add_op($$->code, new_nop());
 				}
 
 bool_expr : expr 
@@ -1108,6 +1113,7 @@ while 		: TK_PR_WHILE '(' bool_expr ')'
 										
 					//false ->out while
 					add_op($$->code, label(out_while));
+					add_op($$->code, new_nop());
 				}
 
 do_while 	: TK_PR_DO '{' push_table cmd_block
@@ -1134,7 +1140,8 @@ do_while 	: TK_PR_DO '{' push_table cmd_block
 					$$->code = concat_code($$->code, $7->code);
 					
 					//false ->out while
-					add_op($$->code, label(out_while));				
+					add_op($$->code, label(out_while));	
+					add_op($$->code, new_nop());			
 				}
 
 continue 	: TK_PR_CONTINUE
@@ -1587,6 +1594,7 @@ var_end 	: TK_OC_LE var_lit
 
 					$$->code = $2->code;
 					$$->result_reg = $2->result_reg;
+
 				}
 			| %empty
 				{

@@ -207,6 +207,10 @@ iloc_operation* store(char* regop1, char* regdst) {
 	return new_2arg_op(STORE, new_arg(REGISTER, regop1), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* storeai(char* regop1, int value, char* regdst) {
+	return new_3arg_op(STOREAI, new_arg(REGISTER, regop1), new_arg(REGISTER, regdst), new_arg(CONSTANT, (void*) &value));
+}
+
 iloc_operation* and_op(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(AND, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }

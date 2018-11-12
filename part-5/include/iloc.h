@@ -71,6 +71,8 @@ iloc_operation* jumpi(char* label);
 
 iloc_operation* store(char* regop1, char* regdst);
 
+iloc_operation* storeai(char* regop1, int value, char* regdst);
+
 iloc_operation* and_op(char* regop, char* regop2, char* regdst);
 
 iloc_operation* add(char* regop, char* regop2, char* regdst);

@@ -11,7 +11,7 @@ char* get_instruction_name(int code) {
 		/*( Arithmetical expressions )*/
 		case ADD:   return "add";
 		case SUB:   return "sub";
-		case MULT:  return "mul";
+		case MULT:  return "mult";
 		case DIV:   return "div";
 		case ADDI:  return "addI";
 		case SUBI:  return "subI";
@@ -77,7 +77,7 @@ char* get_instruction_name(int code) {
 
 		case LABEL_INST: return "LABEL_INST";
 
-		default: return "NOP";
+		default: return "nop";
 	}
 }
 
