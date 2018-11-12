@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern int displacement_rfp;
-extern int displacement_rbss;
+#define VAR_SIZE 4
+
+int RFP  = 0;
+int RBSS = 0;
 
 table_stack * stack;
 
@@ -49,6 +51,16 @@ void pop(){
 		stack->num_tables--;
 		return;
 	}	
+}
+
+int increase_rfp() {
+	RFP += VAR_SIZE;
+	return RFP;
+}
+
+int increase_rbss() {
+	RBSS += VAR_SIZE;
+	return RBSS;
 }
 
 int is_declared (char* token) {
@@ -217,7 +229,7 @@ void add_global_var(global_var_args globalvar_args, Lexeme * token) {
 		line.token_name = strdup(globalvar_args.name);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = displacement_rbss;
+		line.mem_address = increase_rbss();;
 		line.is_global_var = TRUE;
 
 		if (globalvar_args.is_array) {
@@ -317,7 +329,7 @@ void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexem
 		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = displacement_rfp;
+		line.mem_address = increase_rfp();
 		
 		line.category = VARIABLE;
 		line.is_static = lv_static;
@@ -543,4 +555,8 @@ int is_global_var(char* var) {
 		return line->is_global_var;
 	}
 	return -1;
+}
+
+char* get_base_reg(char* var) {
+	return (is_global_var(var)) ? "rbss" : "rfp";
 }

@@ -103,49 +103,35 @@ typedef struct table_stack {
 } table_stack;
 
 void init_table_stack();
-
 int is_empty();
-
 void push(table item);
-
 void pop();
 
 // FUNCTIONS that manage the information of the tables.
 
 int is_declared (char* token);
 int is_declared_on_current_table (char* token);
-
-
 void add_user_type(Lexeme * token);
 void add_user_type_properties(char * key, user_type_args token);
 table_line inicialize_line(Lexeme * token_name);
-
 void initialize_stack();
-
 global_var_args initialize_global_var_args();
 void add_global_var(global_var_args globalvar_args, Lexeme * token);
 int get_user_type_size(char * token);
-
 void add_function(int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token);
 int is_function_declared(char* token);
 void set_func_as_static(char* token);
-
 void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexeme *token);
-
 void free_table_stack();
-
 expr_args init_expr_args();
-
-
 int get_id_type(char* token, char** user_type_return);
 int get_id_field_type(char* token, char* field);
 int get_func_num_params(char* token);
 int* get_func_params_types(char* token);
-
 int get_category(char* token);
 int get_param_type(char* field, int num_params, func_args* params);
-
 int get_size(Lexeme* token);
 void update_string_size(Lexeme* token_update, Lexeme* token_data);
 int get_mem_address(Lexeme* token);
 int is_global_var(char* var);
+char* get_base_reg(char* var);

@@ -36,9 +36,6 @@
 
 	int yylex(void);
 	void yyerror(char const *s);
-
-	int displacement_rfp = 0;
-	int displacement_rbss = 0;
 %}
 
 %verbose
@@ -485,10 +482,6 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 							set_error(ERR_DECLARED);
 						} 
 						
-						if(global_var.type == INT)
-							displacement_rbss = displacement_rbss + 4;
-
-
 						global_var.name = $1->value.v_string;
 						add_global_var(global_var, $1);
 
@@ -766,7 +759,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						if ($2->code != NULL){
 							$$->code = $2->code;
 						
-							char* displacement_reg = (is_global_var($1->token->value.v_string)) ? "rbss" : "rfp";
+							char* displacement_reg = get_base_reg($1->token->value.v_string);
 							int value = get_mem_address($1->token);
 							//add_op($$->code, loadai(displacement_reg, get_mem_address($1->token), reg_temp));
 							add_op($$->code, storeai($2->result_reg, value, displacement_reg));	
@@ -838,8 +831,6 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							set_error(ERR_DECLARED);
 						}
 						else {
-							if($2->type == INT)
-								displacement_rfp = displacement_rfp + 4;
 							add_local_var($2->type, NULL, FALSE, FALSE, $3);
 						}
 
@@ -862,7 +853,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						if($4->code != NULL) {
 							$$->code = $4->code;
 						
-							char* displacement_reg = (is_global_var($3->value.v_string)) ? "rbss" : "rfp";					
+							char* displacement_reg = get_base_reg($3->value.v_string);					
 
 							int value = get_mem_address($3);
 							add_op($$->code, storeai($4->result_reg, value, displacement_reg));								
@@ -1297,11 +1288,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
 							set_error(ERR_DECLARED);
-						}
-						else {
-							if($1->type == INT)
-								displacement_rfp = displacement_rfp + 4;
-
+						} else {
 							add_local_var($1->type, NULL, FALSE, FALSE, $2);
 						}
 
@@ -1609,7 +1596,7 @@ var_lit		: TK_IDENTIFICADOR
 
 					$$->code = new_op_list();
 					$$->result_reg = new_reg();
-					char* displacement_reg = (is_global_var($1->value.v_string)) ? "rbss" : "rfp";
+					char* displacement_reg = get_base_reg($1->value.v_string);
 					//printf("Result_Reg [%s]\n", $$->result_reg);
 					//printf("Displacement_reg [%s]\n", displacement_reg);
 					//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address($$->token));
@@ -2433,7 +2420,7 @@ id_for_expr		: TK_IDENTIFICADOR
 							$$->code = new_op_list();
 
 							$$->result_reg = new_reg();
-							char* displacement_reg = (is_global_var($1->value.v_string)) ? "rbss" : "rfp";
+							char* displacement_reg = get_base_reg($1->value.v_string);
 							//printf("Result_Reg [%s]\n", $$->result_reg);
 							//printf("Displacement_reg [%s]\n", displacement_reg);
 							//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address($$->token));
