@@ -2075,8 +2075,7 @@ expr 			: expr '+' expr
 						if (($1->type == INT || $1->type == BOOL)
 							&& ($3->type == INT || $3->type == BOOL)) {
 							char* new_label = new_lbl();
-							char* res_reg   = new_reg();
-							$$->result_reg  = res_reg;
+							//$$->result_reg  = new_reg();
 
 							patch_list($1->code, $1->true_list, new_label);
 							$$->true_list = copy_label_list($3->true_list);
@@ -2113,8 +2112,7 @@ expr 			: expr '+' expr
 						if (($1->type == INT || $1->type == BOOL)
 							&& ($3->type == INT || $3->type == BOOL)) {
 							char* new_label = new_lbl();
-							char* res_reg   = new_reg();
-							$$->result_reg  = res_reg;
+							//$$->result_reg  = new_reg();
 
 							patch_list($1->code, $1->false_list, new_label);
 							$$->false_list = copy_label_list($3->false_list);
