@@ -49,10 +49,10 @@ lbl_list* concat_labels(lbl_list* list1, lbl_list* list2) {
 	lbl_list* mixed_list = new_label_list();
 	int lbl_index;
 	for (lbl_index = 0; lbl_index < list1->num_labels; lbl_index++) {
-		add_label_to_list(mixed_list, list1->list[lbl_index]);
+		add_label_to_list(mixed_list, strdup(list1->list[lbl_index]));
 	}
 	for (lbl_index = 0; lbl_index < list2->num_labels; lbl_index++) {
-		add_label_to_list(mixed_list, list2->list[lbl_index]);
+		add_label_to_list(mixed_list, strdup(list2->list[lbl_index]));
 	}
 	return mixed_list;
 }
@@ -269,14 +269,24 @@ iloc_operation* label(char* label_name) {
 
 /* Free + Print functions */
 
+int is_supposed_to_free(char* arg_name) {
+	if (strcmp(arg_name, "rfp") == 0 || strcmp(arg_name, "rbss") == 0)
+		return 0;
+	return 1;;
+}
+
 void add_to_freed_args(iloc_arg* arg) {
-	if (num_freed_registers == 0) {
-		freed_registers = (iloc_arg**) malloc(sizeof(iloc_arg));
-	} else {
-		freed_registers = (iloc_arg**) realloc(freed_registers, (num_freed_registers+1) * sizeof(iloc_arg));
+	if (arg == NULL)
+		return;
+	if (is_supposed_to_free(arg->arg.str_var)) {
+		if (num_freed_registers == 0) {
+			freed_registers = (iloc_arg**) malloc(sizeof(iloc_arg));
+		} else {
+			freed_registers = (iloc_arg**) realloc(freed_registers, (num_freed_registers+1) * sizeof(iloc_arg));
+		}
+		freed_registers[num_freed_registers] = arg;
+		num_freed_registers++;
 	}
-	freed_registers[num_freed_registers] = arg;
-	num_freed_registers++;
 }
 
 int is_arg_freed(iloc_arg* arg) {
@@ -361,6 +371,24 @@ void print_code(iloc_op_list* list) {
 	} 
 }
 
+lbl_list* copy_label_list(lbl_list* list) {
+	if (list == NULL)
+		return NULL;
+	lbl_list* new_list = (lbl_list*) malloc(sizeof(lbl_list));
+	int index;
+
+	new_list->num_labels = list->num_labels;
+	if (list->num_labels > 0) {
+		new_list->list = (char**) malloc(list->num_labels * sizeof(char*));
+		for (index = 0; index < list->num_labels; index++) {
+			new_list->list[index] = strdup(list->list[index]);
+		}
+	} else {
+		new_list->list = NULL;
+	}
+	return new_list;
+}
+
 void free_label_list(lbl_list* list) {
 	int index;
 	for (index = 0; index < list->num_labels; index++) {
@@ -375,7 +403,10 @@ void free_register_list() {
 	int index;
 	for (index = 0; index < num_freed_registers; index++) {
 		if (freed_registers[index]->type == REGISTER) {
-			free(freed_registers[index]->arg.str_var);
+			if (freed_registers[index]->arg.str_var != NULL) {
+				free(freed_registers[index]->arg.str_var);
+				freed_registers[index]->arg.str_var = NULL;
+			}
 		}
 		free(freed_registers[index]);
 	}

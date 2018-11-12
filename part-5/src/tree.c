@@ -133,6 +133,16 @@ void libera(void *node) {
 			free(tree_node->token);
 		}
 
+		if (tree_node->true_list != NULL) {
+			free_label_list(tree_node->true_list);
+			tree_node->true_list = NULL;
+		}
+
+		if (tree_node->false_list != NULL) {
+			free_label_list(tree_node->false_list);
+			tree_node->false_list = NULL;
+		}
+
 		free(tree_node->children);
 		free(tree_node);
 	} 

@@ -1550,8 +1550,8 @@ cmd_fix_attr		: id_seq_simple attr
 
 					$$->result_reg = $2->result_reg;
 					$$->code = $2->code;
-					$$->true_list = $2->true_list;	
-					$$->false_list = $2->false_list;				
+					$$->true_list = copy_label_list($2->true_list);	
+					$$->false_list = copy_label_list($2->false_list);				
 				}
 cmd_fix_call		: '(' func_call_params piped_expr
 				{
@@ -1673,8 +1673,8 @@ attr 		: '=' expr
 					$$->token = copy_lexeme($2->token);
 					$$->result_reg = $2->result_reg;
 					$$->code = $2->code;		
-					$$->true_list = $2->true_list;	
-					$$->false_list = $2->false_list;							
+					$$->true_list = copy_label_list($2->true_list);	
+					$$->false_list = copy_label_list($2->false_list);							
 				}
 			| TK_OC_SL expr 
 				{
@@ -2054,7 +2054,7 @@ expr 			: expr '+' expr
 						$$->result_reg  = res_reg;
 
 						patch_list($1->code, $1->true_list, new_label);
-						$$->true_list = $3->true_list;
+						$$->true_list = copy_label_list($3->true_list);
 						$$->false_list = concat_labels($1->false_list, $3->false_list);
 
 						$$->code = new_op_list();
@@ -2090,7 +2090,7 @@ expr 			: expr '+' expr
 						$$->result_reg  = res_reg;
 
 						patch_list($1->code, $1->false_list, new_label);
-						$$->false_list = $3->false_list;
+						$$->false_list = copy_label_list($3->false_list);
 						$$->true_list = concat_labels($1->true_list, $3->true_list);
 
 						$$->code = new_op_list();

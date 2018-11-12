@@ -107,6 +107,8 @@ lbl_list* new_label_list();
 
 lbl_list* concat_labels(lbl_list* list1, lbl_list* list2);
 
+lbl_list* copy_label_list(lbl_list* list);
+
 char* new_lbl();
 
 //TODO:

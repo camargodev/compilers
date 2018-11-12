@@ -20,7 +20,9 @@ int main (int argc, char **argv)
 {
   int ret = yyparse(); 
   //descompila (arvore);
-  print_code(((Node*)arvore)->code);
+  Node* tree = ((Node*)arvore);
+  print_code(tree->code);
+  free_op_list(tree->code);
   libera(arvore);
   arvore = NULL;
   yylex_destroy();
