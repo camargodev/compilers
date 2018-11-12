@@ -76,7 +76,8 @@ RESULTS = ${TST}/results.txt
 TMPRES  = ${TST}/tempresults.txt
 
 PYTHON  = python3
-ILOCSIM = ilocsim.py
+SIMFLDR = simulator
+ILOCSIM = ${SIMFLDR}/ilocsim.py
 ILCFLGS =  -s -t -m --data 120 --stack 1000 
 
 OUTPUT  = ${PSR}.output
