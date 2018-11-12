@@ -18,8 +18,6 @@
 
 	table_stack * stack;
 
-	Error* error = NULL;
-
 	int type_args_counter = 0;
 	user_type_args *type_arguments;
 	char* scope = "public";
@@ -221,17 +219,12 @@ initializer : %empty
 destroyer : %empty
 			{
 				free_table_stack(stack);
-				if (error != NULL) {
-					int error_code = error->error_code;
-					printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
-					
-					free(error);
- 					free_op_list(((Node*)arvore)->code);
-				  	libera(arvore);
-				  	arvore = NULL;
-				  	yylex_destroy();
-					
-					exit(error_code);
+
+				if (raise_error()) {
+					free_op_list(((Node*)arvore)->code);
+			  		libera(arvore);
+			  		arvore = NULL;
+			  		yylex_destroy();
 				}
 			}
 
@@ -2618,12 +2611,6 @@ void init_table_stack() {
 	stack->num_tables = 0;
 	stack->array = malloc(sizeof(table));
 	stack->array[0] = created_table;
-}
-
-void set_error(int error_code) {
-	if(error == NULL) {
-		error = new_error(error_code, yylineno);
-	}
 }
 
 int infer(int type_a, int type_b) {

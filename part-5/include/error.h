@@ -1,3 +1,6 @@
+#ifndef ERROR_H
+#define ERROR_H
+
 /* Verificação de declarações */
 #define ERR_UNDECLARED  10 //identificador não declarado
 #define ERR_DECLARED    11 //identificador já declarado
@@ -32,3 +35,6 @@ typedef struct error {
 Error* new_error(int error_code, int line);
 void set_error(int error_code);
 char* get_error_message(int error_code);
+int raise_error();
+
+#endif

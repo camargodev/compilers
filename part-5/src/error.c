@@ -1,9 +1,12 @@
 // João Vitor de Camargo
 // Marcellus Farias
 
-
 #include <stdlib.h>
+#include <stdio.h>
 #include "../include/error.h"
+
+extern int yylineno;
+Error* error = NULL;
 
 Error* new_error(int error_code, int line) {
 	Error* err = malloc(sizeof(Error));
@@ -51,4 +54,21 @@ char* get_error_message(int error_code) {
 		case ERR_WRONG_PAR_RETURN:
 			return "Wrong type for return";
 	}
+}
+
+void set_error(int error_code) {
+	if(error == NULL) {
+		error = new_error(error_code, yylineno);
+	}
+}
+
+int raise_error() {
+	if (error != NULL) {
+		int error_code = error->error_code;
+		printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
+		free(error);
+		exit(error_code);
+		return 1;
+	}
+	return 0;
 }
