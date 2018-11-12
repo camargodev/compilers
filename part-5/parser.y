@@ -16,8 +16,6 @@
 	extern void* arvore;
 	extern int yylex_destroy(void);
 
-	table_stack * stack;
-
 	int type_args_counter = 0;
 	user_type_args *type_arguments;
 	char* scope = "public";
@@ -39,7 +37,6 @@
 	int yylex(void);
 	void yyerror(char const *s);
 
-	void init_table_stack();
 	int infer(int type_a, int type_b);
 	int infer_not_expr(int type_a, int type_b);
 
@@ -218,7 +215,7 @@ initializer : %empty
 
 destroyer : %empty
 			{
-				free_table_stack(stack);
+				free_table_stack();
 
 				if (raise_error()) {
 					free_op_list(((Node*)arvore)->code);
@@ -380,7 +377,7 @@ func_arg_types: type
 			{ 
 				$$ = new_node($1); 
 
-				if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+				if(is_declared($1->value.v_string) == NOT_DECLARED)
 					set_error(ERR_UNDECLARED);
 
 				$$->type = USER_TYPE;
@@ -421,16 +418,16 @@ new_type    : TK_PR_CLASS TK_IDENTIFICADOR '[' param_begin ';'
 					add_node($$, $4);
 					add_node($$, new_node($5));	
 
-					int declaration_line = is_declared(stack, $2->value.v_string);
+					int declaration_line = is_declared($2->value.v_string);
 					if(declaration_line != NOT_DECLARED) {				
 						set_error(ERR_DECLARED);
 					} else {
-						add_user_type(stack, $2);
+						add_user_type($2);
 					}
 
 					int index;
 					for (index = 0; index < type_args_counter; index++)
-						add_user_type_properties(stack, $2->value.v_string, type_arguments[index]);
+						add_user_type_properties($2->value.v_string, type_arguments[index]);
 
 					free(type_arguments);
 					type_args_counter = 0;
@@ -486,7 +483,7 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 						$$ = new_node($1);
 						add_node($$, $2);
 
-						int declaration_line = is_declared(stack, $1->value.v_string);
+						int declaration_line = is_declared($1->value.v_string);
 						if (declaration_line != NOT_DECLARED) {
 							set_error(ERR_DECLARED);
 						} 
@@ -496,7 +493,7 @@ global_var       : TK_IDENTIFICADOR global_var_vec
 
 
 						global_var.name = $1->value.v_string;
-						add_global_var(stack, global_var, $1);
+						add_global_var(global_var, $1);
 
 						global_var = initialize_global_var_args();
 						
@@ -544,12 +541,12 @@ global_var_type	: type ';'
 						$$ = new_node($1);
 						add_node($$, new_node($2));
 
-						if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)						
+						if(is_declared($1->value.v_string) == NOT_DECLARED)						
 							set_error(ERR_UNDECLARED);
 
 						global_var.type = USER_TYPE;
 						global_var.user_type = $1->value.v_string;
-						global_var.user_type_size = get_user_type_size(stack, $1->value.v_string);
+						global_var.user_type_size = get_user_type_size($1->value.v_string);
 					}
 
 index	: TK_LIT_INT 
@@ -601,11 +598,11 @@ func_name_user_type	: TK_IDENTIFICADOR TK_IDENTIFICADOR
 					add_node($$, new_node($1));
 					add_node($$, new_node($2));
 
-					int declaration_line = is_declared(stack, $2->value.v_string);
+					int declaration_line = is_declared($2->value.v_string);
 					if (declaration_line != NOT_DECLARED)
 						set_error(ERR_DECLARED);
 
-					if(is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+					if(is_declared($1->value.v_string) == NOT_DECLARED)
 						set_error(ERR_UNDECLARED);
 
 					$$->type = USER_TYPE;
@@ -623,7 +620,7 @@ func_name 	: TK_IDENTIFICADOR
 				{
 					$$ = new_node($1);
 
-					int declaration_line = is_function_declared(stack, $1->value.v_string);
+					int declaration_line = is_function_declared($1->value.v_string);
 					if (declaration_line != NOT_DECLARED)
 						set_error(ERR_DECLARED);
 
@@ -659,7 +656,7 @@ func_params_end : ')' add_func func_body
 
 add_func 		: %empty
 					{
-						add_function(stack, function.type, function.type_name, function.args_counter, function.function_args, function.lexeme);	
+						add_function(function.type, function.type_name, function.args_counter, function.function_args, function.lexeme);	
 					}
 
 func_body       : '{' push_table cmd_block 
@@ -674,13 +671,13 @@ func_body       : '{' push_table cmd_block
 
 push_table		: %empty
 					{
-						push(stack, create_table());
+						push(create_table());
 					}
 
 pop_table		: %empty
 					{	
 						//print_stack(stack);					
-						pop(stack);
+						pop();
 						function.function_args = NULL;
 						function.type = 0;
 						function.args_counter = 0;
@@ -707,7 +704,7 @@ cmd_ident	: TK_IDENTIFICADOR
 					$$->type = USER_TYPE;
 					$$->user_type = $1->value.v_string;
 
-					int declaration_line = is_declared(stack, $1->value.v_string);
+					int declaration_line = is_declared($1->value.v_string);
 					if(declaration_line == NOT_DECLARED) 
 						set_error(ERR_UNDECLARED);
 
@@ -719,12 +716,12 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, $2);
 						add_node($$, new_node($3));
 	
-						int declaration_line = is_declared_on_current_table(stack, $2->token->value.v_string);
+						int declaration_line = is_declared_on_current_table($2->token->value.v_string);
 						int param_type = get_param_type($2->token->value.v_string, function.args_counter, function.function_args);
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED) 
 							set_error(ERR_DECLARED);
 						else 
-							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
+							add_local_var($1->type, $1->user_type, FALSE, FALSE, $2->token);
 					}
 				| cmd_ident cmd_fix_attr ';'
 					{
@@ -733,10 +730,10 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($3));
 
 						char* type_name;
-						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+						int type = get_id_type($1->token->value.v_string, &type_name);
 
 						if ($2->user_type != NULL)
-							type = get_id_field_type(stack, type_name, $2->user_type);
+							type = get_id_field_type(type_name, $2->user_type);
 
 						if (type != $2->type) {
 							if (can_convert(type, $2->type) == FALSE) {
@@ -750,7 +747,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							}
 						}
 
-						int category = get_category(stack, $1->token->value.v_string);
+						int category = get_category($1->token->value.v_string);
 						if (category != id_category) {
 							if ($1->type != USER_TYPE || id_category != USER_TYPE)
 								switch (category) {
@@ -766,15 +763,15 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						}
 						
 						if($1->type == USER_TYPE && $2->type == STRING) {
-							update_string_size(stack, $1->token, $2->token);							
+							update_string_size($1->token, $2->token);							
 						}
 
 						if ($2->code != NULL){
 							$$->code = $2->code;
 						
-							char* displacement_reg = (is_global_var(stack, $1->token->value.v_string)) ? "rbss" : "rfp";
-							int value = get_mem_address(stack, $1->token);
-							//add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $1->token), reg_temp));
+							char* displacement_reg = (is_global_var($1->token->value.v_string)) ? "rbss" : "rfp";
+							int value = get_mem_address($1->token);
+							//add_op($$->code, loadai(displacement_reg, get_mem_address($1->token), reg_temp));
 							add_op($$->code, storeai($2->result_reg, value, displacement_reg));	
 						}																				
 					}
@@ -784,9 +781,9 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, $2);
 						add_node($$, new_node($3));
 
-						int num_args = get_func_num_params(stack, $1->token->value.v_string);
-						int category = get_category(stack, $1->token->value.v_string);
-						int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+						int num_args = get_func_num_params($1->token->value.v_string);
+						int category = get_category($1->token->value.v_string);
+						int* expected_types = get_func_params_types($1->token->value.v_string);
 
 						if (category == FUNCTION) {
 							if (num_args == func_call_param_counter) {
@@ -814,7 +811,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 
 						if ($2->type != NOT_DECLARED) {
 							char* dummy;
-							int func_type = get_id_type(stack, $1->token->value.v_string, &dummy);
+							int func_type = get_id_type($1->token->value.v_string, &dummy);
 							if (func_type != $2->type) {
 								if (can_convert(func_type, $2->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
@@ -837,7 +834,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, $4);
 						add_node($$, new_node($5));
 
-						int declaration_line = is_declared_on_current_table(stack, $3->value.v_string);
+						int declaration_line = is_declared_on_current_table($3->value.v_string);
 						int param_type = get_param_type($3->value.v_string, function.args_counter, function.function_args);
 						
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
@@ -846,7 +843,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						else {
 							if($2->type == INT)
 								displacement_rfp = displacement_rfp + 4;
-							add_local_var(stack, $2->type, NULL, FALSE, FALSE, $3);
+							add_local_var($2->type, NULL, FALSE, FALSE, $3);
 						}
 
 						if ($4->type != NOT_DECLARED) 
@@ -862,15 +859,15 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 									$4->conversion = get_conversion($2->type, $4->type);
 								}
 						if($4->token != NULL && $2->type == STRING && $4->type == STRING) {
-							update_string_size(stack, $3, $4->token);
+							update_string_size($3, $4->token);
 						}	
 
 						if($4->code != NULL) {
 							$$->code = $4->code;
 						
-							char* displacement_reg = (is_global_var(stack, $3->value.v_string)) ? "rbss" : "rfp";					
+							char* displacement_reg = (is_global_var($3->value.v_string)) ? "rbss" : "rfp";					
 
-							int value = get_mem_address(stack, $3);
+							int value = get_mem_address($3);
 							add_op($$->code, storeai($4->result_reg, value, displacement_reg));								
 						}											
 					}
@@ -1194,12 +1191,12 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						$$ = $1;
 						add_node($$, $2);
 						
-						int declaration_line = is_declared_on_current_table(stack, $2->token->value.v_string);
+						int declaration_line = is_declared_on_current_table($2->token->value.v_string);
 						int param_type = get_param_type($2->token->value.v_string, function.args_counter, function.function_args);
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED) 
 							set_error(ERR_DECLARED);
 						else 
-							add_local_var(stack, $1->type, $1->user_type, FALSE, FALSE, $2->token);
+							add_local_var($1->type, $1->user_type, FALSE, FALSE, $2->token);
 					}
 				| cmd_ident cmd_fix_attr
 					{
@@ -1207,10 +1204,10 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						add_node($$, $2);
 						
 						char* type_name;
-						int type = get_id_type(stack, $1->token->value.v_string, &type_name);
+						int type = get_id_type($1->token->value.v_string, &type_name);
 
 						if ($2->user_type != NULL)
-							type = get_id_field_type(stack, type_name, $2->user_type);
+							type = get_id_field_type(type_name, $2->user_type);
 
 						if (type != $2->type) {
 							if (can_convert(type, $2->type) == FALSE) {
@@ -1224,7 +1221,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 							}
 						}
 
-						int category = get_category(stack, $1->token->value.v_string);
+						int category = get_category($1->token->value.v_string);
 						if (category != id_category) {
 							if ($1->type != USER_TYPE || id_category != USER_TYPE)
 								switch (category) {
@@ -1240,7 +1237,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						}
 						
 						if($1->type == USER_TYPE && $2->type == STRING) {
-							update_string_size(stack, $1->token, $2->token);							
+							update_string_size($1->token, $2->token);							
 						}
 					}
 				| cmd_ident cmd_fix_call
@@ -1248,9 +1245,9 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						$$ = $1;
 						add_node($$, $2);
 						
-						int num_args = get_func_num_params(stack, $1->token->value.v_string);
-						int category = get_category(stack, $1->token->value.v_string);
-						int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+						int num_args = get_func_num_params($1->token->value.v_string);
+						int category = get_category($1->token->value.v_string);
+						int* expected_types = get_func_params_types($1->token->value.v_string);
 
 						if (category == FUNCTION) {
 							if (num_args == func_call_param_counter) {
@@ -1278,7 +1275,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 
 						if ($2->type != NOT_DECLARED) {
 							char* dummy;
-							int func_type = get_id_type(stack, $1->token->value.v_string, &dummy);
+							int func_type = get_id_type($1->token->value.v_string, &dummy);
 							if (func_type != $2->type) {
 								if (can_convert(func_type, $2->type) == FALSE) {
 									set_error(ERR_WRONG_TYPE);
@@ -1298,7 +1295,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						add_node($$, new_node($2));
 						add_node($$, $3);
 
-						int declaration_line = is_declared_on_current_table(stack, $2->value.v_string);
+						int declaration_line = is_declared_on_current_table($2->value.v_string);
 						int param_type = get_param_type($2->value.v_string, function.args_counter, function.function_args);
 						
 						if(declaration_line != NOT_DECLARED || param_type != NOT_DECLARED){
@@ -1308,7 +1305,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 							if($1->type == INT)
 								displacement_rfp = displacement_rfp + 4;
 
-							add_local_var(stack, $1->type, NULL, FALSE, FALSE, $2);
+							add_local_var($1->type, NULL, FALSE, FALSE, $2);
 						}
 
 						if ($3->type != NOT_DECLARED) 
@@ -1323,7 +1320,7 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 									$3->conversion = get_conversion($1->type, $3->type);
 								}
 						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
-							update_string_size(stack, $2, $3->token);
+							update_string_size($2, $3->token);
 						}							
 					}
 				| TK_PR_STATIC static_var
@@ -1446,7 +1443,7 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 						}
 
 						char* type_name;
-						int var_type = get_id_type(stack, $3->value.v_string, &type_name);
+						int var_type = get_id_type($3->value.v_string, &type_name);
 						if ($$->type != var_type) {
 							if (can_convert($$->type, var_type) == FALSE) {
 								set_error(ERR_WRONG_TYPE);
@@ -1609,17 +1606,17 @@ var_lit		: TK_IDENTIFICADOR
 				{
 					char** trash = malloc(sizeof(char**));
 					$$ = new_node($1);
-					$$->type = get_id_type(stack, $1->value.v_string, trash);
+					$$->type = get_id_type($1->value.v_string, trash);
 					$$->user_type = $1->value.v_string;
 					$$->token = $1;
 
 					$$->code = new_op_list();
 					$$->result_reg = new_reg();
-					char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
+					char* displacement_reg = (is_global_var($1->value.v_string)) ? "rbss" : "rfp";
 					//printf("Result_Reg [%s]\n", $$->result_reg);
 					//printf("Displacement_reg [%s]\n", displacement_reg);
-					//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
-					add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
+					//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address($$->token));
+					add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
 				}
 			| TK_LIT_INT
 				{
@@ -1705,11 +1702,11 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr
 					add_node($$, $5);
 					add_node($$, $6);
 
-					int declaration_line = is_declared(stack, $3->value.v_string);
+					int declaration_line = is_declared($3->value.v_string);
 					if (declaration_line == NOT_DECLARED)
 						set_error(ERR_UNDECLARED);
 
-					int category = get_category(stack, $3->value.v_string);
+					int category = get_category($3->value.v_string);
 					if (category != FUNCTION) {
 						if (category == VARIABLE)
 							set_error(ERR_VARIABLE);
@@ -1721,8 +1718,8 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr
 
 					int point = func_call_param_counter - $5->point -1;
 					if (point >= 0) {
-						int num_expected_args = get_func_num_params(stack, $3->value.v_string);
-						int* expected_types = get_func_params_types(stack, $3->value.v_string);
+						int num_expected_args = get_func_num_params($3->value.v_string);
+						int* expected_types = get_func_params_types($3->value.v_string);
 						if (point < num_expected_args) {
 							$$->type = expected_types[point];
 						}
@@ -1730,7 +1727,7 @@ piped_expr	: pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr
 					}
 
 					char* dummy;
-					int func_type = get_id_type(stack, $3->value.v_string, &dummy);
+					int func_type = get_id_type($3->value.v_string, &dummy);
 						
 					if ($6->type != NOT_DECLARED) {
 						if (func_type != $6->type) {
@@ -2309,7 +2306,7 @@ expr_vals		: TK_LIT_FLOAT
 						add_node($$, $2);
 						//add_node($$, $3);
 
-						int category = get_category(stack, $1->token->value.v_string);
+						int category = get_category($1->token->value.v_string);
 						if (get_param_type($1->token->value.v_string, function.args_counter, function.function_args) == NOT_DECLARED) {
 							if (category != id_category) {
 								if ($1->type != USER_TYPE)
@@ -2327,8 +2324,8 @@ expr_vals		: TK_LIT_FLOAT
 						}
 
 						if (id_category == FUNCTION) {
-							int num_args = get_func_num_params(stack, $1->token->value.v_string);
-							int* expected_types = get_func_params_types(stack, $1->token->value.v_string);
+							int num_args = get_func_num_params($1->token->value.v_string);
+							int* expected_types = get_func_params_types($1->token->value.v_string);
 
 							if (num_args == func_call_param_counter) {
 								int index;
@@ -2355,9 +2352,9 @@ expr_vals		: TK_LIT_FLOAT
 
 						if($2->user_type != NULL) {
 							char* type_name;
-							int id_type = get_id_type(stack, $1->token->value.v_string, &type_name);
+							int id_type = get_id_type($1->token->value.v_string, &type_name);
 							if (type_name != NULL) {
-								int type = get_id_field_type(stack, type_name, $2->user_type);
+								int type = get_id_field_type(type_name, $2->user_type);
 								if (type == INVALID_FIELD) {
 									set_error(ERR_UNDECLARED);
 								} else {
@@ -2423,12 +2420,12 @@ id_for_expr		: TK_IDENTIFICADOR
 						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
 						if (param_type == NOT_DECLARED) {
 							
-							is_id_declared = is_declared(stack, $1->value.v_string);
+							is_id_declared = is_declared($1->value.v_string);
 							if (is_id_declared == NOT_DECLARED)
 								set_error(ERR_UNDECLARED);
 
 							char* type_name;
-							type = get_id_type(stack, $1->value.v_string, &type_name);
+							type = get_id_type($1->value.v_string, &type_name);
 
 							$$->type = type;
 							$$->user_type = type_name;
@@ -2439,12 +2436,12 @@ id_for_expr		: TK_IDENTIFICADOR
 							$$->code = new_op_list();
 
 							$$->result_reg = new_reg();
-							char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
+							char* displacement_reg = (is_global_var($1->value.v_string)) ? "rbss" : "rfp";
 							//printf("Result_Reg [%s]\n", $$->result_reg);
 							//printf("Displacement_reg [%s]\n", displacement_reg);
-							//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
+							//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address($$->token));
 
-							add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
+							add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
 						}
 					}
 
@@ -2601,16 +2598,6 @@ func_call_params_end 	: expr func_call_params_body
 
 void yyerror(char const *s) {
     fprintf(stderr,"ERROR: line %d - %s\n", yylineno, s);
-}
-
-void init_table_stack() {
-	stack = (table_stack *) malloc(sizeof(table_stack));
-	stack->array = NULL;
-	stack->num_tables = NO_TABLES;
-	table created_table = create_table();
-	stack->num_tables = 0;
-	stack->array = malloc(sizeof(table));
-	stack->array[0] = created_table;
 }
 
 int infer(int type_a, int type_b) {

@@ -8,9 +8,21 @@
 extern int displacement_rfp;
 extern int displacement_rbss;
 
-table_line* get_line(table_stack * stack, char* token);
+table_stack * stack;
+
+table_line* get_line(char* token);
 void free_line(table_line line);
 void free_table(table table);
+
+void init_table_stack() {
+	stack = (table_stack *) malloc(sizeof(table_stack));
+	stack->array = NULL;
+	stack->num_tables = NO_TABLES;
+	table created_table = create_table();
+	stack->num_tables = 0;
+	stack->array = malloc(sizeof(table));
+	stack->array[0] = created_table;
+}
 
 table create_table() {
 	table table;
@@ -20,17 +32,16 @@ table create_table() {
 	return table;
 }
 
-void push(table_stack* stack, table item){
+void push(table item){
 	
 	stack->num_tables++;
 	stack->array = realloc(stack->array, sizeof(table)*(stack->num_tables+1));
 	stack->array[stack->num_tables] = item;
 }
 
-void pop(table_stack * stack){
+void pop(){
 	
 	if(stack->num_tables == NO_TABLES){
-		printf("Pilha já vazia!");
 		return;
 	}
 	else {
@@ -40,12 +51,12 @@ void pop(table_stack * stack){
 	}	
 }
 
-int is_declared (table_stack * stack, char* token) {
-	table_line* line = get_line(stack, token);
+int is_declared (char* token) {
+	table_line* line = get_line(token);
 	return (line != NULL);	
 }
 
-int is_declared_on_current_table (table_stack * stack, char* token) {
+int is_declared_on_current_table (char* token) {
 	if (stack->num_tables == NO_TABLES) {
 		return NOT_DECLARED;
 	} else {
@@ -62,20 +73,20 @@ int is_declared_on_current_table (table_stack * stack, char* token) {
 	}
 }
 
-int is_function_declared (table_stack * stack, char* token){
-	table_line* line = get_line(stack, token);
+int is_function_declared (char* token){
+	table_line* line = get_line(token);
 	if (line != NULL) 
 		return (line->category == FUNCTION);
 	return FALSE;
 }
 
-void set_func_as_static(table_stack * stack, char* token) {
-	table_line* line = get_line(stack, token);
+void set_func_as_static(char* token) {
+	table_line* line = get_line(token);
 	if (line != NULL)
 		line->is_static = TRUE;
 }
 
-void add_user_type(table_stack * stack, Lexeme * token) {
+void add_user_type(Lexeme * token) {
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES) {
@@ -102,7 +113,7 @@ void add_user_type(table_stack * stack, Lexeme * token) {
 	return;
 }
 
-void add_user_type_properties(table_stack * stack, char * key, user_type_args token) {
+void add_user_type_properties(char * key, user_type_args token) {
 	int table_index = stack->num_tables;
 
 	if(stack->num_tables != NO_TABLES) {
@@ -196,7 +207,7 @@ global_var_args initialize_global_var_args() {
 	return temp;
 }
 
-void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme * token) {
+void add_global_var(global_var_args globalvar_args, Lexeme * token) {
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES) {
@@ -259,7 +270,7 @@ void add_global_var(table_stack * stack, global_var_args globalvar_args, Lexeme 
 	}
 }
 
-void add_function(table_stack* stack, int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token) {
+void add_function(int type, char* user_type, int num_func_args, func_args *function_args, Lexeme *token) {
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES)	{
@@ -296,7 +307,7 @@ void add_function(table_stack* stack, int type, char* user_type, int num_func_ar
 	return;
 }
 
-void add_local_var(table_stack* stack, int type, char* user_type, int lv_static, int lv_const, Lexeme *token) {
+void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexeme *token) {
 	int table_index = stack->num_tables;
 
 	if (stack->num_tables != NO_TABLES) {
@@ -338,8 +349,8 @@ void add_local_var(table_stack* stack, int type, char* user_type, int lv_static,
 	return;
 }
 
-int get_user_type_size(table_stack * stack, char * token) {
-	table_line* line = get_line(stack, token);
+int get_user_type_size(char * token) {
+	table_line* line = get_line(token);
 	if (line != NULL) 
 		return line->token_size;
 	return 0;
@@ -382,7 +393,7 @@ void free_table(table table) {
 	table.lines = NULL;
 }
 
-void free_table_stack(table_stack * stack) {
+void free_table_stack() {
 	if (stack->num_tables == NO_TABLES) {
 		return;
 	} else {
@@ -397,8 +408,8 @@ void free_table_stack(table_stack * stack) {
 	}
 }
 
-int get_id_type(table_stack * stack, char* token, char** user_type_return) {
-	table_line* line = get_line(stack, token);
+int get_id_type(char* token, char** user_type_return) {
+	table_line* line = get_line(token);
 	if (line != NULL) {
 		*user_type_return = line->user_type;
 		return line->token_type;
@@ -407,8 +418,8 @@ int get_id_type(table_stack * stack, char* token, char** user_type_return) {
 	return NOT_DECLARED;
 }
 
-int get_id_field_type(table_stack * stack, char* token, char* field) {
-	table_line* line = get_line(stack, token);
+int get_id_field_type(char* token, char* field) {
+	table_line* line = get_line(token);
 	if (line != NULL) {
 		if (line->category == USER_TYPE) {
 			int i;
@@ -425,8 +436,8 @@ int get_id_field_type(table_stack * stack, char* token, char* field) {
 	return INVALID_FIELD;
 }
 
-int get_func_num_params(table_stack * stack, char* token) {
-	table_line* line = get_line(stack, token);
+int get_func_num_params(char* token) {
+	table_line* line = get_line(token);
 	if (line != NULL)  {
 		if (line->category == FUNCTION)
 			return line->num_func_args;
@@ -434,8 +445,8 @@ int get_func_num_params(table_stack * stack, char* token) {
 	return -1	;
 }
 
-int* get_func_params_types(table_stack * stack, char* token) {
-	table_line* line = get_line(stack, token);
+int* get_func_params_types(char* token) {
+	table_line* line = get_line(token);
 	if (line != NULL) {
 		if (line->num_func_args <= 0)
 			return NULL;
@@ -450,14 +461,14 @@ int* get_func_params_types(table_stack * stack, char* token) {
 	return NULL;
 }
 
-int get_category(table_stack * stack, char* token) {
-	table_line* line = get_line(stack, token);
+int get_category(char* token) {
+	table_line* line = get_line(token);
 	if (line != NULL) 
 		return line->category;
 	return FALSE;
 }
 
-table_line* get_line(table_stack * stack, char* token) {
+table_line* get_line(char* token) {
 	
 	if (stack->num_tables == NO_TABLES) {
 		return NULL;
@@ -492,9 +503,9 @@ int get_param_type(char* field, int num_params, func_args* params) {
 	return NOT_DECLARED;
 }
 
-void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token_data) {
+void update_string_size(Lexeme* token_update, Lexeme* token_data) {
 	
-	table_line* line = get_line(stack, token_update->value.v_string);
+	table_line* line = get_line(token_update->value.v_string);
 	//char* substr = malloc(sizeof(token_data->value.v_string));
 	//strncpy(substr, token_data->value.v_string, 1);
 	//printf("\n%s", substr);
@@ -503,31 +514,31 @@ void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token
 		line->token_size = strlen(token_data->value.v_string) - 2;
 	}
 	else {
-		table_line* line2 = get_line(stack, token_data->value.v_string);
+		table_line* line2 = get_line(token_data->value.v_string);
 		line->token_size = line2->token_size;
 	}
 	//free(substr);
 	return;
 }
 
-int get_size(table_stack* stack, Lexeme* token) {
-	table_line* line = get_line(stack, token->value.v_string);
+int get_size(Lexeme* token) {
+	table_line* line = get_line(token->value.v_string);
 	if (line != NULL) {
 		return line->token_size;
 	}
 	return -1;
 }
 
-int get_mem_address(table_stack* stack, Lexeme* token) {
-	table_line* line = get_line(stack, token->value.v_string);
+int get_mem_address(Lexeme* token) {
+	table_line* line = get_line(token->value.v_string);
 	if (line != NULL) {
 		return line->mem_address;
 	}
 	return -1;
 }
 
-int is_global_var(table_stack* stack, char* var) {
-	table_line* line = get_line(stack, var);
+int is_global_var(char* var) {
+	table_line* line = get_line(var);
 	if (line != NULL) {
 		return line->is_global_var;
 	}
