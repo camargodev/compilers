@@ -511,13 +511,25 @@ void update_string_size(table_stack * stack, Lexeme* token_update, Lexeme* token
 }
 
 int get_size(table_stack* stack, Lexeme* token) {
-	return get_line(stack, token->value.v_string)->token_size;
+	table_line* line = get_line(stack, token->value.v_string);
+	if (line != NULL) {
+		return line->token_size;
+	}
+	return -1;
 }
 
 int get_mem_address(table_stack* stack, Lexeme* token) {
-	return get_line(stack, token->value.v_string)->mem_address;
+	table_line* line = get_line(stack, token->value.v_string);
+	if (line != NULL) {
+		return line->mem_address;
+	}
+	return -1;
 }
 
 int is_global_var(table_stack* stack, char* var) {
-	return get_line(stack, var)->is_global_var;
+	table_line* line = get_line(stack, var);
+	if (line != NULL) {
+		return line->is_global_var;
+	}
+	return -1;
 }

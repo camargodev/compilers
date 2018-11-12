@@ -774,7 +774,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 							update_string_size(stack, $1->token, $2->token);							
 						}
 
-						if($2->code != NULL){
+						if ($2->code != NULL){
 							$$->code = $2->code;
 						
 							char* reg_temp = new_reg();
@@ -1039,22 +1039,24 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 
 					// $3->code = bool expression
 					// Here we patch with new generated labels
-					patch_list($3->code, $3->true_list, lbl_true);
-					patch_list($3->code, $3->false_list, lbl_false);
-					
-					// We concat the created true-label, the code inside if block
-					// 	and a jump to ignore else block 
-					add_op($$->code, label(lbl_true));
-					$$->code = concat_code($$->code, $8->code);
-					add_op($$->code, jumpi(lbl_next));
+					if ($3->code != NULL) {
+						patch_list($3->code, $3->true_list, lbl_true);
+						patch_list($3->code, $3->false_list, lbl_false);
+						
+						// We concat the created true-label, the code inside if block
+						// 	and a jump to ignore else block 
+						add_op($$->code, label(lbl_true));
+						$$->code = concat_code($$->code, $8->code);
+						add_op($$->code, jumpi(lbl_next));
 
-					// We concat the created false-label and the code inside else block
-					add_op($$->code, label(lbl_false));
-					$$->code = concat_code($$->code, $9->code);
-					
-					// Add a label that represents the next op
-					add_op($$->code, label(lbl_next));
-					add_op($$->code, new_nop());
+						// We concat the created false-label and the code inside else block
+						add_op($$->code, label(lbl_false));
+						$$->code = concat_code($$->code, $9->code);
+						
+						// Add a label that represents the next op
+						add_op($$->code, label(lbl_next));
+						add_op($$->code, new_nop());
+					}
 				}
 
 bool_expr : expr 
@@ -2364,10 +2366,13 @@ id_for_expr		: TK_IDENTIFICADOR
 
 						id_category = VARIABLE;
 
+						int is_id_declared;
+
 						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
 						if (param_type == NOT_DECLARED) {
 							
-							if (is_declared(stack, $1->value.v_string) == NOT_DECLARED)
+							is_id_declared = is_declared(stack, $1->value.v_string);
+							if (is_id_declared == NOT_DECLARED)
 								set_error(ERR_UNDECLARED);
 
 							char* type_name;
@@ -2378,15 +2383,17 @@ id_for_expr		: TK_IDENTIFICADOR
 						} else {
 							$$->type = param_type;
 						}	
-						$$->code = new_op_list();
+						if (is_id_declared != NOT_DECLARED) {
+							$$->code = new_op_list();
 
-						$$->result_reg = new_reg();
-						char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
-						//printf("Result_Reg [%s]\n", $$->result_reg);
-						//printf("Displacement_reg [%s]\n", displacement_reg);
-						//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
+							$$->result_reg = new_reg();
+							char* displacement_reg = (is_global_var(stack, $1->value.v_string)) ? "rbss" : "rfp";
+							//printf("Result_Reg [%s]\n", $$->result_reg);
+							//printf("Displacement_reg [%s]\n", displacement_reg);
+							//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address(stack, $$->token));
 
-						add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
+							add_op($$->code, loadai(displacement_reg, get_mem_address(stack, $$->token), $$->result_reg));
+						}
 					}
 
 /*piped 			: %empty
