@@ -29,6 +29,7 @@
 */
 
 #define UNDECLARED_TYPE -1
+#define INVALID_TYPE 	-3
 #define IGNORE_TYPE		-5
 
 

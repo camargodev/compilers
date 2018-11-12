@@ -37,9 +37,6 @@
 	int yylex(void);
 	void yyerror(char const *s);
 
-	int infer(int type_a, int type_b);
-	int infer_not_expr(int type_a, int type_b);
-
 	int displacement_rfp = 0;
 	int displacement_rbss = 0;
 %}
@@ -1435,7 +1432,7 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 									$$->user_type = NULL;
 								}
 							} else {
-								$$->type = infer_not_expr($5->type, $6->type);
+								$$->type = infer_without_error($5->type, $6->type);
 							}	
 						} else {
 							$$->type = $5->type;
@@ -1482,7 +1479,7 @@ foreach_list	: ',' foreach_count expr foreach_list
 									$$->user_type = NULL;
 								}
 							} else {
-								$$->type = infer_not_expr($3->type, $4->type);
+								$$->type = infer_without_error($3->type, $4->type);
 							}	
 						} else {
 							$$->type = $3->type;
@@ -2601,72 +2598,11 @@ void yyerror(char const *s) {
 }
 
 int infer(int type_a, int type_b) {
-	if (type_a == CHAR || type_b == CHAR) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			set_error(ERR_CHAR_TO_X);
-			return INVALID_TYPE;
-		} else {
-			return CHAR;
-		}
-	} else if (type_a == STRING || type_b == STRING) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			set_error(ERR_STRING_TO_X);
-			return INVALID_TYPE;
-		} else {
-			return STRING;
-		}
-	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			set_error(ERR_USER_TO_X);
-			return INVALID_TYPE;
-		} else {
-			return USER_TYPE;
-		}
-	} else if (type_a == FLOAT || type_b == FLOAT) {
-		return FLOAT;
-	} else if (type_a == INT || type_b == INT) {
-		return INT;
-	} else {
-		return BOOL;
+	int inferred = infer_without_error(type_a, type_b);
+	if (inferred == INVALID_TYPE) {
+		if (type_a == CHAR || type_b == CHAR) set_error(ERR_CHAR_TO_X);
+		else if (type_a == STRING || type_b == STRING) set_error(ERR_STRING_TO_X);
+		else if (type_a == USER_TYPE || type_b == USER_TYPE) set_error(ERR_USER_TO_X);
 	}
-}
-
-int infer_not_expr(int type_a, int type_b) {
-	if (type_a == CHAR || type_b == CHAR) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			return INVALID_TYPE;
-		} else {
-			return CHAR;
-		}
-	} else if (type_a == STRING || type_b == STRING) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			return INVALID_TYPE;
-		} else {
-			return STRING;
-		}
-	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
-		if (type_a == INT || type_b == INT
-			|| type_a == FLOAT || type_b == FLOAT
-			|| type_a == BOOL || type_b == BOOL) {
-			return INVALID_TYPE;
-		} else {
-			return USER_TYPE;
-		}
-	} else if (type_a == FLOAT || type_b == FLOAT) {
-		return FLOAT;
-	} else if (type_a == INT || type_b == INT) {
-		return INT;
-	} else {
-		return BOOL;
-	}
+	return inferred;
 }

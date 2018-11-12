@@ -11,8 +11,6 @@
 #define NOT_USER_TYPE -1
 #define INVALID_FIELD -2
 
-#define INVALID_TYPE -3
-
 typedef struct expr_arguments {
 	int has_int;
 	int has_float;

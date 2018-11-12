@@ -9,3 +9,5 @@
 
 int can_convert(int a, int b);
 int get_conversion(int expected_type, int attr_type);
+int infer_without_error(int type_a, int type_b);
+int infer(int type_a, int type_b);

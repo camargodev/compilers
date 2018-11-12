@@ -40,3 +40,37 @@ int get_conversion(int expected_type, int attr_type) {
 		}
 	}
 }
+
+int infer_without_error(int type_a, int type_b) {
+	if (type_a == CHAR || type_b == CHAR) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return CHAR;
+		}
+	} else if (type_a == STRING || type_b == STRING) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return STRING;
+		}
+	} else if (type_a == USER_TYPE || type_b == USER_TYPE) {
+		if (type_a == INT || type_b == INT
+			|| type_a == FLOAT || type_b == FLOAT
+			|| type_a == BOOL || type_b == BOOL) {
+			return INVALID_TYPE;
+		} else {
+			return USER_TYPE;
+		}
+	} else if (type_a == FLOAT || type_b == FLOAT) {
+		return FLOAT;
+	} else if (type_a == INT || type_b == INT) {
+		return INT;
+	} else {
+		return BOOL;
+	}
+}
