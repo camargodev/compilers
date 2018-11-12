@@ -12,10 +12,15 @@ void free_op(iloc_operation* op);
 void free_list_and_ops(iloc_op_list* list);
 
 int op_counter = 0;
+
 int num_freed_registers = 0;
 int num_on_reg_list = 0;
+int num_freed_labels = 0;
+
 iloc_arg** freed_registers = NULL;
 iloc_arg** reg_list = NULL;
+char** freed_labels = NULL;
+
 int came_from_label = 0;
 
 iloc_op_list* new_op_list() {
@@ -440,10 +445,11 @@ void free_reg_list() {
 	for (index = 0; index < num_on_reg_list; index++) {
 		if (reg_list[index]->type == REGISTER) {
 			if (reg_list[index]->arg.str_var != NULL) {
-				if (is_supposed_to_free(reg_list[index]->arg.str_var)) {
-					free(reg_list[index]->arg.str_var);
-					reg_list[index]->arg.str_var = NULL;
-				}
+               if (is_supposed_to_free(reg_list[index]->arg.str_var)) {
+                       free(reg_list[index]->arg.str_var);
+                       reg_list[index]->arg.str_var = NULL;
+               }
+
 			}
 		}
 		free(reg_list[index]);
@@ -461,6 +467,19 @@ void free_freed_registers() {
 	num_freed_registers = 0;
 }
 
+void free_freed_labels() {
+	int index;
+	for (index = 0; index < num_freed_labels; index++) {
+		if (freed_labels[index]!= NULL) {
+           free(freed_labels[index]);
+           freed_labels[index] = NULL;      
+		}
+	}
+	free(freed_labels);
+	freed_labels = NULL;
+	num_freed_labels = 0;
+}
+
 void free_op_list(iloc_op_list* list) {
 	if (list != NULL) {
 		int op_index;
@@ -474,6 +493,7 @@ void free_op_list(iloc_op_list* list) {
 	}
 
 	free_freed_registers();
+	free_freed_labels();
 	free_reg_list();
 }
 
@@ -490,6 +510,27 @@ void free_op(iloc_operation* op) {
 	}
 }
 
+void add_to_freed_labels(char* lbl) {
+	if (num_freed_labels == 0) {
+		freed_labels = (char**) malloc(sizeof(char*));
+	} else {
+		freed_labels = (char**) realloc(freed_labels, (num_freed_labels+1) * sizeof(char*));
+	}
+	freed_labels[num_freed_labels] = lbl;
+	num_freed_labels++;
+}
+
+int is_label_freed(char* lbl) {
+	int index;
+	for (index = 0; index < num_freed_labels; index++) {
+		if (freed_labels[index] != NULL) {
+			if (strcmp(freed_labels[index], lbl) == 0) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 
 void set_arg_to_freedom(iloc_arg* argum) {
 	if (argum != NULL) {
@@ -497,8 +538,14 @@ void set_arg_to_freedom(iloc_arg* argum) {
 			if (!is_arg_freed(argum)) {
 				add_to_freed_args(argum);
 			}
-		} else {
+		} else if (argum->type == LABEL) {
+			if (!is_label_freed(argum->arg.str_var)) {
+				//printf("\nVOU SER LIBEARADA %s", argum->arg.str_var);
+				add_to_freed_labels(argum->arg.str_var);
+			}
 			free(argum);
+		} else {
+			free(argum);	
 		}
 		argum = NULL;
 	}

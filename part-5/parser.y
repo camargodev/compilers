@@ -897,7 +897,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($2));
 
 						$$->code = $1->code;
-						$$->result_reg = new_reg();
+//						$$->result_reg = new_reg();
 						
 					}
 				| while ';'
@@ -906,7 +906,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($2));
 
 						$$->code = $1->code;
-						$$->result_reg = new_reg();
+						//$$->result_reg = new_reg();
 
 						//print_code($$->code);
 					}
@@ -916,7 +916,7 @@ cmd 		: cmd_ident cmd_fix_local_var ';'
 						add_node($$, new_node($2));
 
 						$$->code = $1->code;
-						$$->result_reg = new_reg();
+						//$$->result_reg = new_reg();
 					}
 				| continue ';'
 					{
@@ -1029,15 +1029,16 @@ if_then 	: TK_PR_IF '(' bool_expr ')'
 					add_node($$, $8);
 					add_node($$, $9);
 
-					$$->code = $3->code;
-
-					char* lbl_true = new_lbl();
-					char* lbl_next = new_lbl();
-					char* lbl_false = new_lbl();
-
 					// $3->code = bool expression
 					// Here we patch with new generated labels
 					if ($3->code != NULL) {
+
+						$$->code = $3->code;
+
+						char* lbl_true = new_lbl();
+						char* lbl_next = new_lbl();
+						char* lbl_false = new_lbl();
+
 						patch_list($3->code, $3->true_list, lbl_true);
 						patch_list($3->code, $3->false_list, lbl_false);
 						

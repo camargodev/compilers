@@ -43,8 +43,8 @@ loadI 0 => r28
 cmp_NE r27, r28 -> r29
 cbr r29 -> L9, L10
 L10: nop 
-loadI 2 => r30
-storeAI r30 => rfp, 12
+loadI 2 => r31
+storeAI r31 => rfp, 12
 jumpI -> L11
 L13: nop 
 halt 
