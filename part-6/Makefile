@@ -7,6 +7,10 @@ FLAGS  = -g -c
 LFLAGS = -g -o
 BFLAGS = -d
 
+QUIET    = "none"
+PRNTCODE = "code"
+PRNTTREE = "tree"
+
 TST  = tests
 SRC  = src
 LIB  = include

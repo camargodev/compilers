@@ -210,15 +210,6 @@ initializer : %empty
 destroyer : %empty
 			{
 				free_table_stack();
-
-				int error_code = raise_error();
-				if (error_code != 0) {
-					free_op_list(((Node*)arvore)->code);
-			  		libera(arvore);
-			  		arvore = NULL;
-			  		yylex_destroy();
-			  		exit(error_code);
-				}
 			}
 
 start : new_type start
@@ -2479,7 +2470,8 @@ id_for_expr		: TK_IDENTIFICADOR
 
 						id_category = VARIABLE;
 
-						int is_id_declared, type;
+						int is_id_declared = NOT_DECLARED;
+						int type = NOT_DECLARED;
 
 						int param_type = get_param_type($1->value.v_string, function.args_counter, function.function_args);
 						if (param_type == NOT_DECLARED) {
@@ -2597,7 +2589,7 @@ func_call_params	: ')'
 							$$->point = $2->point;
 							func_call_param_counter++;
 
-							/* Will be removed */
+							/* Will be removed */	
 							simple_free_code($1->code);
 						}
 					| '.' func_call_params_body

@@ -62,10 +62,11 @@ void set_error(int error_code) {
 	}
 }
 
-int raise_error() {
+int raise_error(int print_error) {
 	if (error != NULL) {
 		int error_code = error->error_code;
-		printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
+		if (print_error)
+			printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
 		free(error);
 		return error_code;
 	}
