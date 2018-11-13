@@ -963,6 +963,8 @@ input 		: TK_PR_INPUT expr
 					if ($2->is_literal == TRUE) {
 						set_error(ERR_WRONG_PAR_INPUT);
 					}
+
+					simple_free_code($2->code);
 				}
 
 output 		: TK_PR_OUTPUT expr output_vals
@@ -1002,6 +1004,8 @@ output_vals : ';'
 							}
 						}
 					}
+
+					simple_free_code($2->code);
 				}
 
 if_then 	: TK_PR_IF '(' bool_expr ')'
@@ -1160,6 +1164,8 @@ return 		: TK_PR_RETURN expr
 							}
 						}
 					}
+
+					simple_free_code($2->code);
 				}
 
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
@@ -1177,6 +1183,13 @@ for 		: TK_PR_FOR '(' cmd_for for_fst_list
 					add_node($$, $8);
 					add_node($$, new_node($9));
 					add_node($$, $11);
+
+					simple_free_code($3->code);
+					simple_free_code($4->code);
+					simple_free_code($5->code);
+					simple_free_code($7->code);
+					simple_free_code($8->code);
+					simple_free_code($11->code);
 				}
 
 cmd_for 	: cmd_ident cmd_fix_local_var
@@ -1190,6 +1203,9 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 							set_error(ERR_DECLARED);
 						else 
 							add_local_var($1->type, $1->user_type, FALSE, FALSE, $2->token);
+
+						simple_free_code($1->code);
+						simple_free_code($2->code);
 					}
 				| cmd_ident cmd_fix_attr
 					{
@@ -1232,6 +1248,9 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 						if($1->type == USER_TYPE && $2->type == STRING) {
 							update_string_size($1->token, $2->token);							
 						}
+
+						simple_free_code($1->code);
+						simple_free_code($2->code);
 					}
 				| cmd_ident cmd_fix_call
 					{
@@ -1310,7 +1329,9 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 								}
 						if($3->token != NULL && $1->type == STRING && $3->type == STRING) {
 							update_string_size($2, $3->token);
-						}							
+						}	
+
+						simple_free_code($3->code);						
 					}
 				| TK_PR_STATIC static_var
 					{
@@ -1366,6 +1387,8 @@ cmd_for 	: cmd_ident cmd_fix_local_var
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
+
+						simple_free_code($2->code);
 					}
 				| '{' push_table cmd_block 
 					{
@@ -1447,6 +1470,8 @@ foreach 	: TK_PR_FOREACH '(' TK_IDENTIFICADOR
 								}
 							}
 						}
+
+						simple_free_code($5->code);
 					}
 
 foreach_list	: ',' foreach_count expr foreach_list 
@@ -1480,6 +1505,8 @@ foreach_list	: ',' foreach_count expr foreach_list
 
 						if ($$->type == INVALID_TYPE)
 							set_error(ERR_WRONG_TYPE);
+
+						simple_free_code($3->code);
 					}
 				| ')' foreach_count
 					{
@@ -1514,6 +1541,8 @@ case 		: TK_PR_CASE expr ':'
 							$2->conversion = get_conversion(INT, $2->type);
 						}
 					}
+
+					simple_free_code($2->code);
 				}
 
 cmd_fix_local_var	: TK_IDENTIFICADOR
@@ -1666,11 +1695,15 @@ attr 		: '=' expr
 				{
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					simple_free_code($2->code);
 				}
 			| TK_OC_SR expr 
 				{
 					$$ = new_node($1);
 					add_node($$, $2);
+
+					simple_free_code($2->code);
 				}
 			| pipe un_op TK_IDENTIFICADOR '(' func_call_params piped_expr 
 				{
@@ -2536,6 +2569,8 @@ id_seq_simple	: '[' expr ']' id_seq_field
 						id_category = ARRAY;
 
 						$$->user_type = $4->user_type;
+
+						simple_free_code($2->code);
 					} 
 				|  id_seq_field
 					{
@@ -2561,6 +2596,9 @@ func_call_params	: ')'
 
 							$$->point = $2->point;
 							func_call_param_counter++;
+
+							/* Will be removed */
+							simple_free_code($1->code);
 						}
 					| '.' func_call_params_body
 						{
@@ -2606,6 +2644,9 @@ func_call_params_end 	: expr func_call_params_body
 
 								$$->point = $2->point;
 								func_call_param_counter++;
+
+								/* Will be removed */
+								simple_free_code($1->code);
 							}
 						| '.' func_call_params_body
 							{
