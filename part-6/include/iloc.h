@@ -55,6 +55,8 @@ void add_op(iloc_op_list* list, iloc_operation* op);
 
 char* new_reg();
 
+void simple_free_code(iloc_op_list* list);
+
 void free_op_list(iloc_op_list* list);
 
 void free_label_list(lbl_list* list);

@@ -236,6 +236,9 @@ start : new_type start
 		| func start 
 			{	$$ = $1; 
 				add_node($$, $2);
+				if ($2->code != NULL) {
+					$$->code = concat_code($1->code, $2->code);
+				}
 			}
 		| %empty 
 			{ 
@@ -1800,7 +1803,13 @@ expr 			: expr '+' expr
 								$$->code = concat_code($1->code, $3->code);
 								$$->result_reg = new_reg();
 								add_op($$->code, add($1->result_reg, $3->result_reg, $$->result_reg));
+							} else {
+								simple_free_code($1->code);
+								simple_free_code($3->code);
 							}
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr '-' expr
@@ -1829,7 +1838,13 @@ expr 			: expr '+' expr
 								$$->code = concat_code($1->code, $3->code);
 								$$->result_reg = new_reg();
 								add_op($$->code, sub($1->result_reg, $3->result_reg, $$->result_reg));
+							} else {
+								simple_free_code($1->code);
+								simple_free_code($3->code);
 							}
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr '*' expr
@@ -1858,7 +1873,13 @@ expr 			: expr '+' expr
 								$$->code = concat_code($1->code, $3->code);
 								$$->result_reg = new_reg();
 								add_op($$->code, mult($1->result_reg, $3->result_reg, $$->result_reg));
+							} else {
+								simple_free_code($1->code);
+								simple_free_code($3->code);
 							}
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr '/' expr
@@ -2004,6 +2025,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_gt($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr '<' expr
@@ -2040,6 +2064,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_lt($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr TK_OC_AND expr
@@ -2070,6 +2097,9 @@ expr 			: expr '+' expr
 							//print_code($1->code);
 							$$->code = concat_code($1->code, $$->code);
 							$$->code = concat_code($$->code, $3->code);
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}						
 
 					}
@@ -2107,6 +2137,9 @@ expr 			: expr '+' expr
 							//print_code($1->code);
 							$$->code = concat_code($1->code, $$->code);
 							$$->code = concat_code($$->code, $3->code);
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr TK_OC_LE expr
@@ -2143,6 +2176,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_le($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr TK_OC_NE expr
@@ -2179,6 +2215,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_ne($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr TK_OC_EQ expr
@@ -2215,6 +2254,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_eq($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| expr TK_OC_GE expr
@@ -2251,6 +2293,9 @@ expr 			: expr '+' expr
 							$$->result_reg = new_reg();
 							add_op($$->code, cmp_ge($1->result_reg, $3->result_reg, $$->result_reg));
 							add_op($$->code, cbr($$->result_reg, lbl_true, lbl_false));
+						} else {
+							simple_free_code($1->code);
+							simple_free_code($3->code);
 						}
 					}
 				| un_op expr_vals

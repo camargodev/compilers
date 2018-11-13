@@ -480,7 +480,7 @@ void free_freed_labels() {
 	num_freed_labels = 0;
 }
 
-void free_op_list(iloc_op_list* list) {
+void simple_free_code(iloc_op_list* list) {
 	if (list != NULL) {
 		int op_index;
 		for (op_index = 0; op_index < list->num_ops; op_index++) {
@@ -491,7 +491,10 @@ void free_op_list(iloc_op_list* list) {
 		free(list);
 		list = NULL;
 	}
+}
 
+void free_op_list(iloc_op_list* list) {
+	simple_free_code(list);
 	free_freed_registers();
 	free_freed_labels();
 	free_reg_list();
