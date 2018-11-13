@@ -211,11 +211,13 @@ destroyer : %empty
 			{
 				free_table_stack();
 
-				if (raise_error()) {
+				int error_code = raise_error();
+				if (error_code != 0) {
 					free_op_list(((Node*)arvore)->code);
 			  		libera(arvore);
 			  		arvore = NULL;
 			  		yylex_destroy();
+			  		exit(error_code);
 				}
 			}
 

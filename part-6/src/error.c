@@ -67,8 +67,7 @@ int raise_error() {
 		int error_code = error->error_code;
 		printf("ERROR %i - line %i = %s\n", error->error_code, error->line, get_error_message(error->error_code));
 		free(error);
-		exit(error_code);
-		return 1;
+		return error_code;
 	}
 	return 0;
 }
