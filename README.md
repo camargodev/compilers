@@ -61,6 +61,15 @@ This part will prevent the use of undeclared identifiers or double declaration o
 A lot of structs were developed, but the most important are on ```table.h```, like ```table_stack``` that represents a stack of symbol tables.
 Also, nodes for ```tree.h``` now have types (like a expression node) and conversions are marked on nodes.
 
+### Part 5 [Nov 2018]
+
+In this part, we started the code generation from "The Language" to [ILOC](https://en.wikipedia.org/wiki/Intermediate_representation#cite_note-6).
+Also, the language was trully simplfied and we only deal with integers now.
+The commands for which code is "generated" are:
+* Variable declaration, ie ```x int;``` (global vars), ```int x;``` and ```int x <= 1;``` (local var with/without inicialization).
+* If conditionals, ie ```if (bool) then {...};``` and ```if (bool) then {...} else {...};```.
+* While/Do-While, ie ```do {...} while (bool);``` and ```while (bool) do {...};```
+
 ## Built With
 
 * [Flex](https://www.gnu.org/software/flex/) - The Fast Lexical Analyzer
