@@ -1,0 +1,11 @@
+loadI 1 => r0
+loadI 2 => r1
+cmp_EQ r0, r1 -> r2
+cbr r2 -> L2, L4
+L2: loadI 1 => r3
+storeAI r3 => rfp, 4
+jumpI -> L3
+L4: loadI 165 => r4
+storeAI r4 => rfp, 4
+L3: nop 
+halt 

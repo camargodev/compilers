@@ -1,0 +1,10 @@
+i int;
+int x() {
+	string a;
+	bool x;
+	int i;
+	do {
+		int p;
+	} while (x+1);
+	p = 2;
+}

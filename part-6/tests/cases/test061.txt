@@ -1,0 +1,6 @@
+int x() {
+	string a;
+	bool x;
+	int i;
+	do {} while ("m");
+}

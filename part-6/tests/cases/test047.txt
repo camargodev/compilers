@@ -1,0 +1,5 @@
+class ponto[int i];
+bool k() {
+	ponto p;
+	return p$i;
+}

@@ -1,0 +1,10 @@
+//Variáveis que são de tipo de usuário devem obedecer as regras impostas na declaração do respectivo tipo
+//
+class AST_t [ public int a : public int b ];
+int main()
+{
+  AST_t a;
+  int b <= 2;
+  a$b = b;
+  return b;
+}

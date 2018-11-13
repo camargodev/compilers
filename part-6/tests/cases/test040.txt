@@ -1,0 +1,6 @@
+class x[int i];
+bool k() {
+	int s;
+	x i;
+	s = x;
+}

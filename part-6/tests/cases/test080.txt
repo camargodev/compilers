@@ -1,0 +1,7 @@
+int f(int x, int y, int z) {}
+
+int g() {
+	f(1, 2, 3);
+	int x;
+	x = f(4, "a", 6);
+}

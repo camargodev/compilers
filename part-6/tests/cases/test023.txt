@@ -1,0 +1,7 @@
+bool x() {
+	int k;
+}
+
+bool y() {
+	int k;
+}

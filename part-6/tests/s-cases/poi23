@@ -1,0 +1,11 @@
+//ERR_USER_TO_X
+class AST_t [ public int a : public int b ];
+int main()
+{
+  AST_t c;
+  int a;
+  int b;
+  int d;
+  a = b + d * c;
+  return b;
+}

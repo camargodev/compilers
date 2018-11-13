@@ -1,0 +1,6 @@
+bool k() {
+	int a<= 1;
+	static int b<= 1;
+	static const int c<= 1;
+	const int d <= 1;
+}

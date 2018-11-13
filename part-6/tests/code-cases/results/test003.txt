@@ -1,0 +1,9 @@
+loadI 1 => r0
+loadI 2 => r1
+add r0, r1 => r2
+storeAI r2 => rfp, 4
+loadI 3 => r3
+loadI 4 => r4
+div r3, r4 => r5
+storeAI r5 => rbss, 8
+halt 

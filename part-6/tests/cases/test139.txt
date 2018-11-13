@@ -1,0 +1,7 @@
+int f(string x) {}
+string g() {}
+
+int h() {
+	float a;
+	a = g() %>% f(.) + 2;
+}

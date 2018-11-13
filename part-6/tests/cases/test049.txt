@@ -1,0 +1,7 @@
+class ponto[int i];
+class ponto2[int i];
+
+ponto k() {
+	ponto2 p;
+	return p;
+}

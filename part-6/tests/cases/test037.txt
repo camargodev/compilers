@@ -1,0 +1,9 @@
+class ponto[int x : float y];
+
+int u() {}
+
+bool k() {
+	ponto p;
+	int s;
+	s = p$x + p$y + u();
+}

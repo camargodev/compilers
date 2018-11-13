@@ -1,0 +1,4 @@
+i int;
+int x() {
+	foreach(i : 3, 4) {};
+}

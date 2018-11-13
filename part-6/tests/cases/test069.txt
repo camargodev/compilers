@@ -1,0 +1,7 @@
+int x() {
+	string a;
+	int b;
+	foreach(a : "a", "b") {
+		int b;
+	};
+}
