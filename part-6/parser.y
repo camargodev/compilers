@@ -973,6 +973,8 @@ output 		: TK_PR_OUTPUT expr output_vals
 							}
 						}
 					}
+
+					simple_free_code($2->code);
 					
 				}
 
