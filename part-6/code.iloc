@@ -1,0 +1,23 @@
+loadI 1 => r0
+storeAI r0 => rfp, 0
+loadI 0 => r1
+storeAI r1 => rfp, 4
+loadI 2 => r2
+storeAI r2 => rfp, 8
+loadI 3 => r3
+storeAI r3 => rfp, 12
+loadAI rfp, 0 => r4
+loadAI rfp, 4 => r5
+cmp_LT r4, r5 -> r6
+cbr r6 -> L4, L7
+L4: loadAI rfp, 8 => r7
+loadAI rfp, 12 => r8
+cmp_LT r7, r8 -> r9
+cbr r9 -> L5, L7
+L5: loadI 293 => r10
+storeAI r10 => rfp, 16
+jumpI -> L6
+L7: loadI 325 => r11
+storeAI r11 => rfp, 16
+L6: nop 
+halt 

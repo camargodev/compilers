@@ -229,7 +229,8 @@ void add_global_var(global_var_args globalvar_args, Lexeme * token) {
 		line.token_name = strdup(globalvar_args.name);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = increase_rbss();;
+		line.mem_address = RBSS;
+		increase_rbss();
 		line.is_global_var = TRUE;
 
 		if (globalvar_args.is_array) {
@@ -329,7 +330,8 @@ void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexem
 		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = increase_rfp();
+		line.mem_address = RFP;
+		increase_rfp();
 		
 		line.category = VARIABLE;
 		line.is_static = lv_static;
