@@ -1,50 +1,50 @@
 loadI 0 => r0
-storeAI r0 => rfp, 4
+storeAI r0 => rfp, 0
 loadI 0 => r1
-storeAI r1 => rfp, 8
+storeAI r1 => rfp, 4
 loadI 2 => r2
-storeAI r2 => rfp, 12
-L11: loadAI rfp, 4 => r3
+storeAI r2 => rfp, 8
+L11: loadAI rfp, 0 => r3
 loadI 6 => r4
 cmp_LT r3, r4 -> r5
 cbr r5 -> L12, L13
-L12: loadAI rfp, 4 => r6
+L12: loadAI rfp, 0 => r6
 loadI 2 => r7
 cmp_EQ r6, r7 -> r8
 cbr r8 -> L4, L6
 L4: loadI 2 => r9
-loadAI rfp, 8 => r10
+loadAI rfp, 4 => r10
 mult r9, r10 => r11
-storeAI r11 => rfp, 8
-loadAI rfp, 4 => r12
+storeAI r11 => rfp, 4
+loadAI rfp, 0 => r12
 loadI 2 => r13
 add r12, r13 => r14
-storeAI r14 => rfp, 4
+storeAI r14 => rfp, 0
 jumpI -> L5
-L6: loadAI rfp, 4 => r15
+L6: loadAI rfp, 0 => r15
 loadI 2 => r16
 add r15, r16 => r17
-storeAI r17 => rfp, 4
-loadAI rfp, 8 => r18
+storeAI r17 => rfp, 0
+loadAI rfp, 4 => r18
 loadI 3 => r19
 add r18, r19 => r20
-storeAI r20 => rfp, 8
+storeAI r20 => rfp, 4
 L5: nop 
 L9: loadI 3 => r21
-loadAI rfp, 8 => r22
+loadAI rfp, 4 => r22
 mult r21, r22 => r23
-storeAI r23 => rfp, 8
-loadAI rfp, 12 => r24
+storeAI r23 => rfp, 4
+loadAI rfp, 8 => r24
 loadI 1 => r25
 sub r24, r25 => r26
-storeAI r26 => rfp, 12
-loadAI rfp, 12 => r27
+storeAI r26 => rfp, 8
+loadAI rfp, 8 => r27
 loadI 0 => r28
 cmp_NE r27, r28 -> r29
 cbr r29 -> L9, L10
 L10: nop 
 loadI 2 => r30
-storeAI r30 => rfp, 12
+storeAI r30 => rfp, 8
 jumpI -> L11
 L13: nop 
 halt 

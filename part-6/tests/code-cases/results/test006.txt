@@ -1,19 +1,19 @@
 loadI 0 => r0
-storeAI r0 => rfp, 4
+storeAI r0 => rfp, 0
 loadI 0 => r1
-storeAI r1 => rfp, 8
-L2: loadAI rfp, 4 => r2
+storeAI r1 => rfp, 4
+L2: loadAI rfp, 0 => r2
 loadI 6 => r3
 cmp_NE r2, r3 -> r4
 cbr r4 -> L3, L4
-L3: loadAI rfp, 4 => r5
+L3: loadAI rfp, 0 => r5
 loadI 2 => r6
 add r5, r6 => r7
-storeAI r7 => rfp, 4
-loadAI rfp, 8 => r8
+storeAI r7 => rfp, 0
+loadAI rfp, 4 => r8
 loadI 3 => r9
 add r8, r9 => r10
-storeAI r10 => rfp, 8
+storeAI r10 => rfp, 4
 jumpI -> L2
 L4: nop 
 halt 

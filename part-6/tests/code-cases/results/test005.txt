@@ -11,9 +11,9 @@ loadI 4 => r7
 cmp_EQ r6, r7 -> r8
 cbr r8 -> L8, L10
 L8: loadI 1 => r9
-storeAI r9 => rfp, 4
+storeAI r9 => rfp, 0
 jumpI -> L9
 L10: loadI 165 => r10
-storeAI r10 => rfp, 4
+storeAI r10 => rfp, 0
 L9: nop 
 halt 
