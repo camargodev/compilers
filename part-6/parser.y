@@ -196,6 +196,11 @@ set_tree	: start
 				$$ = $1;
 				if ($$->code == NULL) {
 					$$->code = new_op_list();
+				} else {
+					iloc_op_list* jump_to_main = new_op_list();
+					char* main_label = get_function_label("main");
+					add_op(jump_to_main, jumpi(main_label));
+					$$->code = concat_code(jump_to_main, $$->code);
 				}
 				add_op($$->code, halt());
 				arvore = $1;
@@ -226,6 +231,13 @@ start : new_type start
 		| func start 
 			{	$$ = $1; 
 				add_node($$, $2);
+				char* curr_func = get_current_function_name();
+				char* curr_label = get_function_label(curr_func);
+				if ($$->code == NULL) {
+					$$->code = new_op_list();
+					add_op($$->code, new_nop());
+				}
+				$$->code = put_label_before_code($$->code, curr_label);
 				if ($2->code != NULL) {
 					$$->code = concat_code($1->code, $2->code);
 				}

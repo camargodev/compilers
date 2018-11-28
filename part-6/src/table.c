@@ -1,3 +1,4 @@
+#include "../include/iloc.h"
 #include "../include/table.h"
 #include "../include/nature.h"
 #include "../include/category.h"
@@ -93,6 +94,14 @@ int is_declared_on_current_table (char* token) {
 
 char* get_current_function_name() {
 	return current_function;
+}
+
+char* get_function_label(char* function_name) {
+	table_line* line = get_line(function_name);
+	if (line != NULL) {
+		return line->function_label;
+	}
+	return NULL;
 }
 
 int is_function_declared (char* token){
@@ -212,6 +221,8 @@ table_line inicialize_line(Lexeme * token) {
 
 	line.lexeme = token;
 
+	line.function_label = NULL;
+
 	return line;
 }
 
@@ -321,6 +332,8 @@ void add_function(int type, char* user_type, int num_func_args, func_args *funct
 		line.token_size = 0;
 
 		line.token_type = type;
+
+		line.function_label = new_lbl();
 		
 		if (user_type != NULL)
 			line.user_type = strdup(user_type);

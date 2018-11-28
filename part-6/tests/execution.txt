@@ -15,3 +15,8 @@ int i() {
 	int x;
 	int y;
 }
+
+int main() {
+	int k;
+	k = 1;
+}

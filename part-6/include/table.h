@@ -63,24 +63,31 @@ typedef struct function_call_arg {
 
 typedef struct line {
 	
-	char * token_name; // KEY
-	int declaration_line;	// Necessary information
+	char* token_name; 
+	int declaration_line;
 	int nature;
 	int token_type;
 	int token_size;
 	int category;
+	
 	char *user_type;
+	
 	int is_global_var;
 	int is_static;
 	int is_const;
+	
 	int array_size;
+	
 	func_args * function_args;
 	user_type_args * user_type_args;
 	int num_user_type_args;
 	int num_func_args;
+	
 	Lexeme *lexeme;
 
 	int mem_address;
+
+	char* function_label;
 	int var_space;
 
 
@@ -133,3 +140,5 @@ void update_string_size(Lexeme* token_update, Lexeme* token_data);
 int get_mem_address(Lexeme* token);
 int is_global_var(char* var);
 char* get_base_reg(char* var);
+char* get_current_function_name();
+char* get_function_label(char* function_name);

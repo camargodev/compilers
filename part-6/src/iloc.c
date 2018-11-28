@@ -179,6 +179,12 @@ char* new_lbl() {
 	return lbl;
 }
 
+iloc_op_list* put_label_before_code(iloc_op_list* code, char* lbl) {
+	iloc_op_list* temp_code = new_op_list();
+	add_op(temp_code, label(lbl));
+	return concat_code(temp_code, code);
+}
+
 
 lbl_list* new_label_list() {
 	lbl_list* list = (lbl_list*) malloc(sizeof(lbl_list));

@@ -113,8 +113,7 @@ lbl_list* copy_label_list(lbl_list* list);
 
 char* new_lbl();
 
-//TODO:
-//Node* add_short_circuit(Node* node, char* reg_result, char* label_true, char* label_false);
+iloc_op_list* put_label_before_code(iloc_op_list* code, char* lbl);
 
 #endif
 
