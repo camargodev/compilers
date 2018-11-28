@@ -1,4 +1,4 @@
-# João Vi4tor de Camargo (274722) e Marcellus Farias (281984)
+# João Vitor de Camargo (274722) e Marcellus Farias (281984)
 
 CC     = gcc
 PART   = etapa6

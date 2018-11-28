@@ -11,6 +11,10 @@
 #define NOT_USER_TYPE -1
 #define INVALID_FIELD -2
 
+#define PRIVATE 0
+#define PUBLIC 1
+#define PROTECTED 2
+
 typedef struct expr_arguments {
 	int has_int;
 	int has_float;
@@ -37,12 +41,6 @@ typedef struct function_arguments {
 	char* user_type;
 	char* name;
 } func_args;
-
-// The user_type does not have arguments that are also user_types. We must define the access_modification arguments.
-
-#define PRIVATE 0
-#define PUBLIC 1
-#define PROTECTED 2
 
 typedef struct user_type_arguments {
 	char * scope;
@@ -82,15 +80,15 @@ typedef struct line {
 	int num_func_args;
 	Lexeme *lexeme;
 
-	//INFO FOR CODE GENERATION
 	int mem_address;
+	int var_space;
 
 
 } table_line;
 
 typedef struct table {
 	int num_lines;
-	//char scope_name;
+	char* scope_name;
 	table_line *lines;
 
 } table;

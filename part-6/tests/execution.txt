@@ -1,0 +1,17 @@
+int f() {
+	int x;
+	int y;
+	int z;
+}
+
+int g() {
+}
+
+int h() {
+	int x;
+}
+
+int i() {
+	int x;
+	int y;
+}

@@ -155,7 +155,6 @@
 %type <node> expr
 %type <node> expr_vals
 %type <node> id_for_expr
-//%type <node> piped
 %type <node> id_seq
 %type <node> id_seq_field
 %type <node> id_seq_simple
@@ -630,8 +629,6 @@ func_params_end : ')' add_func func_body
 					{
 						$$ = new_node($1);
 						add_node($$, $3);
-
-						//$$->code = $3->code;
 					}
 				| ',' var func_params_end
 					{
@@ -650,9 +647,7 @@ func_body       : '{' push_table cmd_block
 						$$ = new_node($1);
 						add_node($$, $3);
 
-						//printf("FUNCBODY\n");
 						$$->code = $3->code;
-						//print_code($$->code);					
 					}
 
 push_table		: %empty

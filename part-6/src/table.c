@@ -15,6 +15,10 @@ table_stack * stack;
 table_line* get_line(char* token);
 void free_line(table_line line);
 void free_table(table table);
+void update_var_space(int size_to_add);
+int get_current_var_space();
+
+char* current_function;
 
 void init_table_stack() {
 	stack = (table_stack *) malloc(sizeof(table_stack));
@@ -36,6 +40,7 @@ table create_table() {
 
 void push(table item){
 	
+	item.scope_name = current_function;
 	stack->num_tables++;
 	stack->array = realloc(stack->array, sizeof(table)*(stack->num_tables+1));
 	stack->array[stack->num_tables] = item;
@@ -47,6 +52,7 @@ void pop(){
 		return;
 	}
 	else {
+		//printf("\nO ESCOPO ATUAL FOI FECHADO COM VAR SPACE = %i\n", get_current_var_space());
 		free_table(stack->array[stack->num_tables]);
 		stack->num_tables--;
 		return;
@@ -83,6 +89,10 @@ int is_declared_on_current_table (char* token) {
 		}
 		return NOT_DECLARED;
 	}
+}
+
+char* get_current_function_name() {
+	return current_function;
 }
 
 int is_function_declared (char* token){
@@ -231,6 +241,8 @@ void add_global_var(global_var_args globalvar_args, Lexeme * token) {
 		line.nature = NATUREZA_IDENTIFICADOR;
 		line.mem_address = RBSS;
 		increase_rbss();
+		
+		line.var_space = 0;
 		line.is_global_var = TRUE;
 
 		if (globalvar_args.is_array) {
@@ -291,9 +303,12 @@ void add_function(int type, char* user_type, int num_func_args, func_args *funct
 		
 		line = inicialize_line(token);
 		line.token_name = strdup(token->value.v_string);
+		current_function = line.token_name;
+
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		line.mem_address = 0;
+		line.var_space = 0;
 		
 		line.category = FUNCTION;
 		line.is_static = FALSE;
@@ -331,7 +346,11 @@ void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexem
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
 		line.mem_address = RFP;
+		
 		increase_rfp();
+		update_var_space(VAR_SIZE);
+
+		line.var_space = 0;
 		
 		line.category = VARIABLE;
 		line.is_static = lv_static;
@@ -419,6 +438,23 @@ void free_table_stack() {
 	free(stack->array);
 	free(stack);
 	stack = NULL;
+	}
+}
+
+int get_current_var_space() {
+	char* curr_function = get_current_function_name();
+	table_line* line = get_line(curr_function);
+	if (line != NULL) {
+		return line->var_space;
+	}
+	return 0;
+}
+
+void update_var_space(int size_to_add) {
+	char* curr_function = get_current_function_name();
+	table_line* line = get_line(curr_function);
+	if (line != NULL) {
+		line->var_space += size_to_add;
 	}
 }
 
