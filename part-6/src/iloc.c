@@ -248,6 +248,10 @@ iloc_operation* loadai(char* regop1, int value, char* regdst) {
 	return new_3arg_op(LOADAI, new_arg(REGISTER, regop1), new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, regdst));
 }
 
+iloc_operation* jump(char* reg) {
+	return new_1arg_op(JUMP, new_arg(REGISTER, reg));
+}
+
 iloc_operation* jumpi(char* label) {
 	return new_1arg_op(JUMPI, new_arg(LABEL, label));
 }
@@ -310,6 +314,10 @@ iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst) {
 
 iloc_operation* cbr(char* regop1, char* lbl_true, char* lbl_false) {
 	return new_3arg_op(CBR, new_arg(REGISTER, regop1), new_arg(LABEL, lbl_true), new_arg(LABEL, lbl_false));
+}
+
+iloc_operation* i2i(char* regsrc, char* regdst) {
+	return new_2arg_op(I2I, new_arg(REGISTER, regsrc), new_arg(REGISTER, regdst));
 }
 
 iloc_operation* label(char* label_name) {

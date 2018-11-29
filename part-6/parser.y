@@ -235,13 +235,25 @@ start : new_type start
 				char* curr_label = get_function_label(curr_func);
 				if ($$->code == NULL) {
 					$$->code = new_op_list();
-					add_op($$->code, new_nop());
 				}
 				int curr_var_space = get_current_var_space(curr_func);
 				iloc_op_list* rsp_update = new_op_list();
+				char* return_reg = new_reg();
+				char* old_rsp_reg = new_reg();
+				char* old_rfp_reg = new_reg();
+				if (strcmp(curr_func, "main") != 0) 
+					add_op(rsp_update, i2i("rfp", "rsp"));
 				add_op(rsp_update, addi("rsp", curr_var_space, "rsp"));
 				$$->code = concat_code(rsp_update, $$->code);
 				$$->code = put_label_before_code($$->code, curr_label);
+				if (strcmp(curr_func, "main") != 0) {
+					add_op($$->code, loadai("rfp", RETURN_ADDRESS, return_reg));
+					add_op($$->code, loadai("rfp", OLD_RSP, old_rsp_reg));
+					add_op($$->code, loadai("rfp", OLD_RFP, old_rfp_reg));
+					add_op($$->code, store(old_rsp_reg, "rsp"));
+					add_op($$->code, store(old_rfp_reg, "rfp"));
+					add_op($$->code, jump(return_reg));
+				}
 				if ($2->code != NULL) {
 					$$->code = concat_code($1->code, $2->code);
 				}

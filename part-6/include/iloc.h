@@ -75,6 +75,8 @@ iloc_operation* loadai(char* regop1, int value, char* regdst);
 
 iloc_operation* jumpi(char* label);
 
+iloc_operation* jump(char* reg);
+
 iloc_operation* store(char* regop1, char* regdst);
 
 iloc_operation* storeai(char* regop1, int value, char* regdst);
@@ -104,6 +106,8 @@ iloc_operation* cmp_eq(char* regop1, char* regop2, char* regdst);
 iloc_operation* cmp_ne(char* regop1, char* regop2, char* regdst);
 
 iloc_operation* cbr(char* regop1, char* lbl_true, char* lbl_false);
+
+iloc_operation* i2i(char* regsrc, char* regdst);
 
 iloc_operation* label(char* label_name);
 
