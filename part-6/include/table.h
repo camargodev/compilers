@@ -87,8 +87,10 @@ typedef struct line {
 
 	int mem_address;
 
+	// fields for function
 	char* function_label;
 	int var_space;
+	int rfp_displacement;
 
 
 } table_line;

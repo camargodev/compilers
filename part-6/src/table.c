@@ -18,6 +18,7 @@ void free_line(table_line line);
 void free_table(table table);
 void update_var_space(int size_to_add);
 int get_current_var_space();
+int get_current_rfp_displacement();
 
 char* current_function;
 
@@ -60,8 +61,12 @@ void pop(){
 	}	
 }
 
-int increase_rfp() {
-	RFP += VAR_SIZE;
+int increase_rfp() {	
+	char* curr_function = get_current_function_name();
+	table_line* line = get_line(curr_function);
+	if (line != NULL) {
+		line->rfp_displacement += VAR_SIZE;
+	}
 	return RFP;
 }
 
@@ -223,6 +228,8 @@ table_line inicialize_line(Lexeme * token) {
 
 	line.function_label = NULL;
 
+	line.rfp_displacement = 0;
+
 	return line;
 }
 
@@ -320,7 +327,7 @@ void add_function(int type, char* user_type, int num_func_args, func_args *funct
 		line.nature = NATUREZA_IDENTIFICADOR;
 		line.mem_address = 0;
 		line.var_space = 0;
-		
+
 		line.category = FUNCTION;
 		line.is_static = FALSE;
 		line.array_size = 0;
@@ -358,9 +365,10 @@ void add_local_var(int type, char* user_type, int lv_static, int lv_const, Lexem
 		line.token_name = strdup(token->value.v_string);
 		line.declaration_line = token->line_number;
 		line.nature = NATUREZA_IDENTIFICADOR;
-		line.mem_address = RFP;
+		line.mem_address = get_current_rfp_displacement();
 		
 		increase_rfp();
+
 		update_var_space(VAR_SIZE);
 
 		line.var_space = 0;
@@ -452,6 +460,15 @@ void free_table_stack() {
 	free(stack);
 	stack = NULL;
 	}
+}
+
+int get_current_rfp_displacement() {
+	char* curr_function = get_current_function_name();
+	table_line* line = get_line(curr_function);
+	if (line != NULL) {
+		return line->rfp_displacement;
+	}
+	return 0;
 }
 
 int get_current_var_space() {

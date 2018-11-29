@@ -1,22 +1,13 @@
 int f() {
 	int x;
 	int y;
-	int z;
-}
-
-int g() {
-}
-
-int h() {
-	int x;
-}
-
-int i() {
-	int x;
-	int y;
+	y = 3;
 }
 
 int main() {
 	int k;
 	k = 1;
+	int y;
+	int z;
+	z = 4;
 }
