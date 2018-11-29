@@ -1,0 +1,11 @@
+int g() {
+	int k;
+	int l;
+}
+int f() {
+    return 73;
+}
+int main() {
+    int y;
+    y = f();
+}

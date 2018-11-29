@@ -260,6 +260,10 @@ iloc_operation* storeai(char* regop1, int value, char* regdst) {
 	return new_3arg_op(STOREAI, new_arg(REGISTER, regop1), new_arg(REGISTER, regdst), new_arg(CONSTANT, (void*) &value));
 }
 
+iloc_operation* addi(char* regop1, int value, char* regdst) {
+	return new_3arg_op(ADDI, new_arg(REGISTER, regop1), new_arg(CONSTANT, (void*) &value), new_arg(REGISTER, regdst));
+}
+
 iloc_operation* and_op(char* regop1, char* regop2, char* regdst) {
 	return new_3arg_op(AND, new_arg(REGISTER, regop1), new_arg(REGISTER, regop2), new_arg(REGISTER, regdst));
 }
@@ -315,7 +319,8 @@ iloc_operation* label(char* label_name) {
 /* Free + Print functions */
 
 int is_supposed_to_free(char* arg_name) {
-	if (strcmp(arg_name, "rfp") == 0 || strcmp(arg_name, "rbss") == 0)
+	if (strcmp(arg_name, "rfp") == 0 || strcmp(arg_name, "rbss") == 0 
+		|| strcmp(arg_name, "rcp") == 0 || strcmp(arg_name, "rsp") == 0)
 		return 0;
 	return 1;;
 }

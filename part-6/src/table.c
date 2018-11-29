@@ -475,9 +475,8 @@ int get_current_rfp_displacement() {
 	return 0;
 }
 
-int get_current_var_space() {
-	char* curr_function = get_current_function_name();
-	table_line* line = get_line(curr_function);
+int get_current_var_space(char* function) {
+	table_line* line = get_line(function);
 	if (line != NULL) {
 		return line->var_space;
 	}

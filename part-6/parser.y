@@ -237,6 +237,10 @@ start : new_type start
 					$$->code = new_op_list();
 					add_op($$->code, new_nop());
 				}
+				int curr_var_space = get_current_var_space(curr_func);
+				iloc_op_list* rsp_update = new_op_list();
+				add_op(rsp_update, addi("rsp", curr_var_space, "rsp"));
+				$$->code = concat_code(rsp_update, $$->code);
 				$$->code = put_label_before_code($$->code, curr_label);
 				if ($2->code != NULL) {
 					$$->code = concat_code($1->code, $2->code);
@@ -2404,6 +2408,13 @@ expr_vals		: TK_LIT_FLOAT
 							} else {
 								set_error(ERR_EXCESS_ARGS);
 							}
+
+							char* reg_return = new_reg();
+							add_op($$->code, addi("rcp", 5, reg_return));
+							add_op($$->code, storeai(reg_return, RETURN_ADDRESS, "rsp"));
+							add_op($$->code, storeai("rsp", OLD_RSP, "rsp"));
+							add_op($$->code, storeai("rfp", OLD_RFP, "rsp"));
+							add_op($$->code, jumpi(get_function_label($1->token->value.v_string)));
 
 							free(expected_types);
 							free(function_arguments);
