@@ -11,3 +11,13 @@ int main() {
 	int z;
 	z = 4;
 }
+
+int g() {
+}
+
+int h() {
+	int x;
+	int y;
+	int z;
+	y = 8;
+}

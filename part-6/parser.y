@@ -231,7 +231,7 @@ start : new_type start
 		| func start 
 			{	$$ = $1; 
 				add_node($$, $2);
-				char* curr_func = get_current_function_name();
+				char* curr_func = $$->children[0]->token->value.v_string;
 				char* curr_label = get_function_label(curr_func);
 				if ($$->code == NULL) {
 					$$->code = new_op_list();

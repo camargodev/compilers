@@ -57,6 +57,7 @@ void pop(){
 		//printf("\nO ESCOPO ATUAL FOI FECHADO COM VAR SPACE = %i\n", get_current_var_space());
 		free_table(stack->array[stack->num_tables]);
 		stack->num_tables--;
+		//current_function = stack->array[stack->num_tables].scope_name;
 		return;
 	}	
 }
@@ -98,6 +99,9 @@ int is_declared_on_current_table (char* token) {
 }
 
 char* get_current_function_name() {
+	//if (stack->array[stack->num_tables]) {
+	//return stack->array[stack->num_tables-1].scope_name;
+	//}
 	return current_function;
 }
 
