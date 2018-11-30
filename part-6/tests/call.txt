@@ -1,9 +1,10 @@
 int f() {
-    return 73;
+    return 3+3;
 }
 int main() {
     int y;
     int p;
     y = f();
-    p = y + 13;
+    y = y + 4;
+    p = f()*2 + 2;
 }

@@ -199,7 +199,7 @@ set_tree	: start
 				} else {
 					iloc_op_list* jump_to_main = new_op_list();
 					char* main_label = get_function_label("main");
-					add_op(jump_to_main, loadi(1024, "rfp"));
+					add_op(jump_to_main, loadi(512, "rfp"));
 					add_op(jump_to_main, loadi(1024, "rsp"));
 					add_op(jump_to_main, loadi(23, "rbss"));
 					add_op(jump_to_main, jumpi(main_label));
@@ -256,8 +256,8 @@ start : new_type start
 					add_op($$->code, loadai("rfp", RETURN_ADDRESS, return_reg));
 					add_op($$->code, loadai("rfp", OLD_RSP, old_rsp_reg));
 					add_op($$->code, loadai("rfp", OLD_RFP, old_rfp_reg));
-					add_op($$->code, store(old_rsp_reg, "rsp"));
-					add_op($$->code, store(old_rfp_reg, "rfp"));
+					add_op($$->code, addi(old_rsp_reg, 0, "rsp"));
+					add_op($$->code, addi(old_rfp_reg, 0, "rfp"));
 					add_op($$->code, jump(return_reg));
 				}
 				if ($2->code != NULL) {
