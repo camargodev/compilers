@@ -3,27 +3,31 @@ loadI 1024 => rsp
 loadI 23 => rbss
 jumpI -> L1
 L0: i2i rsp => rfp
-addI rsp, 20 => rsp
+addI rsp, 28 => rsp
 loadAI rfp, 16 => r0
-storeAI r0 => rfp, 12
-loadAI rfp, 0 => r10
-loadAI rfp, 4 => r11
-loadAI rfp, 8 => r12
-addI r11, 0 => rsp
-addI r12, 0 => rfp
-jump -> r10
-L1: addI rsp, 8 => rsp
-loadI 7 => r1
-addI rpc, 6 => r3
-storeAI r3 => rsp, 0
+loadAI rfp, 20 => r1
+add r0, r1 => r2
+loadAI rfp, 24 => r3
+add r2, r3 => r4
+storeAI r4 => rfp, 12
+loadAI rfp, 0 => r13
+loadAI rfp, 4 => r14
+loadAI rfp, 8 => r15
+addI r14, 0 => rsp
+addI r15, 0 => rfp
+jump -> r13
+L1: addI rsp, 4 => rsp
+loadI 7 => r5
+loadI 919 => r6
+loadI 8 => r7
+addI rpc, 8 => r9
+storeAI r9 => rsp, 0
 storeAI rsp => rsp, 4
 storeAI rfp => rsp, 8
-storeAI r1 => rsp, 16
+storeAI r5 => rsp, 16
+storeAI r6 => rsp, 20
+storeAI r7 => rsp, 24
 jumpI -> L0
-loadAI rsp, 12 => r2
-storeAI r2 => rfp, 0
-loadAI rfp, 0 => r4
-loadI 7 => r5
-mult r4, r5 => r6
-storeAI r6 => rfp, 4
+loadAI rsp, 12 => r8
+storeAI r8 => rfp, 0
 halt 

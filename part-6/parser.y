@@ -2449,13 +2449,11 @@ expr_vals		: TK_LIT_FLOAT
 							add_op($$->code, storeai("rsp", OLD_RSP, "rsp"));
 							add_op($$->code, storeai("rfp", OLD_RFP, "rsp"));
 
+
 							if (func_call_param_counter > 0) {
-								Node* node = $2->children[0];
-								add_op($$->code, storeai(node->result_reg, 16, "rsp"));
-								//Node* node2 = (($2->children[0])->children[1])->children[1];
-								//printf("\nXX = %s", node->result_reg);
-								//printf("\nYY = %s", node2->result_reg);
-								//printf("\n");
+								for (int i = 0; i < func_call_param_counter; i++) {
+									add_op($$->code, storeai($2->param_regs[i], BEGIN_OF_PARAMS+(i*4), "rsp"));
+								}
 							}
 							add_op($$->code, jumpi(get_function_label($1->token->value.v_string)));
 							add_op($$->code, loadai("rsp", RET_VALUE_ADDRESS, $$->result_reg));
@@ -2594,6 +2592,8 @@ id_seq			:  id_seq_simple
 						id_category = FUNCTION;
 
 						$$->code = $2->code;
+						$$->num_param_regs = $2->num_param_regs;
+						$$->param_regs = $2->param_regs;
 					} 
 
 id_seq_field 	: '$' TK_IDENTIFICADOR  
@@ -2662,6 +2662,16 @@ func_call_params	: ')'
 							if ($2->code != NULL)
 								$$->code = concat_code($$->code, $2->code);
 
+							add_param_reg($$, $1->result_reg);
+							if ($2->num_param_regs > 0) {
+								for (int i = 0; i < $2->num_param_regs; i++) {
+									add_param_reg($$, $2->param_regs[i]);
+								}
+							}
+
+							/*printf("\nIUOUOU1 = %s", $1->result_reg);
+							printf("\nIUOUOU2 = %s", $$->children[1]->result_reg);*/
+
 							/* Will be removed */	
 							//simple_free_code($1->code);
 						}
@@ -2686,6 +2696,8 @@ func_call_params_body 	: ')'
 						{
 							$$ = new_node($1);
 							$$->point = -1;
+
+
 						}
 						| ',' func_call_params_end
 						{
@@ -2693,6 +2705,12 @@ func_call_params_body 	: ')'
 							add_node($$, $2);
 							$$->point = $2->point;
 							$$->code = $2->code;
+
+							$$->param_regs = $2->param_regs;
+							$$->num_param_regs = $2->num_param_regs;
+
+							//$$->result_reg = $2->result_reg;
+
 						}
 
 func_call_params_end 	: expr func_call_params_body
@@ -2710,6 +2728,13 @@ func_call_params_end 	: expr func_call_params_body
 
 								$$->point = $2->point;
 								func_call_param_counter++;
+
+								add_param_reg($$, $1->result_reg);
+								if ($2->num_param_regs > 0) {
+									for(int i = 0; i < $2->num_param_regs; i++) {
+										add_param_reg($$, $2->param_regs[i]);
+									}
+								}	
 
 								if ($2->code != NULL)
 									$$->code = concat_code($$->code, $2->code);

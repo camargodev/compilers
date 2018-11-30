@@ -1,9 +1,7 @@
-int f(int p) {
-    return p;
+int f(int p, int q, int r) {
+    return p+q+r;
 }
 int main() {
     int y;
-    int p;
-    y = f(7);
-    p = y*7;
+    y = f(7, 919, 8);
 }

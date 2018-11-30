@@ -18,6 +18,8 @@ typedef struct node {
 	int 	children_num;
 	struct 	node **children;
 
+	int 	num_param_regs;
+	char**  param_regs;
 	//used for code
 	lbl_list* false_list;
 	lbl_list* true_list;
@@ -40,5 +42,7 @@ void print_token(struct Lexeme* lex_val);
 */
 
 void descompila(void *node);
+
+void add_param_reg(Node* nd, char* reg);
 
 void libera(void *node);

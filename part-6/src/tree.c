@@ -34,6 +34,8 @@ Node* new_node(struct Lexeme* token) {
 	node->children = (Node**) malloc(sizeof(Node**));
 	node->true_list = NULL;
 	node->false_list = NULL;
+	node->num_param_regs = 0;
+	node->param_regs = NULL;
 
 	return node;
 }
@@ -53,6 +55,15 @@ void add_node(Node *root, Node *child) {
 									root->children_num* sizeof(Node**));
 	
 	root->children[root->children_num - 1] = child;
+}
+
+void add_param_reg(Node* root, char* reg) {
+	root->num_param_regs++;
+	root->param_regs = (char**) realloc(root->param_regs, 
+									  root->num_param_regs* sizeof(char*));
+	
+	root->param_regs[root->num_param_regs - 1] = reg;
+
 }
 
 void print_token(struct Lexeme* lex_val) {
