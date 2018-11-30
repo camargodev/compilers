@@ -328,7 +328,7 @@ iloc_operation* label(char* label_name) {
 
 int is_supposed_to_free(char* arg_name) {
 	if (strcmp(arg_name, "rfp") == 0 || strcmp(arg_name, "rbss") == 0 
-		|| strcmp(arg_name, "rcp") == 0 || strcmp(arg_name, "rsp") == 0)
+		|| strcmp(arg_name, "rpc") == 0 || strcmp(arg_name, "rsp") == 0)
 		return 0;
 	return 1;;
 }

@@ -3,5 +3,7 @@ int f() {
 }
 int main() {
     int y;
+    int p;
     y = f();
+    p = y + 13;
 }

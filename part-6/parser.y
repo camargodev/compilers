@@ -199,6 +199,9 @@ set_tree	: start
 				} else {
 					iloc_op_list* jump_to_main = new_op_list();
 					char* main_label = get_function_label("main");
+					add_op(jump_to_main, loadi(1024, "rfp"));
+					add_op(jump_to_main, loadi(1024, "rsp"));
+					add_op(jump_to_main, loadi(23, "rbss"));
 					add_op(jump_to_main, jumpi(main_label));
 					$$->code = concat_code(jump_to_main, $$->code);
 				}
@@ -241,9 +244,12 @@ start : new_type start
 				char* return_reg = new_reg();
 				char* old_rsp_reg = new_reg();
 				char* old_rfp_reg = new_reg();
-				if (strcmp(curr_func, "main") != 0) 
-					add_op(rsp_update, i2i("rfp", "rsp"));
-				add_op(rsp_update, addi("rsp", curr_var_space, "rsp"));
+				if (strcmp(curr_func, "main") != 0) {
+					add_op(rsp_update, i2i("rsp", "rfp"));
+					add_op(rsp_update, addi("rsp", curr_var_space + 4*FIELDS_ON_RA, "rsp"));
+				} else {
+					add_op(rsp_update, addi("rsp", curr_var_space, "rsp"));
+				}
 				$$->code = concat_code(rsp_update, $$->code);
 				$$->code = put_label_before_code($$->code, curr_label);
 				if (strcmp(curr_func, "main") != 0) {
@@ -1181,7 +1187,9 @@ return 		: TK_PR_RETURN expr
 						}
 					}
 
-					simple_free_code($2->code);
+					$$->code = $2->code;
+					add_op($$->code, storeai($2->result_reg, RET_VALUE_ADDRESS, "rfp"));
+					//simple_free_code($2->code);
 				}
 
 for 		: TK_PR_FOR '(' cmd_for for_fst_list
@@ -1703,7 +1711,9 @@ attr 		: '=' expr
 
 					$$->token = copy_lexeme($2->token);
 					$$->result_reg = $2->result_reg;
-					$$->code = $2->code;		
+					$$->code = $2->code;
+					//print_code($$->code);
+					//printf("\nA\n");		
 					$$->true_list = copy_label_list($2->true_list);	
 					$$->false_list = copy_label_list($2->false_list);							
 				}
@@ -2404,6 +2414,8 @@ expr_vals		: TK_LIT_FLOAT
 						}
 
 						if (id_category == FUNCTION) {
+							$$->code = new_op_list();
+							$$->result_reg = new_reg();
 							int num_args = get_func_num_params($1->token->value.v_string);
 							int* expected_types = get_func_params_types($1->token->value.v_string);
 
@@ -2422,16 +2434,23 @@ expr_vals		: TK_LIT_FLOAT
 							}
 
 							char* reg_return = new_reg();
-							add_op($$->code, addi("rcp", 5, reg_return));
+							add_op($$->code, addi("rpc", 5, reg_return));
 							add_op($$->code, storeai(reg_return, RETURN_ADDRESS, "rsp"));
 							add_op($$->code, storeai("rsp", OLD_RSP, "rsp"));
 							add_op($$->code, storeai("rfp", OLD_RFP, "rsp"));
 							add_op($$->code, jumpi(get_function_label($1->token->value.v_string)));
+							add_op($$->code, loadai("rsp", RET_VALUE_ADDRESS, $$->result_reg));
 
 							free(expected_types);
 							free(function_arguments);
 							function_arguments = NULL;
 							func_call_param_counter = 0;
+						} else {
+							$$->code = new_op_list();
+							$$->result_reg = new_reg();
+							char* displacement_reg = get_base_reg($1->token->value.v_string);
+							//printf("\nS = %s", $$->token->value.v_string);
+							add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
 						}
 
 						if (category == USER_TYPE)
@@ -2520,17 +2539,7 @@ id_for_expr		: TK_IDENTIFICADOR
 						} else {
 							$$->type = param_type;
 						}	
-						if (is_id_declared != NOT_DECLARED && type == INT) {
-							$$->code = new_op_list();
-
-							$$->result_reg = new_reg();
-							char* displacement_reg = get_base_reg($1->value.v_string);
-							//printf("Result_Reg [%s]\n", $$->result_reg);
-							//printf("Displacement_reg [%s]\n", displacement_reg);
-							//printf("Address [%s] = %d\n", $$->token->value.v_string, get_mem_address($$->token));
-
-							add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
-						}
+						
 					}
 
 /*piped 			: %empty

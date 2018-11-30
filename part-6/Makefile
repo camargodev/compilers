@@ -82,7 +82,7 @@ TMPRES  = ${TST}/tempresults.txt
 PYTHON  = python3
 SIMFLDR = simulator
 ILOCSIM = ${SIMFLDR}/ilocsim.py
-ILCFLGS =  -s -t -m --data 120 --stack 1000 
+ILCFLGS =  -x -t -s --data 500 --stack 1024 
 
 OUTPUT  = ${PSR}.output
 LKTMP   = tmplk.txt

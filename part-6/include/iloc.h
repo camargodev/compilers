@@ -9,9 +9,12 @@
 #define LABEL	 123
 #define REGISTER 124
 
-#define RETURN_ADDRESS 0
-#define OLD_RSP		   4
-#define OLD_RFP		   8	
+#define RETURN_ADDRESS     0
+#define OLD_RSP		       4
+#define OLD_RFP		       8	
+#define RET_VALUE_ADDRESS 12
+
+#define FIELDS_ON_RA	   4
 
 /* To generate new unique regs */
 static int reg_count = 0;
