@@ -126,6 +126,22 @@ void set_func_as_static(char* token) {
 		line->is_static = TRUE;
 }
 
+int get_parameter_index(char* func, char* param) {
+	table_line* line = get_line(func);
+	if (line != NULL && line->category == FUNCTION) {
+		int num_params = line->num_func_args;
+		for(int i = 0; i < num_params; i++) {
+			char* name = line->function_args[i].name;
+			if (name != NULL) {
+				if (strcmp(name, param) == 0) {
+					return i;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
 void add_user_type(Lexeme * token) {
 	int table_index = stack->num_tables;
 

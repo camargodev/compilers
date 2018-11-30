@@ -245,8 +245,9 @@ start : new_type start
 				char* old_rsp_reg = new_reg();
 				char* old_rfp_reg = new_reg();
 				if (strcmp(curr_func, "main") != 0) {
+					int num_params = get_func_num_params(curr_func);
 					add_op(rsp_update, i2i("rsp", "rfp"));
-					add_op(rsp_update, addi("rsp", curr_var_space + 4*FIELDS_ON_RA, "rsp"));
+					add_op(rsp_update, addi("rsp", curr_var_space + 4*(FIELDS_ON_RA+num_params), "rsp"));
 				} else {
 					add_op(rsp_update, addi("rsp", curr_var_space, "rsp"));
 				}
@@ -657,18 +658,24 @@ func_params     : ')' add_func func_body
 					{
 						$$ = $1;
 						add_node($$, $2);
+
+						$$->code = $2->code;
 					}
 
 func_params_end : ')' add_func func_body
 					{
 						$$ = new_node($1);
 						add_node($$, $3);
+
+						$$->code = $3->code;
 					}
 				| ',' var func_params_end
 					{
 						$$ = new_node($1);
 						add_node($$, $2);
 						add_node($$, $3);
+
+						$$->code = $3->code;
 					}
 
 add_func 		: %empty
@@ -2434,10 +2441,22 @@ expr_vals		: TK_LIT_FLOAT
 							}
 
 							char* reg_return = new_reg();
-							add_op($$->code, addi("rpc", 5, reg_return));
+							if ($2->code != NULL) {
+								$$->code = concat_code($$->code, $2->code);
+							}
+							add_op($$->code, addi("rpc", 5+func_call_param_counter, reg_return));
 							add_op($$->code, storeai(reg_return, RETURN_ADDRESS, "rsp"));
 							add_op($$->code, storeai("rsp", OLD_RSP, "rsp"));
 							add_op($$->code, storeai("rfp", OLD_RFP, "rsp"));
+
+							if (func_call_param_counter > 0) {
+								Node* node = $2->children[0];
+								add_op($$->code, storeai(node->result_reg, 16, "rsp"));
+								//Node* node2 = (($2->children[0])->children[1])->children[1];
+								//printf("\nXX = %s", node->result_reg);
+								//printf("\nYY = %s", node2->result_reg);
+								//printf("\n");
+							}
 							add_op($$->code, jumpi(get_function_label($1->token->value.v_string)));
 							add_op($$->code, loadai("rsp", RET_VALUE_ADDRESS, $$->result_reg));
 
@@ -2448,9 +2467,17 @@ expr_vals		: TK_LIT_FLOAT
 						} else {
 							$$->code = new_op_list();
 							$$->result_reg = new_reg();
-							char* displacement_reg = get_base_reg($1->token->value.v_string);
-							//printf("\nS = %s", $$->token->value.v_string);
-							add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
+							char* in_function = function.lexeme->value.v_string;
+							char* displacement_reg;
+							int displacement_param = get_parameter_index(in_function, $1->token->value.v_string);
+							if (displacement_param != -1) {
+								displacement_reg = "rfp";
+								add_op($$->code, loadai(displacement_reg, 16 + displacement_param*4, $$->result_reg));
+							} else {
+								displacement_reg = get_base_reg($1->token->value.v_string);
+								//printf("\nS = %s", $$->token->value.v_string);
+								add_op($$->code, loadai(displacement_reg, get_mem_address($$->token), $$->result_reg));
+							}
 						}
 
 						if (category == USER_TYPE)
@@ -2565,6 +2592,8 @@ id_seq			:  id_seq_simple
 						add_node($$, $3);
 
 						id_category = FUNCTION;
+
+						$$->code = $2->code;
 					} 
 
 id_seq_field 	: '$' TK_IDENTIFICADOR  
@@ -2630,8 +2659,11 @@ func_call_params	: ')'
 							$$->point = $2->point;
 							func_call_param_counter++;
 
+							if ($2->code != NULL)
+								$$->code = concat_code($$->code, $2->code);
+
 							/* Will be removed */	
-							simple_free_code($1->code);
+							//simple_free_code($1->code);
 						}
 					| '.' func_call_params_body
 						{
@@ -2660,6 +2692,7 @@ func_call_params_body 	: ')'
 							$$ = new_node($1);
 							add_node($$, $2);
 							$$->point = $2->point;
+							$$->code = $2->code;
 						}
 
 func_call_params_end 	: expr func_call_params_body
@@ -2678,8 +2711,11 @@ func_call_params_end 	: expr func_call_params_body
 								$$->point = $2->point;
 								func_call_param_counter++;
 
+								if ($2->code != NULL)
+									$$->code = concat_code($$->code, $2->code);
+
 								/* Will be removed */
-								simple_free_code($1->code);
+								//simple_free_code($1->code);
 							}
 						| '.' func_call_params_body
 							{

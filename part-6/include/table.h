@@ -145,3 +145,4 @@ char* get_base_reg(char* var);
 char* get_current_function_name();
 char* get_function_label(char* function_name);
 int get_current_var_space(char* function);
+int get_parameter_index(char* func, char* param);

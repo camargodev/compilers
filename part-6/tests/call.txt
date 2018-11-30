@@ -1,10 +1,9 @@
-int f() {
-    return 3+3;
+int f(int p) {
+    return p;
 }
 int main() {
     int y;
     int p;
-    y = f();
-    y = y + 4;
-    p = f()*2 + 2;
+    y = f(7);
+    p = y*7;
 }
